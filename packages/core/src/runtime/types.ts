@@ -5,6 +5,7 @@ import { MemoryService } from "../memory/service";
 import { MemoryProvider } from "../memory/types";
 import { ModelProvider } from "../models/service";
 import { BaseContextItem } from "../types/agent";
+import { PluginResult } from "../plugin";
 
 /**
  * A step in the execution pipeline
@@ -71,3 +72,44 @@ export interface PipelineGenerationContext {
     conversationHistory: ConversationMessage[];
   };
 }
+
+/**
+ * Context for evaluating pipeline modifications during execution
+ */
+export interface PipelineEvaluationContext {
+  availablePlugins: AvailablePlugin[];
+  originalPipeline: PipelineStep[];
+  remainingSteps: PipelineStep[];
+  executedSteps: {
+    step: PipelineStep;
+    result: PluginResult;
+  }[];
+  contextChain: BaseContextItem[];
+  currentStepIndex: number;
+  modificationHistory: {
+    step: PipelineStep;
+    modification: PipelineModification;
+    timestamp: number;
+    reason: string;
+  }[];
+}
+
+/**
+ * Schema for pipeline modification results from LLM
+ */
+export const PipelineModificationSchema = z
+  .object({
+    shouldModify: z
+      .boolean()
+      .describe("Whether the pipeline should be modified"),
+    explanation: z
+      .string()
+      .describe("Explanation of why the pipeline needs to be modified"),
+    modifiedSteps: z
+      .array(PipelineStepSchema)
+      .optional()
+      .describe("The new steps to use if modification is needed")
+  })
+  .describe("Result of pipeline modification evaluation");
+
+export type PipelineModification = z.infer<typeof PipelineModificationSchema>;

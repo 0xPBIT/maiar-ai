@@ -1,4 +1,9 @@
-import { PipelineGenerationContext } from "./types";
+import {
+  PipelineGenerationContext,
+  PipelineEvaluationContext,
+  PipelineStep,
+  PipelineModification
+} from "./types";
 
 interface ConversationMessage {
   timestamp: number;
@@ -11,10 +16,15 @@ const formatTimestamp = (timestamp: number): string => {
   return new Date(timestamp).toISOString();
 };
 
-const formatPluginDescriptions = (
-  context: PipelineGenerationContext
-): string => {
-  return context.availablePlugins
+const formatPluginDescriptions = (plugins: {
+  availablePlugins: {
+    id: string;
+    name: string;
+    description: string;
+    executors: { name: string; description: string }[];
+  }[];
+}): string => {
+  return plugins.availablePlugins
     .map(
       (plugin) => `Plugin: ${plugin.name} (${plugin.id})
 Description: ${plugin.description}
@@ -176,6 +186,100 @@ Generate a sequence of steps to handle this context. Each step should use an ava
 IMPORTANT: Return ONLY the raw JSON array. Do NOT wrap it in code blocks or add any other text.
 </task>`;
 
+const formatExecutedSteps = (
+  executedSteps: PipelineEvaluationContext["executedSteps"]
+): string => {
+  return executedSteps
+    .map(
+      ({ step, result }) => `Step: ${step.pluginId}:${step.action}
+Result: ${result.success ? "Success" : "Failed"}
+${result.data ? `Output: ${JSON.stringify(result.data, null, 2)}` : ""}
+${result.error ? `Error: ${result.error}` : ""}`
+    )
+    .join("\n\n");
+};
+
+const formatPipelineSteps = (steps: PipelineStep[]): string => {
+  return steps.map((step) => `${step.pluginId}:${step.action}`).join("\n");
+};
+
+// Add a function to format modification history
+const formatModificationHistory = (
+  executedSteps: PipelineEvaluationContext["executedSteps"],
+  modificationHistory: PipelineEvaluationContext["modificationHistory"]
+): string => {
+  const modifications: string[] = [];
+
+  // Add modifications from history
+  modificationHistory.forEach(({ step, modification, timestamp, reason }) => {
+    const time = new Date(timestamp).toISOString();
+    modifications.push(`- At step ${step.pluginId}:${step.action} (${time}):
+  * Reason: ${reason}
+  * Modified Steps: ${modification.modifiedSteps?.map((s) => `${s.pluginId}:${s.action}`).join(", ") || "none"}`);
+  });
+
+  // Add any modifications from executed steps that aren't in history
+  executedSteps.forEach(({ step, result }) => {
+    if (result.data && "modification" in result.data) {
+      const mod = result.data.modification as PipelineModification;
+      if (
+        mod.shouldModify &&
+        !modificationHistory.some((h) => h.modification === mod)
+      ) {
+        modifications.push(`- At step ${step.pluginId}:${step.action}:
+  * Reason: ${mod.explanation}
+  * Modified Steps: ${mod.modifiedSteps?.map((s) => `${s.pluginId}:${s.action}`).join(", ") || "none"}`);
+      }
+    }
+  });
+
+  return modifications.length > 0
+    ? `Previous Modifications:\n${modifications.join("\n")}`
+    : "No previous modifications";
+};
+
+// Update the modification rules to emphasize history awareness
+const PIPELINE_MODIFICATION_RULES = `<rules>
+1. You are evaluating a pipeline during execution to determine if it needs modification
+2. CRITICAL: Before suggesting any modifications:
+   - Review the history of previous modifications
+   - Check if required steps are ALREADY present in the remaining steps
+   - Check if the current pipeline ALREADY satisfies security and permission requirements
+   - Only suggest modifications if the current pipeline state does NOT meet requirements
+   - Do NOT suggest modifications that have already been made
+   - Do NOT undo necessary modifications from previous steps
+3. Consider:
+   - Security and permissions based on context:
+     * If a permission check fails (permissionStatus: "denied"), remove ALL actions from that plugin
+     * Add appropriate context about permission requirements to the response
+   - Dependencies between steps
+   - Success/failure of previous steps
+   - User's intent and safety
+   - Current context state
+   - Impact of previous modifications
+4. When modifying:
+   - Preserve the user's original intent where possible
+   - Remove actions that require permissions the user doesn't have
+   - Maintain proper step ordering
+   - Ensure new steps are compatible
+   - Add only necessary steps
+   - Document what steps are being added and removed
+5. The final step must always be a response action from the original trigger's plugin
+6. Return shouldModify: false if:
+   - The required steps are already present in the correct order
+   - Previous modifications have already addressed the concerns
+   - The current pipeline already satisfies all requirements
+   - A similar modification has already been made
+   - A modification with the same explanation exists in history
+   - A modification affecting the same plugin/actions exists
+7. IMPORTANT: Check modification history carefully:
+   - Look for similar modifications by explanation
+   - Look for modifications affecting the same plugins/actions
+   - Consider timestamps of previous modifications
+   - Avoid undoing recent security-related modifications
+   - Do not modify steps that were recently modified
+</rules>`;
+
 export function generatePipelineTemplate(
   context: PipelineGenerationContext
 ): string {
@@ -189,4 +293,55 @@ export function generatePipelineTemplate(
     contextSection,
     TASK_SECTION
   ].join("\n\n");
+}
+
+export function generatePipelineModificationTemplate(
+  context: PipelineEvaluationContext
+): string {
+  return `You are evaluating a pipeline during execution to determine if it needs modification.
+
+${PIPELINE_MODIFICATION_RULES}
+
+CRITICAL EVALUATION INSTRUCTIONS:
+1. The current step (${context.currentStepIndex}) has ALREADY been executed - do not include it in modifications
+2. Previous steps have already been executed and their effects applied
+3. Only consider modifying REMAINING steps (steps after the current index)
+4. Check the execution history to avoid suggesting duplicate modifications
+5. If a required step is already present in executed steps, do NOT add it again
+6. Return shouldModify: false if no NEW modifications are needed
+
+Available Plugins:
+${formatPluginDescriptions({ availablePlugins: context.availablePlugins })}
+
+Execution State:
+Original Pipeline:
+${formatPipelineSteps(context.originalPipeline)}
+
+Executed Steps:
+${formatExecutedSteps(context.executedSteps)}
+
+Remaining Steps:
+${formatPipelineSteps(context.remainingSteps)}
+
+${formatModificationHistory(context.executedSteps, context.modificationHistory)}
+
+Current Context Chain:
+${JSON.stringify(context.contextChain, null, 2)}
+
+Task:
+Evaluate if the remaining pipeline steps need to be modified based on the current state.
+IMPORTANT: Review the previous modifications to avoid duplicating changes or undoing necessary modifications.
+If modification is needed, provide the new sequence of steps that should replace the remaining steps.
+
+The modification steps available to you are adding new steps, removing steps, or reordering steps.
+You do not have the ability to modify the previous steps.
+You are not concerned with modifying what the steps do internally, only the order of the steps.
+You can add, remove, or reorder steps as they are needed based on the data you have available.
+
+Return a JSON object with:
+- shouldModify: boolean indicating if modification is needed
+- explanation: string explaining why modification is/isn't needed (reference previous modifications if relevant)
+- modifiedSteps: array of new steps (only if shouldModify is true)
+
+IMPORTANT: Return ONLY the raw JSON object. Do NOT wrap it in code blocks or add any other text.`;
 }

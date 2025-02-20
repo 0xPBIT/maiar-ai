@@ -26,6 +26,8 @@ import { PluginCharacter } from "@maiar-ai/plugin-character";
 import { PluginSearch } from "@maiar-ai/plugin-search";
 import { PluginX } from "@maiar-ai/plugin-x";
 import { PluginTerminal } from "@maiar-ai/plugin-terminal";
+import { PluginPermissionsX } from "./plugins/plugin-permissions-x";
+
 import appRouter from "./app";
 // Create and start the agent
 const runtime = createRuntime({
@@ -51,6 +53,9 @@ const runtime = createRuntime({
     }),
     new PluginSearch({
       apiKey: process.env.PERPLEXITY_API_KEY as string
+    }),
+    new PluginPermissionsX({
+      whitelistedUsers: ["admin", "whitelisted_user"]
     }),
     new PluginX({
       username: process.env.X_USERNAME as string,

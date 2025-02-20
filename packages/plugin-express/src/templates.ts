@@ -13,8 +13,13 @@ export function generateResponseTemplate(
     - Do not use smart/curly quotes
     - The response must be parseable by JSON.parse()
 
+    IMPORTANT: When handling permission failures:
+    - If any permission checks failed (permissionStatus: "denied"), include a clear explanation in the response
+    - Explain what permissions are required and how to obtain them
+    - Be polite and helpful while maintaining security boundaries
+
     Do NOT include any metadata, context information, or explanation of how the response was generated.
-    Look for the relevant information in the most recent context items (e.g. generated text, current time, etc).
+    Look for the relevant information in the most recent context items (e.g. generated text, current time, permission status, etc).
 
     Here is the Context Chain of the users initial message, and your internal operations which generated useful data for your response:
     ${JSON.stringify(contextChain, null, 2)}

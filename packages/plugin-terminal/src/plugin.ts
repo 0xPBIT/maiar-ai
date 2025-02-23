@@ -19,7 +19,8 @@ export class PluginTerminal extends PluginBase {
     super({
       id: "plugin-terminal",
       name: "Terminal Plugin",
-      description: "Handles terminal-based chat interaction"
+      description:
+        "Handles terminal-based chat interaction. This plugin is used to receive messages from the user over terminal. All messages recieved over terminal must be sent to the user in the terminal as the very last action you perform. It is called send_response under the plugin-terminal namespace. You must make this your last action if the incoming message is from the terminal plugin."
     });
     this.config = config;
 
@@ -140,7 +141,11 @@ export class PluginTerminal extends PluginBase {
                 // Create event with initial context and response handler
                 const platformContext: TerminalPlatformContext = {
                   platform: this.id,
-                  responseHandler
+                  responseHandler,
+                  metadata: {
+                    helpfulInstruction:
+                      "This is a terminal chat message. This means you must send a response to the user in the terminal as the very last action you perform. It is called send_response under the plugin-terminal namespace."
+                  }
                 };
 
                 await this.runtime.createEvent(initialContext, platformContext);

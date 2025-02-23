@@ -24,8 +24,8 @@ import { PluginSearch } from "@maiar-ai/plugin-search";
 import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
-
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
+import { PluginDiscord } from "@maiar-ai/plugin-discord";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -54,6 +54,11 @@ const runtime = createRuntime({
     new PluginTerminal({
       user: "test",
       agentName: "maiar-starter"
+    }),
+    new PluginDiscord({
+      token: process.env.DISCORD_BOT_TOKEN as string,
+      clientId: process.env.DISCORD_CLIENT_ID as string,
+      commandPrefix: "!"
     })
   ]
 });

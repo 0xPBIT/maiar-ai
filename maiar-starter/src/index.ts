@@ -38,6 +38,7 @@ import {
 } from "@maiar-ai/plugin-x";
 import { PluginImageGeneration } from "@maiar-ai/plugin-image";
 import { router } from "./express-app";
+import { PluginDiscord } from "@maiar-ai/plugin-discord";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -92,6 +93,11 @@ const runtime = createRuntime({
       // If not specified, all default ones will be used automatically
       customExecutors: [createPostExecutor],
       customTriggers: [periodicPostTrigger]
+    }),
+    new PluginDiscord({
+      token: process.env.DISCORD_BOT_TOKEN as string,
+      clientId: process.env.DISCORD_CLIENT_ID as string,
+      commandPrefix: "!"
     })
   ],
   capabilityAliases: [["image-generation", "generate_image"]]

@@ -51,6 +51,8 @@ const commitlintConfig: UserConfig = {
         "memory-sqlite", // memory-sqlite plugin
         "model-ollama", // model-ollama plugin
         "model-openai", // model-openai plugin
+        "plugin-character", // plugin-character plugin
+        "plugin-discord", // plugin-discord plugin
         "plugin-express", // plugin-express plugin
         "plugin-image", // plugin-image plugin
         "plugin-search", // plugin-search plugin

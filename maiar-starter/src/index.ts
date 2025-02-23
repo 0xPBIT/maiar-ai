@@ -31,13 +31,14 @@ import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 import { PluginExpress } from "@maiar-ai/plugin-express";
-// import {
-//   createPostExecutor,
-//   periodicPostTrigger,
-//   PluginX
-// } from "@maiar-ai/plugin-x";
+import {
+  createPostExecutor,
+  periodicPostTrigger,
+  PluginX
+} from "@maiar-ai/plugin-x";
 import { PluginImageGeneration } from "@maiar-ai/plugin-image";
 import { router } from "./express-app";
+import { PluginDiscord } from "@maiar-ai/plugin-discord";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -83,16 +84,21 @@ const runtime = createRuntime({
     new PluginTerminal({
       user: "ligma",
       agentName: "maiar-starter"
+    }),
+    new PluginX({
+      client_id: process.env.X_CLIENT_ID as string,
+      client_secret: process.env.X_CLIENT_SECRET as string,
+      callback_url: process.env.X_CALLBACK_URL as string,
+      // You can customize which executors and triggers to use
+      // If not specified, all default ones will be used automatically
+      customExecutors: [createPostExecutor],
+      customTriggers: [periodicPostTrigger]
+    }),
+    new PluginDiscord({
+      token: process.env.DISCORD_BOT_TOKEN as string,
+      clientId: process.env.DISCORD_CLIENT_ID as string,
+      commandPrefix: "!"
     })
-    // new PluginX({
-    //   client_id: process.env.X_CLIENT_ID as string,
-    //   client_secret: process.env.X_CLIENT_SECRET as string,
-    //   callback_url: process.env.X_CALLBACK_URL as string,
-    //   // You can customize which executors and triggers to use
-    //   // If not specified, all default ones will be used automatically
-    //   customExecutors: [createPostExecutor],
-    //   customTriggers: [periodicPostTrigger]
-    // })
   ],
   capabilityAliases: [["image-generation", "generate_image"]]
 });

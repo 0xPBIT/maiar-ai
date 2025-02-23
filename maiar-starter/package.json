@@ -27,6 +27,7 @@
     "@maiar-ai/plugin-time": "workspace:*",
     "@maiar-ai/plugin-x": "workspace:*",
     "cors": "2.8.5",
+    "@maiar-ai/plugin-discord": "workspace:*",
     "dotenv": "16.4.7",
     "express": "4.21.2",
     "telegraf": "4.16.3"

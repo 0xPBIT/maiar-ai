@@ -1,4 +1,4 @@
-import { PipelineGenerationContext } from "./types";
+import { PipelineGenerationContext, PipelineEvaluationContext } from "./types";
 
 interface ConversationMessage {
   timestamp: number;
@@ -11,18 +11,24 @@ const formatTimestamp = (timestamp: number): string => {
   return new Date(timestamp).toISOString();
 };
 
-const formatPluginDescriptions = (
-  context: PipelineGenerationContext
-): string => {
-  return context.availablePlugins
+const formatPluginDescriptions = (plugins: {
+  availablePlugins: {
+    id: string;
+    name: string;
+    description: string;
+    executors: { name: string; description: string }[];
+  }[];
+}): string => {
+  return plugins.availablePlugins
     .map(
-      (plugin) => `Plugin: ${plugin.name} (${plugin.id})
+      (plugin) => `
+Plugin: ${plugin.name} (${plugin.id})
 Description: ${plugin.description}
 Executors:
 ${plugin.executors.map((e) => `  - ${e.name}: ${e.description}`).join("\n")}
 `
     )
-    .join("\n\n");
+    .join("\n");
 };
 
 const formatConversationHistory = (messages: ConversationMessage[]): string => {
@@ -189,4 +195,79 @@ export function generatePipelineTemplate(
     contextSection,
     TASK_SECTION
   ].join("\n\n");
+}
+
+export function generatePipelineModificationTemplate(
+  context: PipelineEvaluationContext
+): string {
+  return `Analyze the current context chain and determine if the pipeline needs modification.
+The context chain contains all executed steps and their results, including any errors.
+
+CRITICAL - Before suggesting any modifications:
+1. Review ALL steps in the context chain that have already been executed
+2. Review the FULL pipeline to see what steps are already planned
+3. NEVER suggest steps that have already been executed OR are already planned in the pipeline
+4. Pay special attention to response actions (e.g. send_response) - these should NEVER be duplicated
+
+Context Chain:
+${JSON.stringify(context.contextChain, null, 2)}
+
+Current Step:
+${JSON.stringify(context.currentStep, null, 2)}
+
+Full Pipeline:
+${JSON.stringify(context.pipeline, null, 2)}
+
+Available Plugins:
+${formatPluginDescriptions({ availablePlugins: context.availablePlugins })}
+
+Your task is to:
+1. First, identify all actions that have already been executed by examining the context chain
+2. Then, identify all actions that are planned in the pipeline
+3. Analyze any errors in the context chain (items with type: "error")
+4. Determine if the pipeline needs modification to handle these errors
+5. If modification is needed, provide new steps that address the errors
+
+IMPORTANT: When suggesting modifications:
+- Check if the action you want to add is already planned later in the pipeline
+- If an action is already planned, do NOT suggest it as a modification
+- Address the root cause of errors, not just their symptoms
+- Consider the full context of what was attempted and what is planned
+- Use available plugins to implement error recovery
+- Maintain the original goal of the pipeline while handling errors
+- Only suggest modifications if there is a clear path to recovery
+- Keep the pipeline focused and avoid unnecessary steps
+- NEVER suggest a step that appears anywhere in the context chain
+- If a response action (send_response) exists in the context chain or pipeline, do not suggest another one
+
+Return a JSON object with the following structure:
+{
+  "shouldModify": boolean,
+  "explanation": string,
+  "modifiedSteps": PipelineStep[] | null
+}
+
+The modifiedSteps should be null if:
+- No modification is needed
+- All potential recovery steps have already been executed
+- The error cannot be recovered from
+- The suggested steps would duplicate existing steps
+- The steps you want to add are already planned in the pipeline
+
+The explanation should clearly describe:
+- Why modification is or isn't needed
+- What steps have already been executed
+- What steps are planned in the pipeline
+- How any new steps will help (if suggesting modification)
+
+Examples of good modifications:
+1. If a text generation fails and no retry has been attempted or planned, suggest a retry with different parameters
+2. If a permission is denied and no permission request exists in context or pipeline, add steps to request proper permissions
+3. If a resource is not found and no creation step exists in context or pipeline, add steps to create it first
+4. If an API rate limit is hit and no retry exists in context or pipeline, add steps to implement backoff/retry
+
+Remember: 
+- Check both the context chain AND full pipeline thoroughly before suggesting any modifications
+- If you see a step in either the context chain OR planned pipeline, DO NOT suggest it again
+- When in doubt, return shouldModify: false rather than risk duplicating steps`;
 }

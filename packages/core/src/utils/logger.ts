@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import pino from "pino";
+import { PipelineStep, PipelineModification } from "../runtime/types";
+import { BaseContextItem } from "../types/agent";
 
 // Ensure logs directory exists and clear model interactions log file
 const logsDir = path.join(process.cwd(), "logs");
@@ -8,7 +10,9 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
 const modelLogPath = path.join(logsDir, "model-interactions.log");
+const pipelineLogPath = path.join(logsDir, "pipeline.log");
 fs.writeFileSync(modelLogPath, ""); // Clear file on startup
+fs.writeFileSync(pipelineLogPath, ""); // Clear file on startup
 
 interface SerializedError {
   type: string;
@@ -21,6 +25,26 @@ interface SerializedContextItem {
   action: string;
   timestamp: number;
   [key: string]: unknown;
+}
+
+interface PipelineLogEntry {
+  type: "pipeline_state" | "step_execution" | "modification_evaluation";
+  timestamp: number;
+  data: {
+    currentPipeline?: PipelineStep[];
+    currentStepIndex?: number;
+    pipelineLength?: number;
+    executedStep?: {
+      step: PipelineStep;
+      result: {
+        success: boolean;
+        error?: string;
+        data?: unknown;
+      };
+    };
+    contextChain?: BaseContextItem[];
+    modification?: PipelineModification;
+  };
 }
 
 // Custom serializers for better formatting
@@ -132,6 +156,121 @@ const modelLogger = pino(
   })
 );
 
+// Separate logger for pipeline execution
+const pipelineLogger = pino(
+  {
+    serializers: customSerializers,
+    level: "info",
+    formatters: {
+      level: (label) => ({ level: label }),
+      log: (object: Record<string, unknown>) => {
+        const timestamp = new Date(object.timestamp as number).toISOString();
+        let output = "";
+
+        // Prepare variables used in switch cases
+        const pipeline = object.currentPipeline as PipelineStep[] | undefined;
+        const executed = object.executedStep as
+          | {
+            step: PipelineStep;
+            result: {
+              success: boolean;
+              error?: string;
+              data?: unknown;
+            };
+          }
+          | undefined;
+        const execContextChain = object.contextChain as
+          | BaseContextItem[]
+          | undefined;
+        const modification = object.modification as
+          | PipelineModification
+          | undefined;
+
+        // Different formatting based on log type
+        switch (object.type as string) {
+          case "pipeline_state":
+            output += "\n┌─ Pipeline State ─────────────────────\n";
+            if (pipeline) {
+              pipeline.forEach((step, index) => {
+                const isCurrent = index === object.currentStepIndex;
+                output += `│ ${isCurrent ? "▶ " : "  "}${step.pluginId}:${step.action}\n`;
+              });
+            }
+            output += "└────────────────────────────────────\n";
+            break;
+
+          case "step_execution":
+            if (executed) {
+              output += "\n┌─ Step Execution ────────────────────\n";
+              output += `│ Step: ${executed.step.pluginId}:${executed.step.action}\n`;
+              output += `│ Status: ${executed.result.success ? "✓ Success" : "✗ Failed"}`;
+              if (executed.result.error) {
+                output += `\n│ Error: ${executed.result.error}`;
+              }
+              if (executed.result.data) {
+                const data = executed.result.data as Record<string, unknown>;
+                const relevantData = {
+                  message: data.message,
+                  permissionStatus: data.permissionStatus,
+                  helpfulInstruction: data.helpfulInstruction
+                };
+                if (Object.values(relevantData).some((v) => v !== undefined)) {
+                  const formattedData = JSON.stringify(relevantData, null, 2)
+                    .split("\n")
+                    .map((line) => `│ ${line}`)
+                    .join("\n");
+                  output += `\n│ Data:\n${formattedData}`;
+                }
+              }
+              output += "\n└────────────────────────────────────\n";
+            }
+
+            if (execContextChain?.length) {
+              const lastContext = execContextChain[execContextChain.length - 1];
+              if (lastContext && Object.keys(lastContext).length > 0) {
+                output += "\n┌─ Context ──────────────────────────\n";
+                const formattedContext = JSON.stringify(lastContext, null, 2)
+                  .split("\n")
+                  .map((line) => `│ ${line}`)
+                  .join("\n");
+                output += formattedContext + "\n";
+                output += "└────────────────────────────────────\n";
+              }
+            }
+            break;
+
+          case "modification_evaluation":
+            if (modification?.shouldModify) {
+              output += "\n┌─ Pipeline Modification ──────────────\n";
+              output += `│ Reason: ${modification.explanation}\n`;
+              if (modification.modifiedSteps) {
+                output += "│ New Steps:\n";
+                modification.modifiedSteps.forEach((step) => {
+                  output += `│   ${step.pluginId}:${step.action}\n`;
+                });
+              }
+              output += "└────────────────────────────────────\n";
+            }
+            break;
+        }
+
+        return { output: `[${timestamp}]${output}` };
+      }
+    }
+  },
+  pino.transport({
+    target: "pino-pretty",
+    options: {
+      colorize: true,
+      ignore: "pid,hostname,time",
+      messageFormat: "{output}",
+      messageKey: "output",
+      destination: pipelineLogPath,
+      singleLine: false
+    }
+  })
+);
+
 /**
  * Log model interactions to a separate file
  */
@@ -151,3 +290,15 @@ export function logModelInteraction(
  */
 export const createLogger = (component: string) =>
   baseLogger.child({ component });
+
+/**
+ * Log pipeline state to a separate file
+ */
+export function logPipelineState(entry: PipelineLogEntry): void {
+  pipelineLogger.info({
+    ...entry,
+    timestamp: entry.timestamp,
+    type: entry.type,
+    ...entry.data
+  });
+}

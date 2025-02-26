@@ -71,3 +71,45 @@ export interface PipelineGenerationContext {
     conversationHistory: ConversationMessage[];
   };
 }
+
+/**
+ * Represents an error that occurred during pipeline execution
+ */
+export interface ErrorContextItem extends BaseContextItem {
+  type: "error";
+  error: string;
+  failedStep?: {
+    pluginId: string;
+    action: string;
+  };
+}
+
+/**
+ * Context passed to the LLM for pipeline modification evaluation
+ */
+export interface PipelineEvaluationContext {
+  contextChain: BaseContextItem[];
+  currentStep: PipelineStep;
+  availablePlugins: AvailablePlugin[];
+  pipeline: PipelineStep[];
+}
+
+/**
+ * Schema for pipeline modification results from LLM
+ */
+export const PipelineModificationSchema = z
+  .object({
+    shouldModify: z
+      .boolean()
+      .describe("Whether the pipeline should be modified"),
+    explanation: z
+      .string()
+      .describe("Explanation of why the pipeline needs to be modified"),
+    modifiedSteps: z
+      .array(PipelineStepSchema)
+      .optional()
+      .describe("The new steps to use if modification is needed")
+  })
+  .describe("Result of pipeline modification evaluation");
+
+export type PipelineModification = z.infer<typeof PipelineModificationSchema>;

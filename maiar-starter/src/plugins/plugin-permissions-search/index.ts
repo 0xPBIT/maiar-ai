@@ -1,0 +1,57 @@
+import {
+  PluginBase,
+  AgentContext,
+  PluginResult,
+  getUserInput
+} from "@maiar-ai/core";
+
+interface PermissionsSearchConfig {
+  // List of whitelisted users that can use post/send tweet actions
+  whitelistedUsers: string[];
+}
+
+/**
+ * Example plugin that demonstrates how to use dynamic pipeline modification
+ * to implement a permissions layer for the X plugin.
+ */
+export class PluginPermissionsSearch extends PluginBase {
+  constructor(private config: PermissionsSearchConfig) {
+    super({
+      id: "plugin-permissions-search",
+      name: "Search Permissions",
+      description:
+        "Handles permissions for search plugin actions. This plugin is used to check if the current user has permission to use search plugin actions. Should be run anytime before the search plugin is used."
+    });
+
+    this.addExecutor({
+      name: "check_search_permission",
+      description:
+        "Check if the current user has permission to use search plugin 'search' action from 'plugin-search' plugin.",
+      execute: async (context: AgentContext): Promise<PluginResult> => {
+        const userInput = getUserInput(context);
+        if (!userInput) {
+          return {
+            success: false,
+            error: "No user input found in context chain"
+          };
+        }
+
+        const isWhitelisted = this.config.whitelistedUsers.includes(
+          userInput.user
+        );
+
+        return {
+          success: true,
+          data: {
+            isWhitelisted,
+            user: userInput.user,
+            permissionStatus: isWhitelisted ? "granted" : "denied",
+            helpfulInstruction: isWhitelisted
+              ? `The user ${userInput.user} is whitelisted for search plugin actions. This information should be used when deciding whether to allow search plugin actions in the pipeline.`
+              : `The user ${userInput.user} is not whitelisted for search plugin actions. The pipeline should be modified to remove search plugin actions and inform the user about the permission requirement.`
+          }
+        };
+      }
+    });
+  }
+}

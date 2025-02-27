@@ -3,8 +3,8 @@ import {
   createLogger,
   PluginBase,
   PluginResult,
-  UserInputContext,
-  Runtime
+  Runtime,
+  UserInputContext
 } from "@maiar-ai/core";
 import {
   Client,
@@ -14,22 +14,25 @@ import {
   BaseGuildTextChannel
 } from "discord.js";
 import {
-  DiscordPlatformContext,
   DiscordPluginConfig,
   DiscordReplySchema,
   DiscordSendSchema,
   DiscordChannelSelectionSchema,
-  ChannelInfo
+  ChannelInfo,
+  MessageIntentSchema,
+  DiscordPlatformContext
 } from "./types";
 import {
   generateResponseTemplate,
-  generateChannelSelectionTemplate
+  generateChannelSelectionTemplate,
+  generateMessageIntentTemplate
 } from "./templates";
 
 const log = createLogger("plugin:discord");
 
 export class PluginDiscord extends PluginBase {
   private client: Client;
+  private isProcessing: boolean = false; // Our processing lock
   private typingIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(private config: DiscordPluginConfig) {
@@ -117,6 +120,18 @@ export class PluginDiscord extends PluginBase {
 
           await selectedChannel.send(response.message);
 
+          const user = (context.platformContext as DiscordPlatformContext)
+            .metadata?.userId;
+
+          if (user) {
+            await this.runtime.memory.storeAssistantInteraction(
+              user,
+              this.id,
+              response.message,
+              context.contextChain
+            );
+          }
+
           return {
             success: true,
             data: {
@@ -151,15 +166,13 @@ export class PluginDiscord extends PluginBase {
         }
 
         const messageId = context.platformContext.metadata.messageId as string;
+        const channelId = context.platformContext.metadata.channelId as string;
 
         try {
           const response = await this.runtime.operations.getObject(
             DiscordReplySchema,
             generateResponseTemplate(context.contextChain)
           );
-
-          const channelId = context.platformContext.metadata
-            .channelId as string;
 
           const channel = await this.client.channels.fetch(channelId);
           if (
@@ -175,21 +188,33 @@ export class PluginDiscord extends PluginBase {
           const originalMessage = await channel.messages.fetch(messageId);
           await originalMessage.reply(response.message);
 
-          // Clear typing indicator after reply is sent
-          const typingInterval = this.typingIntervals.get(messageId);
-          if (typingInterval) {
-            clearInterval(typingInterval);
-            this.typingIntervals.delete(messageId);
+          // Stop typing indicator after reply is sent
+          this.stopTypingIndicator(channelId);
+
+          // Release processing lock after reply is sent
+          this.isProcessing = false;
+          log.info("Message processing complete - agent unlocked", {
+            messageId,
+            channelId
+          });
+
+          const user = (context.platformContext as DiscordPlatformContext)
+            .metadata?.userId;
+
+          if (user) {
+            await this.runtime.memory.storeAssistantInteraction(
+              user,
+              this.id,
+              response.message,
+              context.contextChain
+            );
           }
 
           return { success: true, data: { message: response.message } };
         } catch (error) {
-          // Clear typing indicator if there's an error
-          const typingInterval = this.typingIntervals.get(messageId);
-          if (typingInterval) {
-            clearInterval(typingInterval);
-            this.typingIntervals.delete(messageId);
-          }
+          // Make sure we unlock and stop typing if there's an error
+          this.isProcessing = false;
+          this.stopTypingIndicator(channelId);
 
           log.error("Error sending Discord reply", { err: error });
           return {
@@ -218,99 +243,224 @@ export class PluginDiscord extends PluginBase {
     }
   }
 
+  private startTypingIndicator(channel: BaseGuildTextChannel) {
+    // Clear any existing interval for this channel
+    this.stopTypingIndicator(channel.id);
+
+    // Start a new typing indicator that repeats every 7 seconds
+    // (Discord's typing indicator lasts 10 seconds, so we refresh before it expires)
+    const interval = setInterval(() => {
+      channel.sendTyping().catch((error) => {
+        log.error("Error sending typing indicator", {
+          error,
+          channelId: channel.id
+        });
+      });
+    }, 7000);
+
+    // Store the interval
+    this.typingIntervals.set(channel.id, interval);
+
+    // Send initial typing indicator
+    channel.sendTyping().catch((error) => {
+      log.error("Error sending initial typing indicator", {
+        error,
+        channelId: channel.id
+      });
+    });
+  }
+
+  private stopTypingIndicator(channelId: string) {
+    const interval = this.typingIntervals.get(channelId);
+    if (interval) {
+      clearInterval(interval);
+      this.typingIntervals.delete(channelId);
+    }
+  }
+
   private async handleMessage(message: Message): Promise<void> {
-    // Ignore bot messages and messages that don't mention us
-    if (
-      message.author.bot ||
-      !message.mentions.users.has(this.client.user!.id)
-    ) {
-      return;
-    }
+    // Skip bot messages
+    if (message.author.bot) return;
 
-    // Ignore messages from other guilds if guildId is specified
-    if (this.config.guildId && message.guildId !== this.config.guildId) {
-      return;
-    }
+    // Skip messages from other guilds if guildId is specified
+    if (this.config.guildId && message.guildId !== this.config.guildId) return;
 
-    // Ignore messages not in text channels
+    // Skip messages not in text channels
     if (
       !message.channel.isTextBased() ||
       !(message.channel instanceof BaseGuildTextChannel)
-    ) {
+    )
       return;
-    }
 
     try {
-      // Start typing indicator
-      if (message.channel instanceof BaseGuildTextChannel) {
-        await message.channel.sendTyping();
+      // If we're already processing a message, skip intent check
+      if (this.isProcessing) {
+        // Store message in DB since it won't be processed by the event system
+        await this.runtime.memory.storeUserInteraction(
+          message.author.id,
+          this.id,
+          message.content,
+          Date.now(),
+          message.id
+        );
 
-        // Keep typing indicator active during processing
-        const typingInterval = setInterval(() => {
-          if (message.channel instanceof BaseGuildTextChannel) {
-            message.channel.sendTyping().catch((err: Error) => {
-              log.error("Error maintaining typing indicator", { err });
-            });
-          }
-        }, 5000);
-
-        // Store the interval using messageId as key
-        this.typingIntervals.set(message.id, typingInterval);
+        log.debug("Skipping message processing - agent busy", {
+          content: message.content,
+          author: message.author.username
+        });
+        return;
       }
 
-      // Clean the message content by removing the mention
-      const cleanContent = message.content
-        .replace(new RegExp(`<@!?${this.client.user!.id}>`), "")
-        .trim();
+      const isMentioned = message.content.includes(
+        `<@${this.config.clientId}>`
+      );
 
-      const userContext: UserInputContext = {
-        id: `${this.id}-${message.id}`,
-        pluginId: this.id,
-        type: "user_input",
-        action: "receiveMessage",
-        content: cleanContent,
-        timestamp: Date.now(),
-        rawMessage: message.content,
-        user: message.author.username,
-        messageHistory: [
-          {
-            role: "user",
-            content: cleanContent,
-            timestamp: Date.now()
-          }
-        ],
-        helpfulInstruction: `Message from Discord user ${message.author.username}`
-      };
+      log.info("Processing message", {
+        content: message.content,
+        author: message.author.username,
+        channelId: message.channelId,
+        isMention: isMentioned,
+        isReply: !!message.reference?.messageId
+      });
 
-      const platformContext: DiscordPlatformContext = {
-        platform: this.id,
-        responseHandler: async (response: unknown) => {
-          log.info("Response from Discord", { response });
-        },
-        metadata: {
-          channelId: message.channelId,
-          messageId: message.id
+      // Get recent conversation history
+      const recentHistory =
+        await this.runtime.memory.getRecentConversationHistory(
+          message.author.id,
+          this.id,
+          10 // Limit to last 10 messages
+        );
+
+      log.info("Retrieved conversation history", {
+        historyCount: recentHistory.length,
+        history: recentHistory.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp).toISOString()
+        }))
+      });
+
+      const intentTemplate = generateMessageIntentTemplate(
+        message.content,
+        isMentioned,
+        !!message.reference?.messageId,
+        this.config.clientId,
+        this.config.commandPrefix,
+        recentHistory
+      );
+
+      log.debug("Generated intent template", { template: intentTemplate });
+
+      const intent = await this.runtime.operations.getObject(
+        MessageIntentSchema,
+        intentTemplate
+      );
+
+      log.info("Intent analysis result", {
+        isIntendedForAgent: intent.isIntendedForAgent,
+        reason: intent.reason,
+        message: message.content
+      });
+
+      if (intent.isIntendedForAgent) {
+        // Set processing lock
+        this.isProcessing = true;
+        log.info("Message processing started - agent locked", {
+          content: message.content,
+          author: message.author.username
+        });
+
+        log.info("Message intended for agent", {
+          reason: intent.reason,
+          content: message.content,
+          author: message.author.username
+        });
+
+        // Start typing indicator
+        if (message.channel instanceof BaseGuildTextChannel) {
+          this.startTypingIndicator(message.channel);
         }
-      };
 
-      await this.runtime.createEvent(userContext, platformContext);
-    } catch (error) {
-      // Clear typing interval if there's an error
-      const typingInterval = this.typingIntervals.get(message.id);
-      if (typingInterval) {
-        clearInterval(typingInterval);
-        this.typingIntervals.delete(message.id);
+        const userContext: UserInputContext = {
+          id: `${this.id}-${message.id}`,
+          pluginId: this.id,
+          type: "user_input",
+          action: "receiveMessage",
+          content: message.content,
+          timestamp: Date.now(),
+          rawMessage: message.content,
+          user: message.author.username,
+          messageHistory: [
+            {
+              role: "user",
+              content: message.content,
+              timestamp: Date.now()
+            }
+          ],
+          helpfulInstruction: `Message from Discord user ${message.author.username} (${intent.reason})`
+        };
+
+        const platformContext: DiscordPlatformContext = {
+          platform: this.id,
+          responseHandler: async () => {
+            // Empty response handler - logic moved to reply executor
+          },
+          metadata: {
+            channelId: message.channelId,
+            messageId: message.id,
+            userId: message.author.id
+          }
+        };
+
+        await this.runtime.createEvent(userContext, platformContext);
+      } else {
+        // Only store the message if we're not going to process it
+        // (if we process it, the event system will handle storage)
+        await this.runtime.memory.storeUserInteraction(
+          message.author.id,
+          this.id,
+          message.content,
+          Date.now(),
+          message.id
+        );
+
+        log.debug("Message not intended for agent", {
+          reason: intent.reason,
+          content: message.content,
+          author: message.author.username
+        });
+        // Add detailed info logging for skipped messages
+        log.info("Skipping message - not intended for agent", {
+          content: message.content,
+          author: message.author.username,
+          reason: intent.reason,
+          isMention: isMentioned,
+          isReply: !!message.reference?.messageId,
+          hasPrefix: message.content.startsWith(
+            this.config.commandPrefix || "!"
+          )
+        });
       }
-
-      log.error("Error processing Discord message", {
-        err: error,
-        messageId: message.id,
-        channelId: message.channelId
+    } catch (error) {
+      // Make sure we unlock if there's an error
+      this.isProcessing = false;
+      log.error("Error processing message intent", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        message: message.content,
+        author: message.author.username
       });
     }
   }
 
   async cleanup(): Promise<void> {
+    // Clear all typing intervals
+    for (const [channelId, interval] of this.typingIntervals) {
+      clearInterval(interval);
+      this.typingIntervals.delete(channelId);
+    }
+
+    this.isProcessing = false;
     await this.client.destroy();
   }
 }

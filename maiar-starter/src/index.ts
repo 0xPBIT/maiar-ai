@@ -20,15 +20,12 @@ import { OpenAIProvider } from "@maiar-ai/model-openai";
 
 // Import all plugins
 import { PluginCharacter } from "@maiar-ai/plugin-character";
-import { PluginExpress } from "@maiar-ai/plugin-express";
 import { PluginSearch } from "@maiar-ai/plugin-search";
-import { PluginTelegram } from "@maiar-ai/plugin-telegram";
 import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
-import { PluginX } from "@maiar-ai/plugin-x";
-import appRouter from "./app";
-import composer from "./bot";
+
+import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -40,10 +37,6 @@ const runtime = createRuntime({
     dbPath: path.join(process.cwd(), "data", "conversations.db")
   }),
   plugins: [
-    new PluginExpress({
-      port: 3001,
-      router: appRouter
-    }),
     new PluginTextGeneration(),
     new PluginTime(),
     new PluginCharacter({
@@ -55,20 +48,12 @@ const runtime = createRuntime({
     new PluginSearch({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
-    new PluginX({
-      username: process.env.X_USERNAME as string,
-      password: process.env.X_PASSWORD as string,
-      email: process.env.X_EMAIL as string,
-      mentionsCheckIntervalMins: 10,
-      loginRetries: 3
+    new PluginPermissionsSearch({
+      whitelistedUsers: ["admin", "whitelisted_user"]
     }),
     new PluginTerminal({
       user: "test",
       agentName: "maiar-starter"
-    }),
-    new PluginTelegram({
-      token: process.env.TELEGRAM_BOT_TOKEN as string,
-      composer
     })
   ]
 });

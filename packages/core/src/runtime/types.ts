@@ -5,7 +5,8 @@ import { MemoryService } from "../memory/service";
 import { MemoryProvider } from "../memory/types";
 import { ModelProvider } from "../models/service";
 import { BaseContextItem } from "../types/agent";
-
+import { MonitorService } from "../monitor/service";
+import { MonitorProvider } from "../monitor/types";
 /**
  * A step in the execution pipeline
  */
@@ -30,6 +31,7 @@ export interface RuntimeConfig {
   plugins?: Plugin[];
   llmService: LLMService;
   memoryService: MemoryService;
+  monitorService: MonitorService;
 }
 
 /**
@@ -39,6 +41,7 @@ export interface RuntimeOptions {
   model: ModelProvider;
   memory: MemoryProvider;
   plugins: Plugin[];
+  monitor: MonitorProvider;
 }
 
 interface PluginExecutor {

@@ -32,6 +32,7 @@ import { createLogger, logPipelineState } from "../utils/logger";
 import { z } from "zod";
 import { OperationConfig } from "../operations/base";
 import { MemoryService } from "../memory/service";
+import { MonitorService } from "../monitor/service";
 
 const log = createLogger("runtime");
 
@@ -70,10 +71,14 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   // Initialize memory service with the provided provider
   const memoryService = new MemoryService(options.memory);
 
+  // Initialize monitor service if provider is available
+  const monitorService = new MonitorService(options.monitor);
+
   return new Runtime({
     plugins: options.plugins,
     llmService,
-    memoryService
+    memoryService,
+    monitorService
   });
 }
 
@@ -87,6 +92,7 @@ export class Runtime {
   private isRunning: boolean = false;
   private llmService: LLMService;
   private memoryService: MemoryService;
+  private monitorService: MonitorService;
   private currentContext: AgentContext | undefined;
   private contextObservers: Set<(context: AgentContext) => void> = new Set();
 
@@ -250,6 +256,16 @@ export class Runtime {
     this.llmService = config.llmService;
     this.plugins = config.plugins || [];
     this.memoryService = config.memoryService;
+    this.monitorService = config.monitorService;
+
+    // Initialize monitoring
+    this.monitorService.logEvent({
+      type: "runtime.init",
+      message: "Runtime initialized",
+      metadata: {
+        plugins: this.plugins.map((p) => p.id)
+      }
+    });
   }
 
   /**
@@ -301,6 +317,18 @@ export class Runtime {
     });
 
     this.isRunning = true;
+
+    // Log start event
+    if (this.monitorService) {
+      await this.monitorService.logEvent({
+        type: "runtime.start",
+        message: "Runtime started",
+        metadata: {
+          plugins: this.registry.getAllPlugins().map((p) => p.id)
+        }
+      });
+    }
+
     this.runEvaluationLoop().catch((error) => {
       console.error("Error in evaluation loop:", error);
       this.isRunning = false;
@@ -316,6 +344,14 @@ export class Runtime {
     }
 
     this.isRunning = false;
+
+    // Log stop event
+    if (this.monitorService) {
+      await this.monitorService.logEvent({
+        type: "runtime.stop",
+        message: "Runtime stopped"
+      });
+    }
   }
 
   /**
@@ -495,7 +531,7 @@ export class Runtime {
 
     // Create the generation context
     const pipelineContext: PipelineGenerationContext = {
-      contextChain: [],
+      contextChain: context.contextChain,
       availablePlugins,
       currentContext: {
         platform,
@@ -507,12 +543,25 @@ export class Runtime {
     try {
       // Generate the pipeline using LLM
       const template = generatePipelineTemplate(pipelineContext);
+
+      // Log pipeline generation start
+      await this.monitorService.logEvent({
+        type: "pipeline.generation.start",
+        message: "Starting pipeline generation",
+        metadata: {
+          platform,
+          message,
+          template
+        }
+      });
+
       log.debug({
         msg: "Generating pipeline",
         context: pipelineContext,
         template,
         contextChain: context.contextChain
       });
+
       const pipeline = await getObject(
         this.llmService,
         PipelineSchema,
@@ -526,12 +575,44 @@ export class Runtime {
       const steps = pipeline.map((step) => `${step.pluginId}:${step.action}`);
       log.info("Pipeline steps:", steps);
 
+      // Log successful pipeline generation
+      await this.monitorService.logEvent({
+        type: "pipeline.generation.complete",
+        message: "Pipeline generation completed successfully",
+        metadata: {
+          platform,
+          message,
+          template,
+          pipeline,
+          steps
+        }
+      });
+
       log.info({
         msg: "Generated pipeline",
         pipeline
       });
       return pipeline;
     } catch (error) {
+      // Log pipeline generation error
+      await this.monitorService.logEvent({
+        type: "pipeline.generation.error",
+        message: "Pipeline generation failed",
+        metadata: {
+          platform,
+          message,
+          error:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack
+                }
+              : error,
+          template: generatePipelineTemplate(pipelineContext)
+        }
+      });
+
       log.error({
         msg: "Error generating pipeline",
         error:
@@ -789,6 +870,24 @@ export class Runtime {
     for (const observer of this.contextObservers) {
       observer(context);
     }
+  }
+
+  private async updateMonitoringState() {
+    if (this.monitorService) {
+      await this.monitorService.updateState({
+        currentContext: this.currentContext,
+        queueLength: this.eventQueue.length,
+        isRunning: this.isRunning,
+        lastUpdate: Date.now()
+      });
+    }
+  }
+
+  // Update monitoring state when context changes
+  private async setCurrentContext(context: AgentContext | undefined) {
+    this.currentContext = context;
+    this.contextObservers.forEach((observer) => observer(context!));
+    await this.updateMonitoringState();
   }
 }
 

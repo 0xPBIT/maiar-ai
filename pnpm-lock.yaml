@@ -73,6 +73,9 @@ importers:
       "@maiar-ai/model-openai":
         specifier: workspace:*
         version: link:../packages/model-openai
+      "@maiar-ai/monitor-console":
+        specifier: workspace:*
+        version: link:../packages/monitor-console
       "@maiar-ai/plugin-character":
         specifier: workspace:*
         version: link:../packages/plugin-character
@@ -213,6 +216,25 @@ importers:
       openai:
         specifier: 4.82.0
         version: 4.82.0(encoding@0.1.13)(ws@8.18.0)(zod@3.24.1)
+    devDependencies:
+      "@types/node":
+        specifier: 22.13.1
+        version: 22.13.1
+      tsup:
+        specifier: 8.3.6
+        version: 8.3.6(jiti@2.4.2)(postcss@8.5.1)(typescript@5.7.3)(yaml@2.7.0)
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
+  packages/monitor-console:
+    dependencies:
+      "@maiar-ai/core":
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: 3.24.1
+        version: 3.24.1
     devDependencies:
       "@types/node":
         specifier: 22.13.1

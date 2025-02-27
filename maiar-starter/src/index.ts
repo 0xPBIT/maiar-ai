@@ -17,6 +17,7 @@ import { createRuntime } from "@maiar-ai/core";
 // Import providers
 import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
 import { OpenAIProvider } from "@maiar-ai/model-openai";
+import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
 
 // Import all plugins
 import { PluginCharacter } from "@maiar-ai/plugin-character";
@@ -30,12 +31,13 @@ import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 // Create and start the agent
 const runtime = createRuntime({
   model: new OpenAIProvider({
-    model: "gpt-4o",
+    model: "gpt-4",
     apiKey: process.env.OPENAI_API_KEY as string
   }),
   memory: new SQLiteProvider({
     dbPath: path.join(process.cwd(), "data", "conversations.db")
   }),
+  monitor: new ConsoleMonitorProvider(),
   plugins: [
     new PluginTextGeneration(),
     new PluginTime(),
@@ -61,7 +63,7 @@ const runtime = createRuntime({
 // Start the runtime if this file is run directly
 if (require.main === module) {
   console.log("Starting agent...");
-  runtime.start().catch((error) => {
+  runtime.start().catch((error: Error) => {
     console.error("Failed to start agent:", error);
     process.exit(1);
   });

@@ -8,6 +8,7 @@ export interface DiscordPlatformContext
   metadata?: {
     channelId: string;
     messageId: string;
+    userId: string;
   };
 }
 
@@ -23,6 +24,7 @@ export interface DiscordPluginConfig {
   clientId: string; // Discord application client ID
   guildId?: string; // Optional: Specific guild/server ID to restrict the bot to
   commandPrefix?: string; // Optional: Command prefix for the bot (default: "!")
+  agentName?: string; // Optional: Name of the agent for intent checking
 }
 
 // Schema for channel information
@@ -82,3 +84,16 @@ export type DiscordSendMessage = z.infer<typeof DiscordSendSchema>;
 export type DiscordChannelSelection = z.infer<
   typeof DiscordChannelSelectionSchema
 >;
+
+export const MessageIntentSchema = z.object({
+  isIntendedForAgent: z
+    .boolean()
+    .describe("Whether the message is intended for the agent"),
+  reason: z
+    .string()
+    .describe(
+      "The reason why this message was determined to be for the agent or not"
+    )
+});
+
+export type MessageIntent = z.infer<typeof MessageIntentSchema>;

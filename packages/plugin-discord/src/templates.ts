@@ -52,3 +52,73 @@ export function generateChannelSelectionTemplate(
         If no channel seems appropriate, pick the most general or default channel from the list.
     `;
 }
+
+export function generateMessageIntentTemplate(
+  message: string,
+  isMention: boolean,
+  isReply: boolean,
+  botId: string,
+  commandPrefix?: string,
+  recentHistory?: { role: string; content: string; timestamp: number }[]
+): string {
+  const historyContext = recentHistory?.length
+    ? `\nRecent conversation history:
+${recentHistory
+  .map(
+    (msg) =>
+      `[${new Date(msg.timestamp).toISOString()}] ${msg.role}: ${msg.content}`
+  )
+  .join("\n")}`
+    : "\nNo recent conversation history.";
+
+  return `Determine if this message is intended for the agent by analyzing both explicit markers and contextual clues.
+
+Consider explicit markers:
+- Direct mentions of the bot
+- Command prefixes (messages starting with "${commandPrefix || "!"}")
+- If it's a reply to the bot's message
+
+AND consider contextual clues:
+- Thematic continuity (is the message continuing a theme/topic from recent messages?)
+- Semantic relationships (does the message reference concepts/ideas from recent conversation?)
+- Conversational flow (does this naturally follow from the previous exchanges?)
+- Implicit references (does the message refer to information only the bot previously provided?)
+- Temporal proximity (how recent was the last interaction?)
+
+Message: "${message}"
+Is mentioned: ${isMention}
+Is reply: ${isReply}
+Bot ID: ${botId}
+Command prefix: "${commandPrefix || "!"}"
+${historyContext}
+
+IMPORTANT: Your response MUST be valid JSON:
+- Use double quotes (") not single quotes (')
+- The response must be parseable by JSON.parse()
+
+Return a JSON object with:
+- "isIntendedForAgent": boolean indicating if the message is meant for the agent
+- "reason": string explaining why this determination was made
+
+Example responses:
+{
+    "isIntendedForAgent": true,
+    "reason": "Message starts with command prefix ${commandPrefix || "!"}"
+}
+{
+    "isIntendedForAgent": true,
+    "reason": "Direct mention of the bot"
+}
+{
+    "isIntendedForAgent": true,
+    "reason": "Continuing conversation about [topic] from recent interaction"
+}
+{
+    "isIntendedForAgent": true,
+    "reason": "Message references information only provided by the bot in previous message"
+}
+{
+    "isIntendedForAgent": true,
+    "reason": "Thematic continuity with bot's previous message about [theme]"
+}`;
+}

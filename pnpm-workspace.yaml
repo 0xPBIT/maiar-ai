@@ -2,3 +2,4 @@ packages:
   - "packages/*"
   - "website"
   - "maiar-starter"
+  - "maiar-client"

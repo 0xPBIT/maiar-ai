@@ -812,6 +812,18 @@ export class Runtime {
                 contextChain: context.contextChain
               }
             });
+
+            // Emit pipeline modification event
+            await this.monitorService.logEvent({
+              type: "pipeline.modification",
+              message: "Pipeline modified during execution",
+              metadata: {
+                explanation: modification.explanation,
+                currentStep,
+                modifiedSteps: modification.modifiedSteps,
+                pipeline: currentPipeline
+              }
+            });
           }
         } catch (error) {
           // Add error to context chain for unexpected errors

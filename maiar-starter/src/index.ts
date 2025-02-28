@@ -30,7 +30,7 @@ import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 // Create and start the agent
 const runtime = createRuntime({
   model: new OpenAIProvider({
-    model: "gpt-4",
+    model: "gpt-4o",
     apiKey: process.env.OPENAI_API_KEY as string
   }),
   memory: new SQLiteProvider({

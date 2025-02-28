@@ -21,18 +21,16 @@ interface PipelineStepsProps {
   explanation?: string;
 }
 
-const StyledTimelineItem = styled(TimelineItem)(
-  ({ theme }: { theme: Theme }) => ({
-    "&:before": {
-      flex: 0,
-      padding: 0
-    },
-    minHeight: "auto",
-    "&:last-child": {
-      marginBottom: 0
-    }
-  })
-);
+const StyledTimelineItem = styled(TimelineItem)({
+  "&:before": {
+    flex: 0,
+    padding: 0
+  },
+  minHeight: "auto",
+  "&:last-child": {
+    marginBottom: 0
+  }
+});
 
 const StyledPaper = styled(Paper)(({ theme }: { theme: Theme }) => ({
   padding: theme.spacing(2),
@@ -75,7 +73,6 @@ export function PipelineSteps({
   const originalSteps = modifiedSteps
     ? steps.slice(0, modificationStartIndex + 1)
     : steps;
-  const remainingSteps = modifiedSteps || [];
 
   const renderTimeline = (
     pipelineSteps: PipelineStep[],
@@ -201,12 +198,14 @@ export function PipelineSteps({
   );
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2} sx={{ width: "100%", maxWidth: "1200px" }}>
       {explanation && (
         <Paper
           elevation={0}
           sx={{
             p: 2,
+            width: "100%",
+            maxWidth: "1200px",
             bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.05),
             border: 1,
             borderColor: (theme) => alpha(theme.palette.secondary.main, 0.2),
@@ -226,11 +225,13 @@ export function PipelineSteps({
       )}
 
       {/* Original pipeline steps */}
-      {renderTimeline(originalSteps)}
+      <Box sx={{ width: "100%", maxWidth: "1200px" }}>
+        {renderTimeline(originalSteps)}
+      </Box>
 
       {/* Divider between original and modified steps */}
       {modifiedSteps && modifiedSteps.length > 0 && (
-        <DividerPaper>
+        <DividerPaper sx={{ width: "100%", maxWidth: "1200px" }}>
           <Typography
             variant="subtitle2"
             sx={{
@@ -245,9 +246,11 @@ export function PipelineSteps({
       )}
 
       {/* Modified pipeline steps */}
-      {modifiedSteps &&
-        modifiedSteps.length > 0 &&
-        renderTimeline(modifiedSteps, true)}
+      {modifiedSteps && modifiedSteps.length > 0 && (
+        <Box sx={{ width: "100%", maxWidth: "1200px" }}>
+          {renderTimeline(modifiedSteps, true)}
+        </Box>
+      )}
     </Stack>
   );
 }

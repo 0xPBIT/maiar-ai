@@ -43,6 +43,12 @@ export class WebSocketMonitorProvider implements MonitorProvider {
   }
 
   async updateState(state: AgentState): Promise<void> {
+    console.log("[WebSocketMonitor] Updating state:", {
+      hasContext: !!state.currentContext,
+      contextChainLength: state.currentContext?.contextChain?.length,
+      state
+    });
+
     const message = {
       type: "state_update",
       data: state,

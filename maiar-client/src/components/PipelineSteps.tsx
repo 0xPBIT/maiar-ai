@@ -83,6 +83,9 @@ export function PipelineSteps({
       sx={{
         m: 0,
         p: 2,
+        width: "100%",
+        minWidth: "100%",
+        alignSelf: "stretch",
         bgcolor: (theme) =>
           alpha(theme.palette[isModified ? "secondary" : "primary"].main, 0.03),
         borderRadius: 2,
@@ -92,7 +95,13 @@ export function PipelineSteps({
         "& .MuiTimelineItem-root": {
           "&:before": {
             display: "none"
-          }
+          },
+          width: "100%",
+          minWidth: "100%"
+        },
+        "& .MuiTimelineContent-root": {
+          width: "100%",
+          minWidth: "100%"
         }
       }}
     >
@@ -132,10 +141,14 @@ export function PipelineSteps({
                 />
               )}
             </TimelineSeparator>
-            <TimelineContent sx={{ py: 0, px: 2 }}>
+            <TimelineContent
+              sx={{ py: 0, px: 2, width: "100%", minWidth: "100%" }}
+            >
               <StyledPaper
                 elevation={0}
                 sx={{
+                  width: "100%",
+                  minWidth: "100%",
                   borderColor: (theme) =>
                     isModified
                       ? alpha(theme.palette.secondary.main, 0.2)
@@ -147,19 +160,14 @@ export function PipelineSteps({
                   })
                 }}
               >
-                <Stack spacing={1}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "text.secondary",
-                        width: "2rem",
-                        textAlign: "center",
-                        fontFamily: "monospace"
-                      }}
-                    >
-                      {(index + 1).toString().padStart(2, "0")}
-                    </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    width: "100%"
+                  }}
+                >
+                  <Stack spacing={1}>
                     <Chip
                       label={step.pluginId.replace("plugin-", "")}
                       size="small"
@@ -174,21 +182,29 @@ export function PipelineSteps({
                         borderRadius: 1,
                         fontFamily: "monospace",
                         fontSize: "0.75rem",
-                        minWidth: "100px"
+                        width: "fit-content"
                       }}
                     />
                     <Typography
                       variant="body2"
                       sx={{
                         color: "text.primary",
-                        fontFamily: "monospace",
-                        flex: 1
+                        fontFamily: "monospace"
                       }}
                     >
                       {step.action}
                     </Typography>
-                  </Box>
-                </Stack>
+                  </Stack>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      fontFamily: "monospace"
+                    }}
+                  >
+                    {(index + 1).toString().padStart(2, "0")}
+                  </Typography>
+                </Box>
               </StyledPaper>
             </TimelineContent>
           </StyledTimelineItem>

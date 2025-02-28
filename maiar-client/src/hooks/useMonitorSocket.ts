@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 // Types from the monitor
 interface AgentState {
@@ -6,6 +6,17 @@ interface AgentState {
   isRunning: boolean;
   lastUpdate: number;
   metadata?: Record<string, unknown>;
+  currentContext?: {
+    contextChain: Array<{
+      id: string;
+      pluginId: string;
+      type: string;
+      action: string;
+      content: string;
+      timestamp: number;
+      error?: string;
+    }>;
+  };
 }
 
 interface MonitorEvent {
@@ -41,17 +52,35 @@ export function useMonitorSocket({
   });
 
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | undefined>();
 
-  useEffect(() => {
+  const connect = useCallback(() => {
+    const cleanup = () => {
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return cleanup;
+    }
+
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
       setState((prev) => ({ ...prev, connected: true }));
+      // Clear any existing reconnection timeout
+      if (reconnectTimeoutRef.current !== undefined) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = undefined;
+      }
     };
 
     ws.onclose = () => {
       setState((prev) => ({ ...prev, connected: false }));
+      // Start polling for reconnection
+      reconnectTimeoutRef.current = window.setTimeout(connect, 1000); // Poll every second
     };
 
     ws.onmessage = (event) => {
@@ -60,6 +89,7 @@ export function useMonitorSocket({
 
         switch (message.type) {
           case "state_update":
+            console.log("Received state update:", message.data);
             setState((prev) => ({
               ...prev,
               agentState: message.data as AgentState
@@ -82,10 +112,20 @@ export function useMonitorSocket({
       }
     };
 
-    return () => {
-      ws.close();
-    };
+    return cleanup;
   }, [url]);
+
+  useEffect(() => {
+    const cleanup = connect();
+
+    return () => {
+      if (reconnectTimeoutRef.current !== undefined) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+      }
+      cleanup?.();
+      wsRef.current?.close();
+    };
+  }, [connect]);
 
   return state;
 }

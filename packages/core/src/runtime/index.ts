@@ -490,6 +490,7 @@ export class Runtime {
       } finally {
         // Clear current context after execution
         this.currentContext = undefined;
+        await this.updateMonitoringState();
       }
     }
   }
@@ -764,6 +765,9 @@ export class Runtime {
               failedStep: currentStep
             };
             context.contextChain.push(errorContext);
+
+            // Update monitoring state after error context changes
+            await this.updateMonitoringState();
           } else if (result.data) {
             // Add successful result to context chain
             context.contextChain.push({
@@ -775,6 +779,9 @@ export class Runtime {
               timestamp: Date.now(),
               ...result.data
             });
+
+            // Update monitoring state after context changes
+            await this.updateMonitoringState();
           }
 
           // Evaluate pipeline modification with updated context
@@ -839,6 +846,9 @@ export class Runtime {
           };
           context.contextChain.push(errorContext);
 
+          // Update monitoring state after error context changes
+          await this.updateMonitoringState();
+
           // Log failed step
           logPipelineState({
             type: "step_execution",
@@ -863,6 +873,7 @@ export class Runtime {
       }
     } finally {
       this.currentContext = undefined;
+      await this.updateMonitoringState();
     }
   }
 

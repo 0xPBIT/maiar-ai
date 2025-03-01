@@ -18,10 +18,12 @@
     "@maiar-ai/plugin-express": "workspace:*",
     "@maiar-ai/plugin-search": "workspace:*",
     "@maiar-ai/plugin-telegram": "workspace:*",
+    "@maiar-ai/plugin-terminal": "workspace:*",
     "@maiar-ai/plugin-text": "workspace:*",
     "@maiar-ai/plugin-time": "workspace:*",
     "@maiar-ai/plugin-x": "workspace:*",
-    "@maiar-ai/plugin-terminal": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "cors": "^2.8.5",
     "dotenv": "16.4.7",
     "express": "4.21.2",
     "telegraf": "4.16.3"

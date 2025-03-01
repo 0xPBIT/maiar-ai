@@ -2,6 +2,7 @@ import { useMonitorSocket } from "./hooks/useMonitorSocket";
 import { CurrentPipeline } from "./components/CurrentPipeline";
 import { CurrentContextChain } from "./components/CurrentContextChain";
 import { Events } from "./components/Events";
+import { Chat } from "./components/Chat";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import {
   Box,
@@ -102,19 +103,24 @@ function App() {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 600px",
-            gridTemplateRows: "auto 1fr",
+            gridTemplateColumns:
+              "minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)",
             gap: 3,
             p: 3,
             height: "calc(100vh - 64px)", // Account for AppBar
-            width: "100vw",
-            maxWidth: "100vw",
+            width: "100%",
             boxSizing: "border-box",
             overflow: "hidden"
           }}
         >
-          {/* Agent State - first column */}
-          <Box>
+          {/* Agent State and Pipeline - first column */}
+          <Box
+            sx={{
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
             <Paper
               elevation={0}
               sx={{
@@ -204,15 +210,31 @@ function App() {
           </Box>
 
           {/* Context Chain */}
-          <Box sx={{ overflow: "auto" }}>
+          <Box sx={{ overflow: "hidden", minHeight: 0 }}>
             <CurrentContextChain
               contextChain={agentState?.currentContext?.contextChain}
             />
           </Box>
 
-          {/* Events Panel */}
-          <Box sx={{ overflow: "auto" }}>
-            <Events events={events} />
+          {/* Third Column - Chat and Events */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              overflow: "hidden",
+              minHeight: 0
+            }}
+          >
+            {/* Chat Panel */}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <Chat connected={connected} />
+            </Box>
+
+            {/* Events Panel */}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <Events events={events} />
+            </Box>
           </Box>
         </Box>
       </Box>

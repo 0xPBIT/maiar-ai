@@ -25,6 +25,9 @@ import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
+import { PluginExpress } from "@maiar-ai/plugin-express";
+
+import { router } from "./express-app";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -40,6 +43,10 @@ const runtime = createRuntime({
     path: "/monitor"
   }),
   plugins: [
+    new PluginExpress({
+      port: 3002,
+      router
+    }),
     new PluginTextGeneration(),
     new PluginTime(),
     new PluginCharacter({

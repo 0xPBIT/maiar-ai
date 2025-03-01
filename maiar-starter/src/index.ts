@@ -25,8 +25,6 @@ import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 
-import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
-
 // Create and start the agent
 const runtime = createRuntime({
   model: new OpenAIProvider({
@@ -51,9 +49,6 @@ const runtime = createRuntime({
     }),
     new PluginSearch({
       apiKey: process.env.PERPLEXITY_API_KEY as string
-    }),
-    new PluginPermissionsSearch({
-      whitelistedUsers: ["admin", "whitelisted_user"]
     }),
     new PluginTerminal({
       user: "test",

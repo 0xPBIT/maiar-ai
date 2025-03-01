@@ -24,11 +24,12 @@ export function CurrentPipeline({
           bgcolor: "background.paper",
           border: 1,
           borderColor: "divider",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
+          overflow: "hidden"
         }}
       >
+        <Typography variant="h6" sx={{ mb: 3 }}>
+          Current Pipeline
+        </Typography>
         <Typography variant="body1" color="text.secondary">
           No active pipeline
         </Typography>

@@ -52,11 +52,15 @@ export function CurrentContextChain({
           bgcolor: "background.paper",
           border: 1,
           borderColor: "divider",
+          overflow: "hidden",
+          height: "calc(100vh - 140px)",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
+          flexDirection: "column"
         }}
       >
+        <Typography variant="h6" sx={{ mb: 3 }}>
+          Context Chain
+        </Typography>
         <Typography variant="body1" color="text.secondary">
           No active context chain
         </Typography>
@@ -68,20 +72,18 @@ export function CurrentContextChain({
     <Paper
       elevation={0}
       sx={{
-        p: 3,
+        p: 0,
         width: "100%",
         bgcolor: "background.paper",
         border: 1,
         borderColor: "divider",
         overflow: "hidden",
-        height: "calc(100vh - 140px)", // Match the height of Current Pipeline
+        height: "100%",
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        position: "relative"
       }}
     >
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Context Chain
-      </Typography>
       <Box
         sx={{
           width: "100%",
@@ -102,64 +104,82 @@ export function CurrentContextChain({
           }
         }}
       >
-        <Timeline
+        <Box
           sx={{
-            [`& .MuiTimelineItem-root:before`]: {
-              flex: 0,
-              padding: 0
-            },
-            m: 0,
-            p: 0
+            position: "sticky",
+            top: 0,
+            zIndex: 1,
+            p: 3,
+            pb: 2,
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, 0.8),
+            backdropFilter: "blur(2px)",
+            borderBottom: 1,
+            borderColor: "divider"
           }}
         >
-          {displayChain.map((item, index) => (
-            <TimelineItem key={item.id}>
-              <TimelineSeparator>
-                <TimelineDot
-                  color={item.type === "error" ? "error" : "primary"}
-                  variant={item.type === "error" ? "outlined" : "filled"}
-                />
-                {index < displayChain.length - 1 && (
-                  <TimelineConnector
-                    sx={{
-                      bgcolor: "divider",
-                      width: "2px"
-                    }}
+          <Typography variant="h6">Context Chain</Typography>
+        </Box>
+        <Box sx={{ p: 3, pt: 0 }}>
+          <Timeline
+            sx={{
+              [`& .MuiTimelineItem-root:before`]: {
+                flex: 0,
+                padding: 0
+              },
+              m: 0,
+              p: 0
+            }}
+          >
+            {displayChain.map((item, index) => (
+              <TimelineItem key={item.id}>
+                <TimelineSeparator>
+                  <TimelineDot
+                    color={item.type === "error" ? "error" : "primary"}
+                    variant={item.type === "error" ? "outlined" : "filled"}
                   />
-                )}
-              </TimelineSeparator>
-              <TimelineContent>
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="subtitle2" component="span">
-                    {item.pluginId}:{item.action}
-                  </Typography>
+                  {index < displayChain.length - 1 && (
+                    <TimelineConnector
+                      sx={{
+                        bgcolor: "divider",
+                        width: "2px"
+                      }}
+                    />
+                  )}
+                </TimelineSeparator>
+                <TimelineContent>
+                  <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle2" component="span">
+                      {item.pluginId}:{item.action}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 1 }}
+                    >
+                      {new Date(item.timestamp).toLocaleTimeString()}
+                    </Typography>
+                  </Box>
                   <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 1 }}
+                    variant="body2"
+                    color={item.type === "error" ? "error" : "text.primary"}
+                    sx={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      bgcolor: "background.paper",
+                      p: 1.5,
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: "divider"
+                    }}
                   >
-                    {new Date(item.timestamp).toLocaleTimeString()}
+                    {item.type === "error" ? item.error : item.content}
                   </Typography>
-                </Box>
-                <Typography
-                  variant="body2"
-                  color={item.type === "error" ? "error" : "text.primary"}
-                  sx={{
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                    bgcolor: "background.paper",
-                    p: 1.5,
-                    borderRadius: 1,
-                    border: 1,
-                    borderColor: "divider"
-                  }}
-                >
-                  {item.type === "error" ? item.error : item.content}
-                </Typography>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
-        </Timeline>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        </Box>
       </Box>
     </Paper>
   );

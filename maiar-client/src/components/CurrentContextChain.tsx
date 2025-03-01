@@ -113,7 +113,7 @@ export function CurrentContextChain({
             pb: 2,
             backgroundColor: (theme) =>
               alpha(theme.palette.background.paper, 0.8),
-            backdropFilter: "blur(2px)",
+            backdropFilter: "blur(8px)",
             borderBottom: 1,
             borderColor: "divider"
           }}

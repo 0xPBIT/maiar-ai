@@ -1,5 +1,6 @@
 import { Box, Typography, Paper, Stack, alpha } from "@mui/material";
 import { useRef } from "react";
+import JsonView from "./JsonView";
 
 interface Event {
   type: string;
@@ -17,14 +18,12 @@ export function Events({ events }: EventsProps) {
 
   const renderEventMetadata = (event: Event) => {
     if (event.type === "pipeline.generation.complete") {
-      // For pipeline generation events, show the pipeline steps visualization
       const metadata = event.metadata as {
         pipeline: Array<{ pluginId: string; action: string }>;
       };
       return metadata?.pipeline ? (
         <Box sx={{ width: "100%" }}>
-          {/* We'll handle pipeline visualization separately */}
-          <pre>{JSON.stringify(metadata.pipeline, null, 2)}</pre>
+          <JsonView data={metadata.pipeline} />
         </Box>
       ) : null;
     }
@@ -39,14 +38,12 @@ export function Events({ events }: EventsProps) {
 
       return (
         <Box sx={{ width: "100%" }}>
-          {/* We'll handle pipeline visualization separately */}
-          <pre>{JSON.stringify(metadata, null, 2)}</pre>
+          <JsonView data={metadata} />
         </Box>
       );
     }
 
     if (event.type === "pipeline.generation.start") {
-      // For pipeline start events, only show platform and message
       const { platform, message } = event.metadata || {};
       return platform || message ? (
         <Paper
@@ -55,26 +52,14 @@ export function Events({ events }: EventsProps) {
             p: 2,
             mt: 2,
             width: "100%",
-            bgcolor: "background.paper",
-            fontFamily: "monospace",
-            fontSize: "0.875rem"
+            bgcolor: "background.paper"
           }}
         >
-          <Box
-            sx={{
-              width: "100%",
-              overflow: "auto",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word"
-            }}
-          >
-            {JSON.stringify({ platform, message }, null, 2)}
-          </Box>
+          <JsonView data={{ platform, message }} />
         </Paper>
       ) : null;
     }
 
-    // For all other events, show full metadata
     return event.metadata ? (
       <Paper
         elevation={0}
@@ -82,21 +67,10 @@ export function Events({ events }: EventsProps) {
           p: 2,
           mt: 2,
           width: "100%",
-          bgcolor: "background.paper",
-          fontFamily: "monospace",
-          fontSize: "0.875rem"
+          bgcolor: "background.paper"
         }}
       >
-        <Box
-          sx={{
-            width: "100%",
-            overflow: "auto",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word"
-          }}
-        >
-          {JSON.stringify(event.metadata, null, 2)}
-        </Box>
+        <JsonView data={event.metadata} />
       </Paper>
     ) : null;
   };

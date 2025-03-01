@@ -24,6 +24,7 @@ import { PluginSearch } from "@maiar-ai/plugin-search";
 import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
+import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -50,8 +51,11 @@ const runtime = createRuntime({
     new PluginSearch({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
+    new PluginPermissionsSearch({
+      whitelistedUsers: ["test"]
+    }),
     new PluginTerminal({
-      user: "test",
+      user: "ligma",
       agentName: "maiar-starter"
     })
   ]

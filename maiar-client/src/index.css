@@ -28,6 +28,9 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 h1 {
@@ -65,4 +68,110 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* React Grid Layout Custom Styling */
+.layout-container {
+  width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.layout {
+  width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.react-grid-layout {
+  position: relative;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  opacity: 0.2;
+  transition: opacity 0.3s;
+  border-radius: 0 0 8px 0;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid #50fa7b;
+  border-bottom: 2px solid #50fa7b;
+  border-radius: 0 0 6px 0;
+  opacity: 0.7;
+  transform: none;
+}
+
+.react-grid-item:hover > .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(80, 250, 123, 0.2);
+  border: 1px dashed rgba(80, 250, 123, 0.4);
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+}
+
+.react-grid-item.resizing {
+  z-index: 1;
+  box-shadow: 0 0 15px rgba(80, 250, 123, 0.3);
+}
+
+.react-grid-item.react-draggable-dragging {
+  z-index: 3;
+  box-shadow: 0 0 20px rgba(80, 250, 123, 0.4);
+  opacity: 0.9;
+}
+
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Prevent text selection during dragging/resizing */
+.react-draggable-transparent-selection,
+.react-draggable-transparent-selection * {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+.react-draggable:active {
+  cursor: grabbing !important;
+}
+
+/* Utility class for disabling selection */
+.select-none {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  cursor: grabbing !important;
 }

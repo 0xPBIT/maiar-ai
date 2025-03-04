@@ -79,100 +79,67 @@ export function Events({ events }: EventsProps) {
     <Paper
       elevation={0}
       sx={{
-        p: 0,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "background.paper",
         border: 1,
         borderColor: "divider",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%"
+        overflow: "hidden"
       }}
     >
       <Box
         ref={eventsContainerRef}
         sx={{
-          width: "100%",
           flex: 1,
           overflow: "auto",
-          "&::-webkit-scrollbar": {
-            width: "8px"
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent"
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
-            borderRadius: "4px",
-            "&:hover": {
-              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.3)
-            }
-          }
+          p: 3
         }}
       >
-        <Box
-          sx={{
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            p: 3,
-            pb: 2,
-            backgroundColor: (theme) =>
-              alpha(theme.palette.background.paper, 0.8),
-            backdropFilter: "blur(8px)",
-            borderBottom: 1,
-            borderColor: "divider"
-          }}
-        >
-          <Typography variant="h6">Events</Typography>
-        </Box>
-        <Box sx={{ p: 3, pt: 2 }}>
-          <Stack spacing={2}>
-            {events.map((event, index) => (
-              <Paper
-                key={index}
-                elevation={0}
-                sx={{
-                  p: 3,
-                  width: "100%",
-                  display: "block",
-                  bgcolor: "background.paper",
-                  border: 1,
-                  borderColor: "divider",
-                  transition: "all 0.2s ease-in-out",
-                  "&:hover": {
-                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
-                    borderColor: (theme) =>
-                      alpha(theme.palette.primary.main, 0.2)
-                  }
-                }}
-              >
-                <Stack spacing={1}>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      color: "primary.main",
-                      fontWeight: 500
-                    }}
-                  >
-                    {event.type}
-                  </Typography>
-                  <Typography variant="body1">{event.message}</Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "text.secondary",
-                      display: "block"
-                    }}
-                  >
-                    {new Date(event.timestamp).toLocaleString()}
-                  </Typography>
-                  {renderEventMetadata(event)}
-                </Stack>
-              </Paper>
-            ))}
-          </Stack>
-        </Box>
+        <Stack spacing={2}>
+          {events.map((event, index) => (
+            <Paper
+              key={index}
+              elevation={0}
+              sx={{
+                p: 3,
+                width: "100%",
+                display: "block",
+                bgcolor: "background.paper",
+                border: 1,
+                borderColor: "divider",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                  borderColor: (theme) => alpha(theme.palette.primary.main, 0.2)
+                }
+              }}
+            >
+              <Stack spacing={1}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "primary.main",
+                    fontWeight: 500
+                  }}
+                >
+                  {event.type}
+                </Typography>
+                <Typography variant="body1">{event.message}</Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    display: "block"
+                  }}
+                >
+                  {new Date(event.timestamp).toLocaleString()}
+                </Typography>
+                {renderEventMetadata(event)}
+              </Stack>
+            </Paper>
+          ))}
+        </Stack>
       </Box>
     </Paper>
   );

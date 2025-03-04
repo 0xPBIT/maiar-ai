@@ -88,106 +88,81 @@ export function Chat({ connected }: ChatProps) {
     }
   };
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    handleSend();
+  };
+
   return (
     <Paper
       elevation={0}
       sx={{
-        p: 0,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "background.paper",
         border: 1,
         borderColor: "divider",
-        overflow: "hidden",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column"
+        overflow: "hidden"
       }}
     >
       <Box
         ref={chatContainerRef}
         sx={{
-          width: "100%",
           flex: 1,
           overflow: "auto",
-          "&::-webkit-scrollbar": {
-            width: "8px"
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent"
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
-            borderRadius: "4px",
-            "&:hover": {
-              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.3)
-            }
-          }
+          p: 3
         }}
       >
-        <Box
-          sx={{
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            p: 3,
-            pb: 2,
-            backgroundColor: (theme) =>
-              alpha(theme.palette.background.paper, 0.8),
-            backdropFilter: "blur(8px)",
-            borderBottom: 1,
-            borderColor: "divider"
-          }}
-        >
-          <Typography variant="h6">Chat</Typography>
-        </Box>
-        <Box sx={{ p: 3, pt: 2 }}>
-          <Stack spacing={2}>
-            {messages.map((message, index) => (
-              <Box
-                key={index}
+        <Stack spacing={2}>
+          {messages.map((message, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: "flex",
+                justifyContent:
+                  message.sender === "user" ? "flex-end" : "flex-start"
+              }}
+            >
+              <Paper
+                elevation={0}
                 sx={{
-                  display: "flex",
-                  justifyContent:
-                    message.sender === "user" ? "flex-end" : "flex-start"
+                  p: 2,
+                  maxWidth: "80%",
+                  bgcolor:
+                    message.sender === "user"
+                      ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                      : (theme) => alpha(theme.palette.background.paper, 0.5),
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor:
+                    message.sender === "user" ? "primary.main" : "divider"
                 }}
               >
-                <Paper
-                  elevation={0}
+                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                  {message.content}
+                </Typography>
+                <Typography
+                  variant="caption"
                   sx={{
-                    p: 2,
-                    maxWidth: "80%",
-                    bgcolor:
-                      message.sender === "user"
-                        ? (theme) => alpha(theme.palette.primary.main, 0.1)
-                        : (theme) => alpha(theme.palette.background.paper, 0.5),
-                    borderRadius: 2,
-                    border: 1,
-                    borderColor:
-                      message.sender === "user" ? "primary.main" : "divider"
+                    display: "block",
+                    mt: 1,
+                    color: "text.secondary"
                   }}
                 >
-                  <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-                    {message.content}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      display: "block",
-                      mt: 1,
-                      color: "text.secondary"
-                    }}
-                  >
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </Typography>
-                </Paper>
-              </Box>
-            ))}
-            <div ref={messagesEndRef} />
-          </Stack>
-        </Box>
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </Typography>
+              </Paper>
+            </Box>
+          ))}
+          <div ref={messagesEndRef} />
+        </Stack>
       </Box>
       <Box
+        component="form"
+        onSubmit={handleSubmit}
         sx={{
-          p: 2,
+          p: 3,
           borderTop: 1,
           borderColor: "divider",
           bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8)
@@ -198,11 +173,12 @@ export function Chat({ connected }: ChatProps) {
             fullWidth
             multiline
             maxRows={4}
+            placeholder={connected ? "Type a message..." : "Disconnected"}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={connected ? "Type a message..." : "Disconnected"}
             disabled={!connected}
+            size="small"
             sx={{
               "& .MuiOutlinedInput-root": {
                 bgcolor: "background.paper"
@@ -214,8 +190,7 @@ export function Chat({ connected }: ChatProps) {
             onClick={handleSend}
             disabled={!connected || !input.trim()}
             sx={{
-              alignSelf: "flex-end",
-              height: 56
+              alignSelf: "flex-end"
             }}
           >
             <SendIcon />

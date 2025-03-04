@@ -4,17 +4,8 @@ import { CurrentContextChain } from "./components/CurrentContextChain";
 import { Events } from "./components/Events";
 import { Chat } from "./components/Chat";
 import { ThemeProvider } from "./theme/ThemeProvider";
-import {
-  Box,
-  Typography,
-  Paper,
-  AppBar,
-  Toolbar,
-  Chip,
-  Stack,
-  Divider,
-  alpha
-} from "@mui/material";
+import { GridLayout } from "./components/GridLayout";
+import { Box, Typography, AppBar, Toolbar, Chip, Grid } from "@mui/material";
 import { useState, useEffect } from "react";
 
 function App() {
@@ -73,14 +64,23 @@ function App() {
   return (
     <ThemeProvider>
       <Box
-        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "auto",
+          minHeight: "100vh",
+          width: "100%",
+          boxSizing: "border-box",
+          overflow: "hidden"
+        }}
       >
         <AppBar
           position="fixed"
           elevation={0}
           sx={{
-            bgcolor: alpha("#000000", 0.7),
-            backdropFilter: "blur(8px)"
+            bgcolor: "background.paper",
+            borderBottom: 1,
+            borderColor: "divider"
           }}
         >
           <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -100,56 +100,17 @@ function App() {
           </Toolbar>
         </AppBar>
         <Toolbar /> {/* Spacer for fixed AppBar */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns:
-              "minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr)",
-            gap: 3,
-            p: 3,
-            height: "calc(100vh - 64px)", // Account for AppBar
-            width: "100%",
-            boxSizing: "border-box",
-            overflow: "hidden"
-          }}
-        >
-          {/* Agent State and Pipeline - first column */}
-          <Box
-            sx={{
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column"
-            }}
-          >
-            <Paper
-              elevation={0}
-              sx={{
-                px: 2,
-                py: 1.5,
-                bgcolor: alpha("#50fa7b", 0.05),
-                border: 1,
-                borderColor: alpha("#50fa7b", 0.1),
-                mb: 3
-              }}
-            >
-              <Stack
-                direction="row"
-                alignItems="stretch"
-                spacing={3}
-                divider={<Divider orientation="vertical" flexItem />}
-              >
-                <Stack
-                  direction="row"
-                  spacing={3}
-                  divider={<Divider orientation="vertical" flexItem />}
-                  sx={{ flex: 1 }}
-                >
+        {/* Grid Layout */}
+        <GridLayout
+          children={{
+            status: (
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={4}>
                   <Box
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
-                      flex: 1
+                      alignItems: "center"
                     }}
                   >
                     <Typography
@@ -163,12 +124,13 @@ function App() {
                       {agentState?.queueLength || 0}
                     </Typography>
                   </Box>
+                </Grid>
+                <Grid item xs={12} sm={4}>
                   <Box
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
-                      flex: 1
+                      alignItems: "center"
                     }}
                   >
                     <Typography
@@ -182,12 +144,13 @@ function App() {
                       {agentState?.isRunning ? "Running" : "Idle"}
                     </Typography>
                   </Box>
+                </Grid>
+                <Grid item xs={12} sm={4}>
                   <Box
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
-                      flex: 1
+                      alignItems: "center"
                     }}
                   >
                     <Typography
@@ -203,40 +166,19 @@ function App() {
                         : "-"}
                     </Typography>
                   </Box>
-                </Stack>
-              </Stack>
-            </Paper>
-            <CurrentPipeline {...(currentPipelineState || {})} />
-          </Box>
-
-          {/* Context Chain */}
-          <Box sx={{ overflow: "hidden", minHeight: 0 }}>
-            <CurrentContextChain
-              contextChain={agentState?.currentContext?.contextChain}
-            />
-          </Box>
-
-          {/* Third Column - Chat and Events */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 3,
-              overflow: "hidden",
-              minHeight: 0
-            }}
-          >
-            {/* Chat Panel */}
-            <Box sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-              <Chat connected={connected} />
-            </Box>
-
-            {/* Events Panel */}
-            <Box sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-              <Events events={events} />
-            </Box>
-          </Box>
-        </Box>
+                </Grid>
+              </Grid>
+            ),
+            pipeline: <CurrentPipeline {...(currentPipelineState || {})} />,
+            contextChain: (
+              <CurrentContextChain
+                contextChain={agentState?.currentContext?.contextChain}
+              />
+            ),
+            chat: <Chat connected={connected} />,
+            events: <Events events={events} />
+          }}
+        />
       </Box>
     </ThemeProvider>
   );

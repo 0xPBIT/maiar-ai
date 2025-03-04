@@ -19,20 +19,26 @@ export function CurrentPipeline({
       <Paper
         elevation={0}
         sx={{
-          p: 3,
-          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
           bgcolor: "background.paper",
           border: 1,
           borderColor: "divider",
           overflow: "hidden"
         }}
       >
-        <Typography variant="h6" sx={{ mb: 3 }}>
-          Current Pipeline
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          No active pipeline
-        </Typography>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            p: 3
+          }}
+        >
+          <Typography variant="body1" color="text.secondary">
+            No active pipeline
+          </Typography>
+        </Box>
       </Paper>
     );
   }
@@ -41,39 +47,45 @@ export function CurrentPipeline({
     <Paper
       elevation={0}
       sx={{
-        p: 3,
-        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "background.paper",
         border: 1,
         borderColor: "divider",
         overflow: "hidden"
       }}
     >
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Current Pipeline
-      </Typography>
       <Box
         sx={{
-          width: "100%",
-          "& .MuiChip-root": {
-            maxWidth: "100%",
-            "& .MuiChip-label": {
-              overflow: "hidden",
-              whiteSpace: "normal",
-              textOverflow: "clip",
-              height: "auto",
-              maxHeight: "none",
-              wordBreak: "break-word"
-            }
-          }
+          flex: 1,
+          overflow: "auto",
+          p: 3
         }}
       >
-        <PipelineSteps
-          steps={pipeline}
-          currentStep={currentStep}
-          modifiedSteps={modifiedSteps}
-          explanation={explanation}
-        />
+        <Box
+          sx={{
+            width: "100%",
+            "& .MuiChip-root": {
+              maxWidth: "100%",
+              "& .MuiChip-label": {
+                overflow: "hidden",
+                whiteSpace: "normal",
+                textOverflow: "clip",
+                height: "auto",
+                maxHeight: "none",
+                wordBreak: "break-word"
+              }
+            }
+          }}
+        >
+          <PipelineSteps
+            steps={pipeline}
+            currentStep={currentStep}
+            modifiedSteps={modifiedSteps}
+            explanation={explanation}
+          />
+        </Box>
       </Box>
     </Paper>
   );

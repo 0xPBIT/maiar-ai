@@ -156,14 +156,16 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
         updateWidth();
       });
 
-      if (containerRef.current) {
-        resizeObserver.observe(containerRef.current);
+      const currentContainer = containerRef.current;
+
+      if (currentContainer) {
+        resizeObserver.observe(currentContainer);
       }
 
       return () => {
         window.removeEventListener("resize", updateWidth);
-        if (containerRef.current) {
-          resizeObserver.unobserve(containerRef.current);
+        if (currentContainer) {
+          resizeObserver.unobserve(currentContainer);
         }
       };
     }

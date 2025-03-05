@@ -3,25 +3,14 @@ import { CurrentPipeline } from "./components/CurrentPipeline";
 import { CurrentContextChain } from "./components/CurrentContextChain";
 import { Events } from "./components/Events";
 import { Chat } from "./components/Chat";
+import { AgentStatus } from "./components/AgentStatus";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { GridLayout } from "./components/GridLayout";
-import { Box, Typography, AppBar, Toolbar, Chip, Grid } from "@mui/material";
+import { Box, Typography, AppBar, Toolbar, Chip } from "@mui/material";
 import { useState, useEffect } from "react";
 
 function App() {
   const { connected, agentState, events } = useMonitorSocket();
-
-  // Debug logging for agentState updates
-  useEffect(() => {
-    if (agentState) {
-      console.log("Agent state updated:", {
-        hasContext: !!agentState.currentContext,
-        contextChainLength: agentState.currentContext?.contextChain?.length,
-        contextChain: agentState.currentContext?.contextChain,
-        fullAgentState: agentState
-      });
-    }
-  }, [agentState]);
 
   const [currentPipelineState, setCurrentPipelineState] = useState<{
     pipeline: Array<{ pluginId: string; action: string }>;
@@ -103,72 +92,7 @@ function App() {
         {/* Grid Layout */}
         <GridLayout
           children={{
-            status: (
-              <Grid container spacing={3}>
-                <Grid item xs={12} sm={4}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center"
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
-                    >
-                      Queue
-                    </Typography>
-                    <Typography variant="h6">
-                      {agentState?.queueLength || 0}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center"
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
-                    >
-                      Status
-                    </Typography>
-                    <Typography variant="h6">
-                      {agentState?.isRunning ? "Running" : "Idle"}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center"
-                    }}
-                  >
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
-                    >
-                      Updated
-                    </Typography>
-                    <Typography variant="h6">
-                      {agentState?.lastUpdate
-                        ? new Date(agentState.lastUpdate).toLocaleTimeString()
-                        : "-"}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            ),
+            status: <AgentStatus agentState={agentState} />,
             pipeline: <CurrentPipeline {...(currentPipelineState || {})} />,
             contextChain: (
               <CurrentContextChain

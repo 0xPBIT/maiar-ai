@@ -6,9 +6,11 @@ import {
   TextField,
   IconButton,
   Stack,
-  alpha
+  alpha,
+  Popover
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 interface Message {
   content: string;
@@ -23,8 +25,22 @@ interface ChatProps {
 export function Chat({ connected }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [username, setUsername] = useState("user-name");
+  const [settingsAnchorEl, setSettingsAnchorEl] =
+    useState<HTMLButtonElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const openSettings = Boolean(settingsAnchorEl);
+  const settingsId = openSettings ? "username-settings-popover" : undefined;
+
+  const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setSettingsAnchorEl(event.currentTarget);
+  };
+
+  const handleSettingsClose = () => {
+    setSettingsAnchorEl(null);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,7 +70,7 @@ export function Chat({ connected }: ChatProps) {
         },
         body: JSON.stringify({
           message: input,
-          user: "web-client"
+          user: username
         })
       });
 
@@ -162,39 +178,117 @@ export function Chat({ connected }: ChatProps) {
         component="form"
         onSubmit={handleSubmit}
         sx={{
-          p: 3,
+          p: 2,
           borderTop: 1,
           borderColor: "divider",
           bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8)
         }}
       >
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            placeholder={connected ? "Type a message..." : "Disconnected"}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={!connected}
-            size="small"
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                bgcolor: "background.paper"
-              }
-            }}
-          />
-          <IconButton
-            color="primary"
-            onClick={handleSend}
-            disabled={!connected || !input.trim()}
-            sx={{
-              alignSelf: "flex-end"
-            }}
-          >
-            <SendIcon />
-          </IconButton>
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
+          <Box>
+            <IconButton
+              size="small"
+              onClick={handleSettingsClick}
+              aria-describedby={settingsId}
+              color="primary"
+              sx={{
+                p: 0.5,
+                "&:focus": {
+                  outline: "none"
+                },
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: "50%",
+                  boxShadow: "none"
+                }
+              }}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+            <Popover
+              id={settingsId}
+              open={openSettings}
+              anchorEl={settingsAnchorEl}
+              onClose={handleSettingsClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right"
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right"
+              }}
+              PaperProps={{
+                sx: {
+                  bgcolor: "background.paper",
+                  boxShadow: 5,
+                  border: "1px solid",
+                  borderColor: "divider"
+                }
+              }}
+            >
+              <Box sx={{ p: 2, width: 220 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Username"
+                  variant="outlined"
+                  defaultValue={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoFocus
+                />
+              </Box>
+            </Popover>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                fullWidth
+                multiline
+                maxRows={4}
+                placeholder={connected ? "Type a message..." : "Disconnected"}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={!connected}
+                size="small"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "background.paper"
+                  }
+                }}
+              />
+              <IconButton
+                color="primary"
+                onClick={handleSend}
+                disabled={!connected || !input.trim()}
+                sx={{
+                  alignSelf: "flex-end"
+                }}
+              >
+                <SendIcon />
+              </IconButton>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.5,
+                fontSize: "0.7rem",
+                color: "text.secondary",
+                pl: 1
+              }}
+            >
+              sending as{" "}
+              <Box component="span" sx={{ fontWeight: "bold" }}>
+                {username}
+              </Box>
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Paper>

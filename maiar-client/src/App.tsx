@@ -4,13 +4,14 @@ import { CurrentContextChain } from "./components/CurrentContextChain";
 import { Events } from "./components/Events";
 import { Chat } from "./components/Chat";
 import { AgentStatus } from "./components/AgentStatus";
+import { ConnectionSettings } from "./components/ConnectionSettings";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { GridLayout } from "./components/GridLayout";
-import { Box, Typography, AppBar, Toolbar, Chip } from "@mui/material";
+import { Box, Typography, AppBar, Toolbar } from "@mui/material";
 import { useState, useEffect } from "react";
 
 function App() {
-  const { connected, agentState, events } = useMonitorSocket();
+  const { connected, agentState, events, url, setUrl } = useMonitorSocket();
 
   const [currentPipelineState, setCurrentPipelineState] = useState<{
     pipeline: Array<{ pluginId: string; action: string }>;
@@ -76,15 +77,10 @@ function App() {
             <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
               Maiar Agent Monitor
             </Typography>
-            <Chip
-              label={connected ? "Connected" : "Disconnected"}
-              color={connected ? "primary" : "error"}
-              variant="outlined"
-              size="small"
-              sx={{
-                borderWidth: 2,
-                px: 1
-              }}
+            <ConnectionSettings
+              connected={connected}
+              url={url}
+              onChangeUrl={setUrl}
             />
           </Toolbar>
         </AppBar>

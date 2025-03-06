@@ -258,14 +258,16 @@ export class Runtime {
     this.memoryService = config.memoryService;
     this.monitorService = config.monitorService;
 
-    // Initialize monitoring
-    this.monitorService.logEvent({
-      type: "runtime.init",
-      message: "Runtime initialized",
-      metadata: {
-        plugins: this.plugins.map((p) => p.id)
-      }
-    });
+    // Initialize monitoring if available
+    if (this.monitorService) {
+      this.monitorService.publishEvent({
+        type: "runtime.init",
+        message: "Runtime initialized",
+        metadata: {
+          plugins: this.plugins.map((p) => p.id)
+        }
+      });
+    }
   }
 
   /**
@@ -320,7 +322,7 @@ export class Runtime {
 
     // Log start event
     if (this.monitorService) {
-      await this.monitorService.logEvent({
+      await this.monitorService.publishEvent({
         type: "runtime.start",
         message: "Runtime started",
         metadata: {
@@ -347,7 +349,7 @@ export class Runtime {
 
     // Log stop event
     if (this.monitorService) {
-      await this.monitorService.logEvent({
+      await this.monitorService.publishEvent({
         type: "runtime.stop",
         message: "Runtime stopped"
       });
@@ -546,7 +548,7 @@ export class Runtime {
       const template = generatePipelineTemplate(pipelineContext);
 
       // Log pipeline generation start
-      await this.monitorService.logEvent({
+      await this.monitorService.publishEvent({
         type: "pipeline.generation.start",
         message: "Starting pipeline generation",
         metadata: {
@@ -577,7 +579,7 @@ export class Runtime {
       log.info("Pipeline steps:", steps);
 
       // Log successful pipeline generation
-      await this.monitorService.logEvent({
+      await this.monitorService.publishEvent({
         type: "pipeline.generation.complete",
         message: "Pipeline generation completed successfully",
         metadata: {
@@ -596,7 +598,7 @@ export class Runtime {
       return pipeline;
     } catch (error) {
       // Log pipeline generation error
-      await this.monitorService.logEvent({
+      await this.monitorService.publishEvent({
         type: "pipeline.generation.error",
         message: "Pipeline generation failed",
         metadata: {
@@ -821,7 +823,7 @@ export class Runtime {
             });
 
             // Emit pipeline modification event
-            await this.monitorService.logEvent({
+            await this.monitorService.publishEvent({
               type: "pipeline.modification",
               message: "Pipeline modified during execution",
               metadata: {
@@ -877,40 +879,22 @@ export class Runtime {
     }
   }
 
-  /**
-   * Subscribe to context changes
-   * Returns an unsubscribe function
-   */
-  subscribeToContext(callback: (context: AgentContext) => void): () => void {
-    this.contextObservers.add(callback);
-    return () => this.contextObservers.delete(callback);
-  }
-
-  /**
-   * Notify observers of context changes
-   */
-  private notifyContextChange(context: AgentContext) {
-    for (const observer of this.contextObservers) {
-      observer(context);
-    }
-  }
-
   private async updateMonitoringState() {
     if (this.monitorService) {
-      await this.monitorService.updateState({
-        currentContext: this.currentContext,
-        queueLength: this.eventQueue.length,
-        isRunning: this.isRunning,
-        lastUpdate: Date.now()
+      await this.monitorService.publishEvent({
+        type: "state",
+        message: "Agent state update",
+        timestamp: Date.now(),
+        metadata: {
+          state: {
+            currentContext: this.currentContext,
+            queueLength: this.eventQueue.length,
+            isRunning: this.isRunning,
+            lastUpdate: Date.now()
+          }
+        }
       });
     }
-  }
-
-  // Update monitoring state when context changes
-  private async setCurrentContext(context: AgentContext | undefined) {
-    this.currentContext = context;
-    this.contextObservers.forEach((observer) => observer(context!));
-    await this.updateMonitoringState();
   }
 }
 

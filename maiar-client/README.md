@@ -12,6 +12,7 @@ A React-based monitoring dashboard for Maiar AI agents. This client connects to 
 - Monitor events as they occur
 - Chat interface for direct interaction with your agent
 - Responsive, grid-based layout
+- Dynamic WebSocket URL configuration from the UI
 
 ## Prerequisites
 
@@ -73,6 +74,60 @@ const runtime = createRuntime({
   ]
 });
 ```
+
+### Custom WebSocket Configuration
+
+If you need to configure a custom port or path for the WebSocket connection, you'll need to update both the agent's WebSocketMonitorProvider and the client's connection settings.
+
+#### Example: Using a custom WebSocket URL
+
+1. Configure the WebSocketMonitorProvider on your agent:
+
+```typescript
+import { createRuntime } from "@maiar-ai/core";
+import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
+
+const runtime = createRuntime({
+  // ...other configurations
+  monitors: [
+    new WebSocketMonitorProvider({
+      port: 8080, // Custom port
+      path: "/agent-monitor" // Custom path
+    })
+  ]
+});
+```
+
+2. Update your client application to connect to the same endpoint by providing the complete WebSocket URL:
+
+```typescript
+// In your component or custom hook
+import { useMonitorSocket } from "../hooks/useMonitorSocket";
+
+function MyComponent() {
+  const { connected, agentState, events } = useMonitorSocket({
+    url: "ws://localhost:8080/agent-monitor" // Must match the agent's configuration
+  });
+
+  // Rest of your component...
+}
+```
+
+#### Changing the WebSocket URL from the UI
+
+You can also change the WebSocket URL directly from the client interface:
+
+1. Click on the Connection status chip in the top-right corner of the dashboard
+2. Enter your custom WebSocket URL in the provided field
+3. Click "Apply" to connect to the new endpoint
+4. Use "Reset to Default" to revert to the default WebSocket URL (`ws://localhost:3001/monitor`)
+
+This feature is particularly useful when:
+
+- Testing with different agent configurations
+- Connecting to remote Maiar agents
+- Switching between different agent instances
+- Working in development environments with varying port configurations
 
 ### Dashboard Components
 

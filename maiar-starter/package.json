@@ -13,6 +13,7 @@
     "@maiar-ai/core": "workspace:*",
     "@maiar-ai/memory-sqlite": "workspace:*",
     "@maiar-ai/model-openai": "workspace:*",
+    "@maiar-ai/monitor-console": "workspace:*",
     "@maiar-ai/monitor-websocket": "workspace:*",
     "@maiar-ai/plugin-character": "workspace:*",
     "@maiar-ai/plugin-express": "workspace:*",
@@ -22,13 +23,13 @@
     "@maiar-ai/plugin-text": "workspace:*",
     "@maiar-ai/plugin-time": "workspace:*",
     "@maiar-ai/plugin-x": "workspace:*",
-    "@types/cors": "^2.8.17",
-    "cors": "^2.8.5",
+    "cors": "2.8.5",
     "dotenv": "16.4.7",
     "express": "4.21.2",
     "telegraf": "4.16.3"
   },
   "devDependencies": {
+    "@types/cors": "2.8.17",
     "@types/express": "5.0.0",
     "chokidar-cli": "3.0.0",
     "dotenv-cli": "8.0.0",

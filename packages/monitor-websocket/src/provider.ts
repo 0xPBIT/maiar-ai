@@ -1,19 +1,47 @@
-import { MonitorProvider, AgentState } from "@maiar-ai/core";
-import { WebSocket, WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
+import { MonitorProvider } from "@maiar-ai/core";
 
+/**
+ * Configuration options for the WebSocket monitor
+ */
 interface WebSocketMonitorOptions {
+  /** Port to run the WebSocket server on (default: 3001) */
   port?: number;
+
+  /** WebSocket server path (default: "/monitor") */
   path?: string;
 }
 
+/**
+ * A monitor provider that broadcasts agent state and events through WebSockets.
+ *
+ * This provider sets up a WebSocket server that clients can connect to in order
+ * to receive real-time updates about the agent's state and events. It's useful
+ * for building dashboards, visualizations, or other real-time monitoring tools.
+ *
+ * Events are sent as JSON messages with a type field indicating the kind of message.
+ */
 export class WebSocketMonitorProvider implements MonitorProvider {
+  /** Unique identifier for this monitor */
   readonly id = "websocket";
+
+  /** Human-readable name of this monitor */
   readonly name = "WebSocket Monitor";
+
+  /** Description of what this monitor does */
   readonly description = "Monitors agent state through WebSocket connections";
 
+  /** WebSocket server instance */
   private wss: WebSocketServer;
+
+  /** Set of connected WebSocket clients */
   private clients: Set<WebSocket> = new Set();
 
+  /**
+   * Creates a new WebSocket monitor provider.
+   *
+   * @param options - Configuration options for the WebSocket server
+   */
   constructor(options: WebSocketMonitorOptions = {}) {
     const { port = 3001, path = "/monitor" } = options;
 
@@ -37,64 +65,81 @@ export class WebSocketMonitorProvider implements MonitorProvider {
     });
   }
 
+  /**
+   * Initializes the WebSocket monitor.
+   * The server is already initialized in the constructor, so this is a no-op.
+   */
   async init(): Promise<void> {
     // Server is already initialized in constructor
     return Promise.resolve();
   }
 
-  async updateState(state: AgentState): Promise<void> {
-    console.log("[WebSocketMonitor] Updating state:", {
-      hasContext: !!state.currentContext,
-      contextChainLength: state.currentContext?.contextChain?.length,
-      state
-    });
-
-    const message = {
-      type: "state_update",
-      data: state,
-      timestamp: Date.now()
-    };
-
-    this.broadcast(message);
-  }
-
-  async logEvent(event: {
+  /**
+   * Publishes an event to all connected WebSocket clients.
+   *
+   * @param event - Event details to publish
+   */
+  async publishEvent(event: {
     type: string;
     message: string;
     timestamp: number;
     metadata?: Record<string, unknown>;
   }): Promise<void> {
     const message = {
-      type: "event",
+      type: "publish_event",
       data: event,
-      timestamp: event.timestamp
+      timestamp: Date.now()
     };
 
     this.broadcast(message);
   }
 
+  /**
+   * Logs an event to all connected WebSocket clients.
+   * @deprecated Use publishEvent instead
+   * @param event - Event details to log
+   */
+  async logEvent(event: {
+    type: string;
+    message: string;
+    timestamp: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    // Forward to publishEvent for backward compatibility
+    return this.publishEvent(event);
+  }
+
+  /**
+   * Checks the health of the WebSocket monitor.
+   * Verifies that the WebSocket server is running.
+   */
   async checkHealth(): Promise<void> {
     if (!this.wss) {
-      throw new Error("WebSocket server is not initialized");
+      throw new Error("WebSocket server is not running");
     }
     return Promise.resolve();
   }
 
+  /**
+   * Broadcasts a message to all connected WebSocket clients.
+   *
+   * @param message - The message to broadcast
+   * @private
+   */
   private broadcast(message: unknown): void {
-    const payload = JSON.stringify(message);
-    for (const client of this.clients) {
+    const messageStr = JSON.stringify(message);
+    this.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
+        client.send(messageStr);
       }
-    }
+    });
   }
 
-  // Cleanup method to close server and connections
+  /**
+   * Closes the WebSocket server and disconnects all clients.
+   * Should be called when shutting down the service.
+   */
   public close(): void {
-    for (const client of this.clients) {
-      client.close();
-    }
-    this.clients.clear();
     this.wss.close();
   }
 }

@@ -18,6 +18,7 @@ import { createRuntime } from "@maiar-ai/core";
 import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
 import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
+import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
 // Import all plugins
 import { PluginCharacter } from "@maiar-ai/plugin-character";
 import { PluginSearch } from "@maiar-ai/plugin-search";
@@ -38,10 +39,13 @@ const runtime = createRuntime({
   memory: new SQLiteProvider({
     dbPath: path.join(process.cwd(), "data", "conversations.db")
   }),
-  monitor: new WebSocketMonitorProvider({
-    port: 3001,
-    path: "/monitor"
-  }),
+  monitor: [
+    new ConsoleMonitorProvider(),
+    new WebSocketMonitorProvider({
+      port: 3001,
+      path: "/monitor"
+    })
+  ],
   plugins: [
     new PluginExpress({
       port: 3002,

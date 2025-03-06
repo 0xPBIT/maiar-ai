@@ -1,5 +1,11 @@
 import { AgentContext } from "@maiar-ai/core";
+import { ExecutorImplementation, Trigger } from "@maiar-ai/core";
+import { XService } from "./services";
+import { Runtime } from "@maiar-ai/core";
 
+/**
+ * Configuration for the X plugin
+ */
 export interface XPluginConfig {
   // OAuth2 Authentication
   client_id: string;
@@ -10,7 +16,60 @@ export interface XPluginConfig {
   // Optional configuration
   mentionsCheckIntervalMins?: number;
   loginRetries?: number;
+
+  // Auto posting configuration
+  intervalMinutes?: number;
+  intervalRandomizationMinutes?: number;
+  postTemplate?: string;
+
+  // Custom executors and triggers
+  // Can be either plain implementations or factory functions that will receive XService
+  customExecutors?: (ExecutorImplementation | XExecutorFactory)[];
+  customTriggers?: (Trigger | XTriggerFactory)[];
 }
+
+/**
+ * Configuration for triggers
+ */
+export interface TriggerConfig {
+  followersCheckInterval?: number;
+  mentionsCheckInterval?: number;
+
+  /**
+   * Base interval in minutes between posts (default: 360 minutes / 6 hours)
+   */
+  intervalMinutes?: number;
+
+  /**
+   * Random additional minutes to add to the interval (default: 180 minutes / 3 hours)
+   * This makes the posting pattern appear more natural
+   */
+  intervalRandomizationMinutes?: number;
+
+  /**
+   * Custom post template to use instead of the default
+   */
+  postTemplate?: string;
+}
+
+/**
+ * Function that receives XService and returns an ExecutorImplementation
+ * This allows for dependency injection of the XService
+ */
+export type XExecutorFactory = (
+  service: XService,
+  runtime: Runtime
+) => ExecutorImplementation;
+
+/**
+ * Function that receives XService and config and returns a Trigger
+ * This allows for dependency injection of the XService
+ */
+export type XTriggerFactory = (
+  service: XService,
+  runtime: Runtime,
+  config?: TriggerConfig
+) => Trigger;
 
 // Type for the stored OAuth token
 export interface XOAuthToken {

@@ -4,6 +4,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "maiar-x-login": "./dist/scripts/auth-flow.js"
+  },
   "files": [
     "dist"
   ],
@@ -39,17 +42,18 @@
     "url": "https://github.com/UraniumCorporation/maiar-ai/issues"
   },
   "scripts": {
-    "dev": "tsup --config ../../tsup.config.base.ts --watch",
+    "dev": "tsup --config ./tsup.config.ts --watch",
     "lint": "tsc --project tsconfig.json",
     "lint:emit": "tsc --project tsconfig.json --noEmit false",
-    "build": "tsup --config ../../tsup.config.base.ts",
+    "build": "tsup --config ./tsup.config.ts",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@maiar-ai/core": "workspace:*",
-    "agent-twitter-client": "0.0.18",
-    "zod": "3.24.1"
+    "zod": "3.24.1",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "22.13.1",

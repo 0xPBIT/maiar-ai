@@ -85,23 +85,6 @@ export class MonitorService {
   }
 
   /**
-   * Logs an event to all registered monitor providers.
-   * @deprecated Use publishEvent instead
-   *
-   * @param event - Event details to log
-   * @returns Promise that resolves when all providers have logged the event (or failed)
-   */
-  async logEvent(event: {
-    type: string;
-    message: string;
-    timestamp?: number;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
-    // Forward to publishEvent for backward compatibility
-    return this.publishEvent(event);
-  }
-
-  /**
    * Checks the health of all registered monitor providers.
    *
    * @returns Promise that resolves when all health checks complete (or fail)

@@ -95,21 +95,6 @@ export class WebSocketMonitorProvider implements MonitorProvider {
   }
 
   /**
-   * Logs an event to all connected WebSocket clients.
-   * @deprecated Use publishEvent instead
-   * @param event - Event details to log
-   */
-  async logEvent(event: {
-    type: string;
-    message: string;
-    timestamp: number;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
-    // Forward to publishEvent for backward compatibility
-    return this.publishEvent(event);
-  }
-
-  /**
    * Checks the health of the WebSocket monitor.
    * Verifies that the WebSocket server is running.
    */

@@ -69,26 +69,6 @@ export interface MonitorProvider {
   }): Promise<void>;
 
   /**
-   * Log a specific event in the monitoring system.
-   * @deprecated Use publishEvent instead
-   *
-   * @param event Event details including type, message, and metadata
-   */
-  logEvent(event: {
-    /** Category or type of event */
-    type: string;
-
-    /** Human-readable message describing the event */
-    message: string;
-
-    /** When the event occurred */
-    timestamp: number;
-
-    /** Optional additional data about the event */
-    metadata?: Record<string, unknown>;
-  }): Promise<void>;
-
-  /**
    * Check the health of the monitoring system.
    * Used to verify the monitor is operational.
    * Should resolve successfully if healthy, or throw an error if not.

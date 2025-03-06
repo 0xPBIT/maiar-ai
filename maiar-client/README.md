@@ -129,6 +129,61 @@ This feature is particularly useful when:
 - Switching between different agent instances
 - Working in development environments with varying port configurations
 
+### Chat API Configuration
+
+The chat panel connects to a default endpoint of `http://localhost:3002/message`. This endpoint can be configured in the same way as the WebSocket connection.
+
+To enable chat functionality in your Maiar agent, you need to add the Express plugin to your agent configuration:
+
+```typescript
+import { createRuntime } from "@maiar-ai/core";
+import { ExpressPlugin } from "@maiar-ai/plugin-express";
+import { Router } from "express";
+
+// Create a router with the required /message endpoint
+const router = Router();
+
+// Add the message route the chat component expects
+router.post("/message", async (req, res) => {
+  // Extract message and user from request body
+  const { message, user } = req.body;
+
+  // Process the message and send a response
+  // You can check how this is done in the maiar-starter repository
+  // ...
+});
+
+const runtime = createRuntime({
+  // ...other configurations
+  plugins: [
+    new ExpressPlugin({
+      port: 3002, // Default port for chat API
+      router // Pass your router with the /message endpoint
+    })
+    // ...other plugins
+  ]
+});
+```
+
+For a complete implementation example, refer to the [maiar-starter](https://github.com/maiar-ai/maiar/tree/main/maiar-starter) repository, which shows how to properly set up the Express plugin with the required message endpoint.
+
+#### Changing the Chat API URL from the UI
+
+You can change the Chat API URL directly from the client interface:
+
+1. Click on the settings (gear) icon in the chat panel
+2. Enter your custom Chat API URL in the provided field
+3. Click "Apply" to use the new endpoint
+4. Use "Reset URL" to revert to the default Chat API URL (`http://localhost:3002/message`)
+
+This allows you to:
+
+- Connect to different chat backends
+- Test with different agent configurations
+- Switch between development and production environments
+
+Both the WebSocket and Chat API default endpoints are centrally configured in the application.
+
 ### Dashboard Components
 
 The dashboard includes the following components:

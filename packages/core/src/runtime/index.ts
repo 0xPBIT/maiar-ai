@@ -94,7 +94,6 @@ export class Runtime {
   private memoryService: MemoryService;
   private monitorService: MonitorService;
   private currentContext: AgentContext | undefined;
-  private contextObservers: Set<(context: AgentContext) => void> = new Set();
 
   /**
    * Operations that can be used by plugins
@@ -123,6 +122,13 @@ export class Runtime {
    */
   public get memory(): MemoryService {
     return this.memoryService;
+  }
+
+  /**
+   * Access to the monitor service for plugins
+   */
+  public get monitor(): MonitorService {
+    return this.monitorService;
   }
 
   /**

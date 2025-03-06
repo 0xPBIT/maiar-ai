@@ -18,10 +18,6 @@ interface XPluginConfig {
   client_secret?: string; // Only required for confidential clients
   callback_url: string;
   bearer_token?: string; // For app-only authentication
-
-  // Optional configuration
-  mentionsCheckIntervalMins?: number;
-  loginRetries?: number;
 }
 ```
 
@@ -29,22 +25,15 @@ interface XPluginConfig {
 
 - `client_id`: Your X API OAuth 2.0 client ID (from X Developer Portal)
 - `callback_url`: Your OAuth callback URL (e.g., http://localhost:3000/callback)
+- `client_secret`: Your X API client secret (required for confidential clients)
 
 > **Important**: The plugin now strictly requires these configuration parameters to be present. If they are missing, the plugin will throw an error and halt application execution. Make sure to properly configure these values before using the plugin.
-
-### Optional Configuration
-
-- `client_secret`: Your X API client secret (required for confidential clients)
-- `bearer_token`: Bearer token for app-only authentication (alternative to OAuth 2.0)
-- `mentionsCheckIntervalMins`: How often to check for new mentions in minutes (default: 5)
-- `loginRetries`: Number of login retry attempts if initial login fails (default: 3)
 
 ## Plugin Information
 
 ### Actions
 
 - `post_tweet`: Post a new tweet (not a reply). Used when you want to post a new tweet that is not in response to another tweet.
-- `send_tweet`: Send a tweet as a reply to a specific tweet. This action requires a tweet ID from the context and is primarily used when processing mention events.
 
 ### Triggers
 
@@ -70,13 +59,7 @@ This plugin provides an interactive authentication flow to connect with the X AP
 
 ### Setup
 
-1. Copy the example environment file and fill in your details:
-
-```bash
-cp .env.example .env
-```
-
-Then edit the `.env` file with your X API credentials from the developer portal.
+Edit your `.env` file with your X API credentials from the developer portal.
 
 ### Authentication Process
 
@@ -96,7 +79,7 @@ If authentication fails at any point:
 You can also manually trigger authentication at any time:
 
 ```bash
-pnpm --filter @maiar-ai/plugin-x x-login
+pnpm maiar-x-login
 ```
 
 This allows you to update the token if needed or redo the authentication with different credentials.
@@ -115,28 +98,10 @@ Authentication tokens are stored securely in the `./data/maiar-plugin-x-x-oauth-
 
 ### Troubleshooting
 
-- **Application stops with "Missing required configuration" error**: The plugin now strictly requires the `client_id` and `callback_url` parameters. Make sure to set these in your configuration or environment variables before starting the application.
-- **"Connection refused" error in browser**: This is normal for localhost URLs. Simply copy the entire URL from your browser's address bar when prompted.
+- **Application stops with "Missing required configuration" error**: The plugin now strictly requires the `client_id`, `client_secret`, and `callback_url` parameters. Make sure to set these in your configuration or environment variables before starting the application.
 - **Authentication failed**: Make sure your callback URL exactly matches what's configured in your X Developer Portal.
 - **Code expired**: Authorization codes expire quickly. Complete the process within a few minutes.
 
 ## Posting to X
 
-After authenticating, you can use the service to post tweets, including media uploads.
-
-### Running The Example Scripts
-
-All example scripts are compiled with tsup before execution:
-
-```bash
-# Generate an auth URL
-pnpm generate-auth-url
-
-# Exchange a code for a token
-pnpm exchange-code YOUR_CODE
-
-# Full interactive authentication flow
-pnpm x-login
-```
-
-For more details, see the examples in the `src/examples` directory.
+After authenticating, you can use the service to post tweets.

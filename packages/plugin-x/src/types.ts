@@ -2,7 +2,7 @@ import { AgentContext } from "@maiar-ai/core";
 import { ExecutorImplementation, Trigger } from "@maiar-ai/core";
 import { XService } from "./services";
 import { Runtime } from "@maiar-ai/core";
-
+import { z } from "zod";
 /**
  * Configuration for the X plugin
  */
@@ -17,11 +17,6 @@ export interface XPluginConfig {
   mentionsCheckIntervalMins?: number;
   loginRetries?: number;
 
-  // Auto posting configuration
-  intervalMinutes?: number;
-  intervalRandomizationMinutes?: number;
-  postTemplate?: string;
-
   // Custom executors and triggers
   // Can be either plain implementations or factory functions that will receive XService
   customExecutors?: (ExecutorImplementation | XExecutorFactory)[];
@@ -34,17 +29,6 @@ export interface XPluginConfig {
 export interface TriggerConfig {
   followersCheckInterval?: number;
   mentionsCheckInterval?: number;
-
-  /**
-   * Base interval in minutes between posts (default: 360 minutes / 6 hours)
-   */
-  intervalMinutes?: number;
-
-  /**
-   * Random additional minutes to add to the interval (default: 180 minutes / 3 hours)
-   * This makes the posting pattern appear more natural
-   */
-  intervalRandomizationMinutes?: number;
 
   /**
    * Custom post template to use instead of the default
@@ -105,3 +89,7 @@ export interface MediaUploadOptions {
   media_category: "TWEET_IMAGE" | "TWEET_GIF" | "amplify_video" | "tweet_video";
   additional_owners?: string[];
 }
+
+export const PostTweetSchema = z.object({
+  tweetText: z.string().describe("The tweet text to be posted")
+});

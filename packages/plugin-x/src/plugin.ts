@@ -15,9 +15,6 @@ import { runAuthFlow } from "./scripts/auth-flow";
 import * as path from "path";
 import { createAllCustomExecutors } from "./executors";
 import { createAllCustomTriggers } from "./triggers";
-import { createLogger } from "@maiar-ai/core";
-
-const log = createLogger("plugin-x");
 
 export class PluginX extends PluginBase {
   private xService: XService;
@@ -57,7 +54,10 @@ export class PluginX extends PluginBase {
     await super.init(runtime);
 
     // This log confirms that we're being initialized with a valid runtime
-    log.info("Initializing X plugin with runtime");
+    runtime.monitor.publishEvent({
+      type: "plugin-x",
+      message: "plugin x initalizing..."
+    });
 
     // Validate required configuration
     if (!this.config.client_id || !this.config.callback_url) {
@@ -89,42 +89,65 @@ export class PluginX extends PluginBase {
     }
 
     if (!this.isAuthenticated) {
-      console.log("\n🔐 X API Authentication Required");
-      console.log("===============================\n");
-      console.log(
-        "No valid authentication token found. Starting authentication flow...\n"
-      );
+      this.runtime.monitor.publishEvent({
+        type: "plugin-x",
+        message: "🔐 X API Authentication Required"
+      });
+      this.runtime.monitor.publishEvent({
+        type: "plugin-x",
+        message:
+          "No valid authentication token found. Starting authentication flow..."
+      });
 
       // Automatically run the authentication flow
-      console.log("You can also manually run authentication at any time with:");
-      console.log("pnpm --filter @maiar-ai/plugin-x x-login\n");
+      this.runtime.monitor.publishEvent({
+        type: "plugin-x",
+        message:
+          "You can also manually run authentication at any time with: pnpm maiar-x-login"
+      });
 
       try {
         // Run the auth flow with plugin config
         const success = await this.runAuthentication();
 
         if (success) {
-          console.log("✅ X Plugin authenticated successfully");
+          this.runtime.monitor.publishEvent({
+            type: "plugin-x",
+            message: "Plugin X authenticated successfully"
+          });
         } else {
           console.error(
             "❌ X Plugin authentication failed. Plugin functionality will be limited."
           );
+          this.runtime.monitor.publishEvent({
+            type: "plugin-x",
+            message: "❌ X Plugin authentication failed."
+          });
         }
       } catch (error) {
         console.error("❌ X Plugin authentication error:", error);
-        console.error(
-          "X Plugin functionality will be limited. You can attempt manual authentication with:"
-        );
-        console.error("pnpm --filter @maiar-ai/plugin-x x-login\n");
+        console.error("You can attempt manual authentication with:");
+        console.error("pnpm maiar-x-login\n");
+        this.runtime.monitor.publishEvent({
+          type: "plugin-x",
+          message: `❌ Plugin X authentication error: ${error}. You can attempt manual authentication with: pnpm maiar-x-login`
+        });
+        throw error;
       }
     } else {
-      console.log("✅ X Plugin authenticated successfully");
+      this.runtime.monitor.publishEvent({
+        type: "plugin-x",
+        message: "Plugin X authenticated successfully"
+      });
     }
 
     // Register executors and triggers now that we have a runtime
     this.registerExecutorsAndTriggers();
 
-    log.info("X plugin initialization complete");
+    runtime.monitor.publishEvent({
+      type: "plugin-x",
+      message: "Plugin X initialized."
+    });
   }
 
   /**
@@ -132,7 +155,10 @@ export class PluginX extends PluginBase {
    * This is separated from init for clarity and is only called after runtime is available
    */
   private registerExecutorsAndTriggers(): void {
-    log.info("Registering X plugin executors and triggers");
+    this.runtime.monitor.publishEvent({
+      type: "plugin-x",
+      message: "Registering X plugin executors and triggers"
+    });
 
     // Register executors
     if (this.config.customExecutors) {
@@ -172,12 +198,7 @@ export class PluginX extends PluginBase {
       for (const triggerOrFactory of customTriggers) {
         if (typeof triggerOrFactory === "function") {
           // It's a factory function, call it with xService and runtime
-          const triggerConfig: TriggerConfig = {
-            intervalMinutes: this.config.intervalMinutes,
-            intervalRandomizationMinutes:
-              this.config.intervalRandomizationMinutes,
-            postTemplate: this.config.postTemplate
-          };
+          const triggerConfig: TriggerConfig = {};
           this.addTrigger(
             triggerOrFactory(this.xService, this.runtime, triggerConfig)
           );
@@ -188,11 +209,7 @@ export class PluginX extends PluginBase {
       }
     } else {
       // Register all default custom triggers with xService injected
-      const triggerConfig: TriggerConfig = {
-        intervalMinutes: this.config.intervalMinutes,
-        intervalRandomizationMinutes: this.config.intervalRandomizationMinutes,
-        postTemplate: this.config.postTemplate
-      };
+      const triggerConfig: TriggerConfig = {};
       for (const trigger of createAllCustomTriggers(
         this.xService,
         this.runtime,
@@ -202,9 +219,10 @@ export class PluginX extends PluginBase {
       }
     }
 
-    log.info(
-      `Registered ${this.executors.length} executors and ${this.triggers.length} triggers`
-    );
+    this.runtime.monitor.publishEvent({
+      type: "plugin-x",
+      message: `Registered ${this.executors.length} executors and ${this.triggers.length} triggers`
+    });
   }
 
   /**

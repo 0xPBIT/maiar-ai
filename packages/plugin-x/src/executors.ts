@@ -5,8 +5,7 @@ import {
   Runtime
 } from "@maiar-ai/core";
 import { XService } from "./services";
-import { TweetOptions, XExecutorFactory } from "./types";
-import { z } from "zod";
+import { PostTweetSchema, TweetOptions, XExecutorFactory } from "./types";
 import { generateTweetTemplate } from "./templates";
 
 /**
@@ -49,10 +48,6 @@ export const createPostExecutor = createXExecutor(
       description: "Post a tweet on X (Twitter)",
       execute: async (context: AgentContext): Promise<PluginResult> => {
         try {
-          const PostTweetSchema = z.object({
-            tweetText: z.string().describe("The tweet text to be posted")
-          });
-
           const tweetTemplate = generateTweetTemplate(context.contextChain);
           const params = await runtime.operations.getObject(
             PostTweetSchema,
@@ -60,10 +55,6 @@ export const createPostExecutor = createXExecutor(
           );
 
           const message = params.tweetText;
-
-          // You could use runtime here to access model capabilities if needed
-          // For example: runtime.operations.getText("Enhance this tweet: " + message)
-
           // Post the tweet
           const options: TweetOptions = {
             text: message

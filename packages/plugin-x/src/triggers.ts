@@ -26,9 +26,9 @@ export function createXTrigger(factory: XTriggerFactory): XTriggerFactory {
  */
 export const periodicPostTrigger = createXTrigger(
   (xService: XService, runtime: Runtime, config?: TriggerConfig): Trigger => {
-    // Default to posting every 6 hours with 3 hours of randomization
-    const baseIntervalMinutes = config?.intervalMinutes || 360; // 6 hours
-    const randomizationMinutes = config?.intervalRandomizationMinutes || 180; // 3 hours
+    // Hardcoded values for posting every 6 hours with 3 hours of randomization
+    const baseIntervalMinutes = 360; // 6 hours
+    const randomizationMinutes = 180; // 3 hours
 
     // Use custom template if provided, otherwise use default
     const postTemplate = config?.postTemplate || xPostTemplate;
@@ -37,7 +37,7 @@ export const periodicPostTrigger = createXTrigger(
       id: "x_periodic_post",
       start: (): void => {
         log.info(
-          `Starting X periodic post trigger (base interval: ${baseIntervalMinutes} mins, randomization: ${randomizationMinutes} mins)`
+          `Starting X periodic post trigger (interval: ${baseIntervalMinutes} mins, randomization: ${randomizationMinutes} mins)`
         );
         log.info(
           `Using post template: "${postTemplate.substring(0, 50)}..." (truncated)`
@@ -70,80 +70,62 @@ export const periodicPostTrigger = createXTrigger(
               `Context content length: ${initialContext.content.length} chars`
             );
 
-            // Log runtime info to help diagnose any issues
-            log.info(`Runtime status: ${runtime ? "available" : "undefined"}`);
-            if (runtime) {
-              try {
-                const plugins = runtime.getPlugins();
-                log.info(`Runtime has ${plugins.length} plugins registered`);
-                log.info(
-                  `Registered plugins: ${plugins.map((p) => p.id).join(", ")}`
-                );
-              } catch (pluginsError) {
-                log.error(
-                  `Error getting plugins: ${pluginsError instanceof Error ? pluginsError.message : String(pluginsError)}`
-                );
-              }
-            }
-
             // Use the runtime to create a new event
             try {
-              log.info("Calling runtime.createEvent()...");
               await runtime.createEvent(initialContext);
-              log.info("Successfully created X post event");
             } catch (eventError) {
-              log.error(
-                `Failed to create event: ${eventError instanceof Error ? eventError.message : String(eventError)}`
-              );
-              log.error(
-                `Event creation stack trace: ${eventError instanceof Error && eventError.stack ? eventError.stack : "No stack trace available"}`
-              );
+              runtime.monitor.publishEvent({
+                type: "plugin-x",
+                message: `Failed to create event: ${eventError instanceof Error ? eventError.message : String(eventError)}`
+              });
               throw eventError; // Re-throw to be caught by outer try/catch
             }
 
             // Schedule next post
-            log.info(
-              `Scheduling next X post in ${Math.round(randomIntervalMinutes)} minutes (${Math.round((intervalMs / 1000 / 60 / 60) * 10) / 10} hours)`
-            );
+            runtime.monitor.publishEvent({
+              type: "plugin-x",
+              message: `Scheduling next X post in ${Math.round(randomIntervalMinutes)} minutes (${Math.round((intervalMs / 1000 / 60 / 60) * 10) / 10} hours)`
+            });
             setTimeout(scheduleNextPost, intervalMs);
           } catch (error) {
-            log.error(
-              `Error in periodic post scheduling: ${error instanceof Error ? error.message : String(error)}`
-            );
-            log.error(`Error type: ${error?.constructor?.name || "Unknown"}`);
-            log.error(
-              `Error stack trace: ${error instanceof Error && error.stack ? error.stack : "No stack trace available"}`
-            );
+            runtime.monitor.publishEvent({
+              type: "plugin-x",
+              message: `Error in periodic post scheduling: ${error instanceof Error ? error.message : String(error)}`
+            });
 
             // Log internal state details
-            log.info("Checking X Service internal state");
+            runtime.monitor.publishEvent({
+              type: "plugin-x",
+              message: "Checking X Service internal state"
+            });
             try {
-              // We don't directly access private isAuthenticated property
-              // Instead we log what we can about the runtime and service
-              log.info(`Runtime reference exists: ${!!runtime}`);
-              log.info(`XService reference exists: ${!!xService}`);
-
               // Log service health using public methods if available
               try {
                 await xService.checkHealth();
-                log.info("X service health check passed");
+                runtime.monitor.publishEvent({
+                  type: "plugin-x",
+                  message: "X service health check passed"
+                });
               } catch (healthError) {
-                log.error(
-                  `X service health check failed: ${healthError instanceof Error ? healthError.message : String(healthError)}`
-                );
+                runtime.monitor.publishEvent({
+                  type: "plugin-x",
+                  message: `X service health check failed: ${healthError instanceof Error ? healthError.message : String(healthError)}`
+                });
               }
             } catch (authCheckError) {
-              log.error(
-                `Failed to check service state: ${authCheckError instanceof Error ? authCheckError.message : String(authCheckError)}`
-              );
+              runtime.monitor.publishEvent({
+                type: "plugin-x",
+                message: `Failed to check service state: ${authCheckError instanceof Error ? authCheckError.message : String(authCheckError)}`
+              });
             }
 
             // If there's an error, still try to schedule the next post
             // but use a shorter interval (30-60 minutes)
             const recoveryMs = (30 + Math.random() * 30) * 60 * 1000;
-            log.info(
-              `Scheduling recovery attempt in ${Math.round(recoveryMs / 1000 / 60)} minutes`
-            );
+            runtime.monitor.publishEvent({
+              type: "plugin-x",
+              message: `Scheduling recovery attempt in ${Math.round(recoveryMs / 1000 / 60)} minutes`
+            });
             setTimeout(scheduleNextPost, recoveryMs);
           }
         };

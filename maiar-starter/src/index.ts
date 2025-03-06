@@ -80,17 +80,8 @@ const runtime = createRuntime({
       callback_url: process.env.X_CALLBACK_URL as string,
       // You can customize which executors and triggers to use
       // If not specified, all default ones will be used automatically
-
-      // To use specific executors, uncomment and modify:
-
-      customExecutors: [
-        // Just pass the factory functions, XService will be injected automatically
-        createPostExecutor
-      ],
-      customTriggers: [
-        // Same pattern for triggers
-        periodicPostTrigger
-      ]
+      customExecutors: [createPostExecutor],
+      customTriggers: [periodicPostTrigger]
     })
   ]
 });

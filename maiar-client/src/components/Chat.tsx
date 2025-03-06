@@ -7,10 +7,14 @@ import {
   IconButton,
   Stack,
   alpha,
-  Popover
+  Popover,
+  Button
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import SettingsIcon from "@mui/icons-material/Settings";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import { useChatApi } from "../hooks/useChatApi";
+import { DEFAULT_URLS } from "../config";
 
 interface Message {
   content: string;
@@ -30,16 +34,25 @@ export function Chat({ connected }: ChatProps) {
     useState<HTMLButtonElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { url: chatApiUrl, setUrl: setChatApiUrl } = useChatApi();
+  const [urlInput, setUrlInput] = useState(chatApiUrl);
 
   const openSettings = Boolean(settingsAnchorEl);
-  const settingsId = openSettings ? "username-settings-popover" : undefined;
+  const settingsId = openSettings ? "chat-settings-popover" : undefined;
 
   const handleSettingsClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setSettingsAnchorEl(event.currentTarget);
+    setUrlInput(chatApiUrl); // Reset URL input when opening settings
   };
 
   const handleSettingsClose = () => {
     setSettingsAnchorEl(null);
+  };
+
+  const handleResetUrl = () => {
+    const defaultUrl = DEFAULT_URLS.CHAT_API;
+    setChatApiUrl(defaultUrl);
+    setUrlInput(defaultUrl);
   };
 
   const scrollToBottom = () => {
@@ -63,7 +76,7 @@ export function Chat({ connected }: ChatProps) {
     setInput("");
 
     try {
-      const response = await fetch("http://localhost:3002/message", {
+      const response = await fetch(chatApiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -195,16 +208,6 @@ export function Chat({ connected }: ChatProps) {
                 p: 0.5,
                 "&:focus": {
                   outline: "none"
-                },
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  borderRadius: "50%",
-                  boxShadow: "none"
                 }
               }}
             >
@@ -232,19 +235,69 @@ export function Chat({ connected }: ChatProps) {
                 }
               }}
             >
-              <Box sx={{ p: 2, width: 220 }}>
+              <Box sx={{ p: 2, width: 320 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ mb: 2, display: "flex", alignItems: "center" }}
+                >
+                  <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
+                  Chat Settings
+                </Typography>
+
+                {/* Username field */}
                 <TextField
                   fullWidth
                   size="small"
                   label="Username"
                   variant="outlined"
-                  defaultValue={username}
+                  value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  autoFocus
+                  margin="normal"
                 />
+
+                {/* Chat API URL field */}
+                <TextField
+                  fullWidth
+                  label="Chat API URL"
+                  variant="outlined"
+                  size="small"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  margin="normal"
+                  placeholder={DEFAULT_URLS.CHAT_API}
+                />
+
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    justifyContent: "space-between"
+                  }}
+                >
+                  <Button
+                    startIcon={<RefreshIcon />}
+                    size="small"
+                    color="secondary"
+                    onClick={handleResetUrl}
+                  >
+                    Reset URL
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      setChatApiUrl(urlInput);
+                      handleSettingsClose();
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </Box>
               </Box>
             </Popover>
           </Box>
+
           <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField

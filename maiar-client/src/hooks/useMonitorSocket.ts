@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { DEFAULT_URLS, STORAGE_KEYS } from "../config";
 
 // Types from the monitor
 interface AgentState {
@@ -45,16 +46,13 @@ interface MonitorSocketState {
   setUrl: (url: string) => void;
 }
 
-// Storage key for localStorage
-const STORAGE_KEY = "maiar-monitor-websocket-url";
-
 export function useMonitorSocket({
-  url: initialUrl = "ws://localhost:3001/monitor"
+  url: initialUrl = DEFAULT_URLS.MONITOR_WEBSOCKET
 }: UseMonitorSocketOptions = {}) {
   // Try to get the saved URL from localStorage first, fallback to initialUrl
   const getSavedUrl = () => {
     try {
-      const savedUrl = localStorage.getItem(STORAGE_KEY);
+      const savedUrl = localStorage.getItem(STORAGE_KEYS.MONITOR_WEBSOCKET_URL);
       console.log("Initial load - savedUrl from localStorage:", savedUrl);
       return savedUrl || initialUrl;
     } catch (error) {
@@ -81,7 +79,7 @@ export function useMonitorSocket({
 
     // Save to localStorage immediately
     try {
-      localStorage.setItem(STORAGE_KEY, newUrl);
+      localStorage.setItem(STORAGE_KEYS.MONITOR_WEBSOCKET_URL, newUrl);
       console.log("Saved URL to localStorage:", newUrl);
     } catch (error) {
       console.error("Failed to save URL to localStorage:", error);

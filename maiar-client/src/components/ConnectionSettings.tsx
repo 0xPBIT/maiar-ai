@@ -13,6 +13,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import SettingsIcon from "@mui/icons-material/Settings";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
+import { DEFAULT_URLS } from "../config";
 
 interface ConnectionSettingsProps {
   connected: boolean;
@@ -43,8 +44,8 @@ export function ConnectionSettings({
   };
 
   const handleReset = () => {
-    onChangeUrl("ws://localhost:3001/monitor");
-    setUrlInput("ws://localhost:3001/monitor");
+    onChangeUrl(DEFAULT_URLS.MONITOR_WEBSOCKET);
+    setUrlInput(DEFAULT_URLS.MONITOR_WEBSOCKET);
     handleClose();
   };
 
@@ -108,7 +109,7 @@ export function ConnectionSettings({
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             margin="normal"
-            placeholder="ws://localhost:3001/monitor"
+            placeholder={DEFAULT_URLS.MONITOR_WEBSOCKET}
             InputProps={{
               endAdornment: urlInput !== url && (
                 <InputAdornment position="end">

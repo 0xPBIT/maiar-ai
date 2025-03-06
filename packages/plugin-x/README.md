@@ -13,22 +13,29 @@ The X plugin requires the following configuration:
 
 ```typescript
 interface XPluginConfig {
-  username: string; // Your X (Twitter) username
-  password: string; // Your X (Twitter) account password
-  email: string; // Email associated with your X account
-  mentionsCheckIntervalMins?: number; // Optional: Interval to check for mentions (default: 5)
-  loginRetries?: number; // Optional: Number of login retry attempts (default: 3)
+  // OAuth2 Authentication
+  client_id: string;
+  client_secret?: string; // Only required for confidential clients
+  callback_url: string;
+  bearer_token?: string; // For app-only authentication
+
+  // Optional configuration
+  mentionsCheckIntervalMins?: number;
+  loginRetries?: number;
 }
 ```
 
 ### Required Configuration
 
-- `username`: Your X (Twitter) account username
-- `password`: Your X (Twitter) account password
-- `email`: Email address associated with your X account
+- `client_id`: Your X API OAuth 2.0 client ID (from X Developer Portal)
+- `callback_url`: Your OAuth callback URL (e.g., http://localhost:3000/callback)
+
+> **Important**: The plugin now strictly requires these configuration parameters to be present. If they are missing, the plugin will throw an error and halt application execution. Make sure to properly configure these values before using the plugin.
 
 ### Optional Configuration
 
+- `client_secret`: Your X API client secret (required for confidential clients)
+- `bearer_token`: Bearer token for app-only authentication (alternative to OAuth 2.0)
 - `mentionsCheckIntervalMins`: How often to check for new mentions in minutes (default: 5)
 - `loginRetries`: Number of login retry attempts if initial login fails (default: 3)
 
@@ -44,3 +51,92 @@ interface XPluginConfig {
 - `mentions`: Monitors and processes mentions of the configured X account. Automatically checks for new mentions at configured intervals and handles user interactions.
 
 For more detailed examples and advanced usage, visit our [documentation](https://maiar.dev/docs).
+
+# Maiar X Plugin
+
+A plugin for the Maiar AI agent framework to interact with the X (Twitter) API.
+
+## Authentication with X API
+
+This plugin provides an interactive authentication flow to connect with the X API. The process uses OAuth 2.0 to securely authenticate and authorize your application.
+
+### Prerequisites
+
+1. Create a project/app in the [X Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+2. Configure your app with:
+   - OAuth 2.0 authentication
+   - A localhost callback URL (e.g., `http://localhost:3000/callback`)
+   - Read/Write permissions
+
+### Setup
+
+1. Copy the example environment file and fill in your details:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file with your X API credentials from the developer portal.
+
+### Authentication Process
+
+The plugin handles authentication automatically during initialization:
+
+1. When the plugin initializes, it checks for existing stored credentials
+2. If no valid token is found, it **automatically starts** the authentication flow
+3. You'll be guided through the X API authentication process interactively
+4. After authentication is complete, the plugin will continue initialization
+
+If authentication fails at any point:
+
+1. The plugin will throw an error with a detailed message
+2. Your application will halt execution, preventing it from running with invalid credentials
+3. You'll need to restart your application after fixing the configuration or running manual authentication
+
+You can also manually trigger authentication at any time:
+
+```bash
+pnpm --filter @maiar-ai/plugin-x x-login
+```
+
+This allows you to update the token if needed or redo the authentication with different credentials.
+
+The authentication flow will:
+
+1. Generate an authorization URL for you to open in your browser
+2. Guide you through the authentication process with X
+3. Allow you to paste the callback URL after authorization
+4. Exchange the code for an access token and store it securely
+5. Test the connection to ensure everything works
+
+### Token Persistence
+
+Authentication tokens are stored securely in the `./data/maiar-plugin-x-x-oauth-token` file in your project directory. Tokens will be reused between application restarts, and the plugin automatically handles token refreshing when needed.
+
+### Troubleshooting
+
+- **Application stops with "Missing required configuration" error**: The plugin now strictly requires the `client_id` and `callback_url` parameters. Make sure to set these in your configuration or environment variables before starting the application.
+- **"Connection refused" error in browser**: This is normal for localhost URLs. Simply copy the entire URL from your browser's address bar when prompted.
+- **Authentication failed**: Make sure your callback URL exactly matches what's configured in your X Developer Portal.
+- **Code expired**: Authorization codes expire quickly. Complete the process within a few minutes.
+
+## Posting to X
+
+After authenticating, you can use the service to post tweets, including media uploads.
+
+### Running The Example Scripts
+
+All example scripts are compiled with tsup before execution:
+
+```bash
+# Generate an auth URL
+pnpm generate-auth-url
+
+# Exchange a code for a token
+pnpm exchange-code YOUR_CODE
+
+# Full interactive authentication flow
+pnpm x-login
+```
+
+For more details, see the examples in the `src/examples` directory.

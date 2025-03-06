@@ -27,8 +27,10 @@ import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 import { PluginExpress } from "@maiar-ai/plugin-express";
+import { PluginX } from "@maiar-ai/plugin-x";
 
 import { router } from "./express-app";
+
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -68,6 +70,11 @@ const runtime = createRuntime({
     new PluginTerminal({
       user: "ligma",
       agentName: "maiar-starter"
+    }),
+    new PluginX({
+      client_id: process.env.X_CLIENT_ID as string,
+      client_secret: process.env.X_CLIENT_SECRET as string,
+      callback_url: process.env.X_CALLBACK_URL as string
     })
   ]
 });

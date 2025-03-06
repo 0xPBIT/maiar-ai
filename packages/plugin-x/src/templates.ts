@@ -1,6 +1,22 @@
 /* eslint-disable no-useless-escape */
 import { BaseContextItem } from "@maiar-ai/core";
 
+/**
+ * Template used to guide the agent when creating X posts
+ * This template is used by the periodic post trigger
+ */
+export const xPostTemplate = `
+You're going to write a post for X. The post needs to fit in a single tweet.
+
+Talk about whatever you want if it fits your character description and is on topic.
+
+The last function you will call in the pipeline is "post_tweet" where you will post the tweet to X.
+`;
+
+/**
+ * Generates a tweet template based on the context chain
+ * This template is used by the createPostExecutor
+ */
 export function generateTweetTemplate(contextChain: BaseContextItem[]): string {
   return `Generate a response based on the context chain. Your response should be a JSON object with a single "tweetText" field containing your response.
     The response should be related to the original message you received from the user. 

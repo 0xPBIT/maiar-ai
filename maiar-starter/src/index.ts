@@ -27,10 +27,13 @@ import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 import { PluginExpress } from "@maiar-ai/plugin-express";
-import { PluginX } from "@maiar-ai/plugin-x";
+import {
+  createPostExecutor,
+  periodicPostTrigger,
+  PluginX
+} from "@maiar-ai/plugin-x";
 
 import { router } from "./express-app";
-
 
 // Create and start the agent
 const runtime = createRuntime({
@@ -74,7 +77,20 @@ const runtime = createRuntime({
     new PluginX({
       client_id: process.env.X_CLIENT_ID as string,
       client_secret: process.env.X_CLIENT_SECRET as string,
-      callback_url: process.env.X_CALLBACK_URL as string
+      callback_url: process.env.X_CALLBACK_URL as string,
+      // You can customize which executors and triggers to use
+      // If not specified, all default ones will be used automatically
+
+      // To use specific executors, uncomment and modify:
+
+      customExecutors: [
+        // Just pass the factory functions, XService will be injected automatically
+        createPostExecutor
+      ],
+      customTriggers: [
+        // Same pattern for triggers
+        periodicPostTrigger
+      ]
     })
   ]
 });

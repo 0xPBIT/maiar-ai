@@ -108,13 +108,17 @@ Conventional commits will be enforced using [commitlint](https://commitlint.js.o
 - If reporting a bug, include steps to reproduce.
 - If suggesting a feature, explain the use case and potential benefits.
 
+## Bounty Program
+
+To participate, please refer to the [Bounty Program Docs](https://maiar.dev/docs/bounty-program) for comprehensive details on how to earn bounties by contributing to the MAIAR project.
+
 ## Code of Conduct
 
 Be respectful, constructive, and inclusive. Follow the [Code of Conduct](https://github.com/UraniumCorporation/maiar-ai/blob/main/.github/CODE_OF_CONDUCT.md).
 
 ## Need Help?
 
-- Join [Discord](https://discord.gg/maiar)
+- Join [Discord](https://discord.gg/7CAjkpCsED)
 - Create [GitHub issues](https://github.com/UraniumCorporation/maiar-ai/issues)
 
 Talk to us in discussions or open an issue. Happy coding!

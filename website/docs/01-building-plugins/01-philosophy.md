@@ -1,18 +1,18 @@
 ---
 sidebar_position: 1
 title: Philosophy
-description: Learn the philosophy of building plugins for Maiar
+description: Learn the philosophy of building plugins for MAIAR
 ---
 
 # Plugin Philosophy
 
-Maiar is built around the concept of Unix-style pipelines, where data flows through a sequence of operations. This design philosophy enables highly composable and flexible AI agents.
+MAIAR is built around the concept of Unix-style pipelines, where data flows through a sequence of operations. This design philosophy enables highly composable and flexible AI agents.
 
 ## Core Concepts
 
 ### Pipeline Architecture
 
-Just like Unix commands can be chained together with pipes (`|`), Maiar plugins form a pipeline where:
+Just like Unix commands can be chained together with pipes (`|`), MAIAR plugins form a pipeline where:
 
 1. Data flows through a sequence of operations
 2. Each plugin is an independent unit
@@ -21,7 +21,7 @@ Just like Unix commands can be chained together with pipes (`|`), Maiar plugins 
 
 ### Plugin Components
 
-Each plugin in Maiar can have two main types of components:
+Each plugin in MAIAR can have two main types of components:
 
 1. **Triggers** - Event listeners that determine when the agent should act
 
@@ -36,7 +36,7 @@ Each plugin in Maiar can have two main types of components:
 
 ### Context Chain
 
-The context chain is central to Maiar's pipeline architecture:
+The context chain is central to MAIAR's pipeline architecture:
 
 ```
 [Trigger] → [Initial Context] → [Executor 1] → [Executor 2] → [Response]

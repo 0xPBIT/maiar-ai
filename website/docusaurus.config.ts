@@ -53,7 +53,7 @@ const config: Config = {
     announcementBar: {
       id: "hackathon_2025",
       content:
-        '🚀 Join us for the Maiar Hackathon from Feb 21 6:00 AM UTC - Feb 25 5:59AM UTC 2025! Prize Pool is currently at 57 SOL! <a href="https://x.com/maiar_ai/status/1892662148146282962" target="_blank">Learn more</a>',
+        '💰 The Maiar Bounty Program is now live! Check out the <a href="/docs/bounty-program">Bounty Program Docs</a> for details.',
       backgroundColor: "#3D4F27",
       textColor: "#D1FF8C",
       isCloseable: false
@@ -91,6 +91,11 @@ const config: Config = {
           label: "Plugins"
         },
         {
+          to: "/docs/bounty-program",
+          position: "left",
+          label: "Bounty Program"
+        },
+        {
           href: "https://github.com/UraniumCorporation/maiar-ai",
           label: "GitHub",
           position: "right"
@@ -115,6 +120,10 @@ const config: Config = {
             {
               label: "Contributing to Maiar",
               to: "/docs/contributing-guide"
+            },
+            {
+              label: "Bounty Program",
+              to: "/docs/bounty-program"
             },
             {
               label: "API",

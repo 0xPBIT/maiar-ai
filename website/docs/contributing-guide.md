@@ -1,4 +1,4 @@
-# Contributing to Maiar
+# Contributing to MAIAR
 
 ## Prerequisites
 
@@ -62,3 +62,9 @@ This setup ensures that changes to either the core packages or the starter proje
 > **_NOTE_**
 >
 > The `maiar-starter` project serves as a reference implementation demonstrating how to develop against the core Maiar packages. You can apply this same development setup to any project that depends on Maiar packages - simply mirror the dev script configuration and `.build-complete` marker file handling shown in the starter project's package.json. The key focus of this repository is the core packages in `packages/*`, with `maiar-starter` serving as an example consumer.
+
+## MAIAR Bounty Program
+
+The MAIAR Bounty Program is a program that allows you to earn rewards by contributing to the MAIAR project.
+
+To participate, please refer to the [Bounty Program Docs](./bounty-program.md).

@@ -28,6 +28,11 @@ const sidebars: SidebarsConfig = {
       label: "Contributing to Maiar"
     },
     {
+      type: "doc",
+      id: "bounty-program",
+      label: "Bounty Program"
+    },
+    {
       type: "category",
       label: "Building Plugins",
       link: {

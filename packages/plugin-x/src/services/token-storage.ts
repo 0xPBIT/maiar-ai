@@ -12,17 +12,9 @@ export class TokenStorage {
 
   /**
    * Creates a new token storage instance
-   * @param storageKeyPrefix Optional prefix for the storage key
    * @param dataFolder Optional data folder path (defaults to './data')
    */
-  constructor(
-    private storageKeyPrefix?: string,
-    dataFolder: string = "./data"
-  ) {
-    if (storageKeyPrefix) {
-      this.storageKey = `${storageKeyPrefix}-${this.storageKey}`;
-    }
-
+  constructor(dataFolder: string = "./data") {
     // Set the data directory
     this.dataDir = dataFolder;
 

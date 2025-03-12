@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import "dotenv/config"; // Load environment variables from .env file
 import { XService, TokenStorage } from "../services";
 import * as readline from "readline";
@@ -96,7 +98,7 @@ async function runAuthFlow(overrideConfig?: {
     // Initialize token storage in the data directory
     console.log("📦 Initializing token storage...");
     const dataFolder = path.resolve(process.cwd(), "data");
-    const tokenStorage = new TokenStorage("maiar-plugin-x", dataFolder);
+    const tokenStorage = new TokenStorage(dataFolder);
 
     // Create the X service
     const xService = new XService({

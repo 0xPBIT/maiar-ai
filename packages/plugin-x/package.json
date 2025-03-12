@@ -8,7 +8,8 @@
     "maiar-x-login": "./dist/scripts/auth-flow.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "dist/scripts"
   ],
   "exports": {
     ".": {

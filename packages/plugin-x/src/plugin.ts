@@ -30,7 +30,7 @@ export class PluginX extends PluginBase {
 
     // Initialize token storage in the data directory
     const dataFolder = path.resolve(process.cwd(), "data");
-    this.tokenStorage = new TokenStorage("maiar-plugin-x", dataFolder);
+    this.tokenStorage = new TokenStorage(dataFolder);
 
     // Initialize X service
     this.xService = new XService({

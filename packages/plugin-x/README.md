@@ -94,7 +94,7 @@ The authentication flow will:
 
 ### Token Persistence
 
-Authentication tokens are stored securely in the `./data/maiar-plugin-x-x-oauth-token` file in your project directory. Tokens will be reused between application restarts, and the plugin automatically handles token refreshing when needed.
+Authentication tokens are stored securely in the `./data/x-oauth-token` file in your project directory. Tokens will be reused between application restarts, and the plugin automatically handles token refreshing when needed.
 
 ### Troubleshooting
 

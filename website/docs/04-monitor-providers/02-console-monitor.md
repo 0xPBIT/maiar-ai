@@ -39,15 +39,11 @@ Integrating the Console Monitor into your agent is straightforward:
 
 ```typescript
 import { createRuntime } from "@maiar-ai/core";
-import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
 
 const runtime = createRuntime({
-  model: new OpenAIProvider({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o"
-  }),
-  monitors: new ConsoleMonitorProvider()
+  // ... other configuration
+  monitors: [new ConsoleMonitorProvider()]
 });
 
 // Start the agent
@@ -76,77 +72,9 @@ When your agent is running, you'll see events in your terminal:
 [Monitor] Event Metadata: { tokens: 89, duration_ms: 2333 }
 ```
 
-## Advanced Usage
-
-### Combining with Other Monitors
-
-The Console Monitor works well alongside other monitor providers:
-
-```typescript
-import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
-import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
-
-const runtime = createRuntime({
-  // ... other configuration
-  monitors: [
-    new ConsoleMonitorProvider(),
-    new WebSocketMonitorProvider({ port: 3001 })
-  ]
-});
-```
-
-### Filtering Events
-
-While the Console Monitor itself doesn't provide filtering capabilities, you can create a simple wrapper to filter events:
-
-```typescript
-import { MonitorProvider } from "@maiar-ai/core";
-import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
-
-class FilteredConsoleMonitor implements MonitorProvider {
-  readonly id = "filtered-console";
-  readonly name = "Filtered Console Monitor";
-  readonly description = "Console monitor with event filtering";
-
-  private baseMonitor: ConsoleMonitorProvider;
-  private allowedTypes: string[];
-
-  constructor(allowedTypes: string[]) {
-    this.baseMonitor = new ConsoleMonitorProvider();
-    this.allowedTypes = allowedTypes;
-  }
-
-  async init(): Promise<void> {
-    return this.baseMonitor.init();
-  }
-
-  async publishEvent(event: {
-    type: string;
-    message: string;
-    timestamp: number;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
-    // Only publish events of allowed types
-    if (this.allowedTypes.includes(event.type)) {
-      return this.baseMonitor.publishEvent(event);
-    }
-  }
-
-  async checkHealth(): Promise<void> {
-    return this.baseMonitor.checkHealth();
-  }
-}
-
-// Usage
-const runtime = createRuntime({
-  // ... other configuration
-  monitors: new FilteredConsoleMonitor(["model_request", "model_response"])
-});
-```
-
 :::tip Next Steps
 
-- Try the [WebSocket Monitor](./websocket-monitor) for real-time dashboard capabilities
-- Explore the [Maiar Client Dashboard](./maiar-client) for a visual monitoring experience
-- Learn about [creating custom monitors](./custom-monitors) for specialized monitoring needs
+- Explore the [WebSocket Monitor](./websocket-monitor) for real-time dashboard capabilities
+- Try the [Maiar Client Dashboard](./maiar-client) for a ready-made visualization tool
+- Learn about [creating custom monitors](./custom-monitors) for your specific needs
   :::

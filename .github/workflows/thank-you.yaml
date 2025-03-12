@@ -16,7 +16,7 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           npm install -g pnpm
-          pnpm install --save-exact @actions/github@6.0.0
+          pnpm install -w --save-exact @actions/github@6.0.0
 
       - name: 🎉 Thank Contributor
         run: node .github/scripts/thank-you/thank-contributor.js

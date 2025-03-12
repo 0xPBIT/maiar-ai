@@ -137,9 +137,12 @@ This pipeline architecture enables:
 - Clear data flow through the system
 - Easy addition of new capabilities
 
-## Next Steps
+:::tip Next Steps
 
 - Learn about [Executors](./executors) in detail
 - Understand [Triggers](./triggers) and event handling
 - Explore [Core Utilities](../core-utilities/runtime) for implementation details
 - Check out [Model Providers](../model-providers/overview) for LLM integration
+- See [Memory Providers](../memory-providers/overview) for state management
+
+:::

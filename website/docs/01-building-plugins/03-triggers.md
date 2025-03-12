@@ -229,3 +229,12 @@ this.addTrigger({
   }
 });
 ```
+
+:::tip Next Steps
+
+- Learn about [Executors](./executors) for handling events
+- Explore [Core Utilities](../core-utilities/runtime) for implementation details
+- Check out [Model Providers](../model-providers/overview) for LLM integration
+- See [Memory Providers](../memory-providers/overview) for state management
+
+:::

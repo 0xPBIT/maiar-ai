@@ -52,29 +52,36 @@ pnpm init
 2. Install the core MAIAR packages, providers, and some starter plugins:
 
 ```bash
-pnpm add @maiar-ai/core @maiar-ai/model-openai @maiar-ai/memory-sqlite @maiar-ai/plugin-express @maiar-ai/plugin-text dotenv
+pnpm add @maiar-ai/core @maiar-ai/model-openai @maiar-ai/memory-sqlite @maiar-ai/plugin-terminal @maiar-ai/plugin-text dotenv
 ```
 
-3. Create a new file called `index.ts` in your project root:
+3. Create a new directory called `src` in your project root and create a new file called `index.ts` in it:
 
 ```typescript
 import "dotenv/config";
 import { createRuntime } from "@maiar-ai/core";
 import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
-import { PluginExpress } from "@maiar-ai/plugin-express";
+
+import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
+
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
+import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import path from "path";
 
 const runtime = createRuntime({
   model: new OpenAIProvider({
     apiKey: process.env.OPENAI_API_KEY as string,
-    model: "gpt-3.5-turbo"
+    model: "gpt-4o"
   }),
   memory: new SQLiteProvider({
     dbPath: path.join(process.cwd(), "data", "conversations.db")
   }),
-  plugins: [new PluginExpress({ port: 3000 }), new PluginTextGeneration()]
+  monitors: [new ConsoleMonitorProvider()],
+  plugins: [
+    new PluginTextGeneration(),
+    new PluginTerminal({ user: "test", agentName: "maiar-starter" })
+  ]
 });
 
 // Start the runtime
@@ -111,18 +118,16 @@ OPENAI_API_KEY=your_api_key_here
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"
   },
-  "include": ["*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }
 ```
 
-6. Add build and start scripts to your `package.json`:
+6. Add build and start scripts to your `package.json` under the `scripts` section:
 
 ```json
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
-  }
+  "build": "tsc",
+  "start": "node dist/index.js"
 ```
 
 7. Build and start your agent:
@@ -132,15 +137,13 @@ pnpm build
 pnpm start
 ```
 
-8. Test your agent by sending a message:
+8. Test your agent by starting `maiar-chat`:
 
 ```bash
-curl -X POST http://localhost:3000/message \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Hey there!", "user": "test-user"}'
+pnpm maiar-chat
 ```
 
-You should receive a response from your agent explaining its capabilities.
+You should see a terminal prompt to chat with your agent.
 
 ## Getting Started Contributing to Maiar
 

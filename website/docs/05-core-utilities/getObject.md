@@ -221,11 +221,8 @@ async function extractArticleData(runtime: Runtime, text: string) {
 
 ## Next Steps
 
-:::tip Next Steps
-
 - Learn about [createEvent](./createEvent) for event handling
 - Explore [Building Plugins](../building-plugins/philosophy) for using getObject in plugins
 - Check out [Model Providers](../model-providers/overview) for LLM configuration
-- See [Runtime](./runtime) for the complete operations API
+- See [Runtime](./runtime.md) for the complete operations API
 - Read about [Executors](../building-plugins/executors) for practical usage examples
-  :::

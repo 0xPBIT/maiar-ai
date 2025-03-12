@@ -351,8 +351,6 @@ This example demonstrates:
 - Type safety
 - Clear documentation
 
-## Next Steps
-
 :::tip Next Steps
 
 - Learn about [Triggers](./triggers) for handling events
@@ -360,4 +358,5 @@ This example demonstrates:
 - See [Runtime](../core-utilities/runtime) for the complete plugin API
 - Check out [Plugin Philosophy](./philosophy) for architectural overview
 - Read about [Model Providers](../model-providers/overview) for LLM integration
-  :::
+
+:::

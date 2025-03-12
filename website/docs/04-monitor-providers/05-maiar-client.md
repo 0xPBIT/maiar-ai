@@ -28,14 +28,10 @@ First, ensure your agent is configured to use the WebSocket Monitor:
 
 ```typescript
 import { createRuntime } from "@maiar-ai/core";
-import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
 
 const runtime = createRuntime({
-  model: new OpenAIProvider({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o"
-  }),
+  // ... other configuration
   monitors: [
     new WebSocketMonitorProvider({
       port: 3001, // Default port
@@ -184,24 +180,6 @@ The WebSocket Monitor sends several types of messages:
   },
   timestamp: 1679012345678
 }
-```
-
-### Advanced Configuration
-
-The dashboard can be configured with various options:
-
-```bash
-# Set custom WebSocket URL
-npx maiar-client --url ws://your-agent:3001/monitor
-
-# Set a specific polling interval (ms)
-npx maiar-client --polling 2000
-
-# Enable debug mode
-npx maiar-client --debug
-
-# Launch without automatically opening the browser
-npx maiar-client --no-open
 ```
 
 ## Use Cases

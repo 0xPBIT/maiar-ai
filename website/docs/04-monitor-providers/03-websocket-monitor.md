@@ -43,18 +43,16 @@ Integrating the WebSocket Monitor into your agent:
 
 ```typescript
 import { createRuntime } from "@maiar-ai/core";
-import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
 
 const runtime = createRuntime({
-  model: new OpenAIProvider({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o"
-  }),
-  monitors: new WebSocketMonitorProvider({
-    port: 3001,
-    path: "/monitor"
-  })
+  // ... other configuration
+  monitors: [
+    new WebSocketMonitorProvider({
+      port: 3001,
+      path: "/monitor"
+    })
+  ]
 });
 
 // Start the agent

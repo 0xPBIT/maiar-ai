@@ -2,8 +2,6 @@
 
 A React-based monitoring dashboard for Maiar AI agents. This client connects to a running Maiar agent via WebSocket and provides real-time visualization of agent state, context chains, events, and more.
 
-![Maiar Client Dashboard](./.github/screenshots/dashboard.png)
-
 ## Features
 
 - Real-time monitoring of your Maiar agent

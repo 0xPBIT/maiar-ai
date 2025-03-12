@@ -278,14 +278,7 @@ const runtime = createRuntime({
 });
 ````
 
-:::tip Next Steps
-
-- Explore the [API Reference](/api) to learn about available methods and configurations
-- Check out the Plugins Guide to learn how to extend your agent's capabilities
-- Join our [Discord](https://discord.gg/7CAjkpCsED) to get help and share your experiences
-  :::
-
-## Troubleshooting
+:::info Troubleshooting
 
 If you encounter any issues:
 
@@ -295,3 +288,11 @@ If you encounter any issues:
 4. Check the TypeScript compilation output for any errors
 
 For more help, please [open an issue](https://github.com/maiar-ai/maiar/issues) on our GitHub repository.
+
+:::
+
+:::tip Next Steps
+
+- Explore the [API Reference](/api) to learn about available methods and configurations
+- Check out the Plugins Guide to learn how to extend your agent's capabilities
+- Join our [Discord](https://discord.gg/7CAjkpCsED) to get help and share your experiences

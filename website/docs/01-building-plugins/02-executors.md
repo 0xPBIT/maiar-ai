@@ -353,8 +353,11 @@ This example demonstrates:
 
 ## Next Steps
 
+:::tip Next Steps
+
 - Learn about [Triggers](./triggers) for handling events
 - Explore [getObject](../core-utilities/getObject) for data extraction
 - See [Runtime](../core-utilities/runtime) for the complete plugin API
 - Check out [Plugin Philosophy](./philosophy) for architectural overview
 - Read about [Model Providers](../model-providers/overview) for LLM integration
+  :::

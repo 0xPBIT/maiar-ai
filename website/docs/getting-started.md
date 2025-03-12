@@ -69,7 +69,13 @@ pnpm add @maiar-ai/core @maiar-ai/model-openai @maiar-ai/memory-sqlite @maiar-ai
 </TabItem>
 </Tabs>
 
-3. Create a new file called `index.ts` in your project root:
+3. Create a `src` directory and an `index.ts` file within it:
+
+```bash
+mkdir -p src
+```
+
+4. Create the `src/index.ts` file with the following content:
 
 ```typescript
 import "dotenv/config";
@@ -84,7 +90,7 @@ import path from "path";
 // Create and start the agent
 const runtime = createRuntime({
   model: new OpenAIProvider({
-    model: "gpt-4",
+    model: "gpt-4o",
     apiKey: process.env.OPENAI_API_KEY as string
   }),
   memory: new SQLiteProvider({
@@ -115,7 +121,7 @@ process.on("SIGINT", async () => {
 });
 ```
 
-4. Create a `.env` file in your project root:
+5. Create a `.env` file in your project root:
 
 ```bash
 # Required for the OpenAI model provider
@@ -124,7 +130,7 @@ OPENAI_API_KEY=your_api_key_here
 
 Make sure to replace `your_api_key_here` with your actual OpenAI API key. You can get one from [OpenAI's website](https://platform.openai.com/api-keys).
 
-5. Add TypeScript configuration. Create a `tsconfig.json`:
+6. Add TypeScript configuration. Create a `tsconfig.json`:
 
 ```json
 {
@@ -137,21 +143,19 @@ Make sure to replace `your_api_key_here` with your actual OpenAI API key. You ca
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist"
   },
-  "include": ["*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]
 }
 ```
 
-6. Add build and start scripts to your `package.json`:
+7. Add build and start scripts to your `package.json` in the `scripts` section:
 
 ```json
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
-  }
+  "build": "tsc",
+  "start": "node dist/index.js"
 ```
 
-7. Build and start your agent:
+8. Build and start your agent:
 
 <Tabs groupId="package-manager">
   <TabItem value="npm" label="npm">
@@ -174,7 +178,7 @@ pnpm start
   </TabItem>
 </Tabs>
 
-8. Test your agent by using the terminal interface:
+9. Test your agent by using the terminal interface:
 
 ```bash
 npx maiar-chat
@@ -182,20 +186,18 @@ npx maiar-chat
 
 You should now see a terminal prompt where you can interact with your agent directly. Try sending a message like "Hey there!" and the agent will respond.
 
-Note: The terminal interface provides a more interactive way to communicate with your agent compared to HTTP requests. You can have natural conversations and see the agent's responses in real-time.
-
 ## Configuration
 
 The basic configuration above includes:
 
-- OpenAI's GPT-3.5 Turbo as the language model
+- OpenAI's GPT-4o as the language model
 - SQLite-based conversation memory
 - Terminal interface (accessible via CLI)
 - Text generation capabilities
 
 You can customize the configuration by:
 
-- Changing the OpenAI model (e.g., to "gpt-4")
+- Changing the OpenAI model
 - Adding more plugins
 - Adjusting plugin settings
 - Configuring memory storage options
@@ -222,10 +224,6 @@ npm install @maiar-ai/plugin-time
 
 npm install @maiar-ai/plugin-telegram
 
-# Terminal interface
-
-npm install @maiar-ai/plugin-terminal
-
 ````
   </TabItem>
   <TabItem value="yarn" label="yarn">
@@ -241,9 +239,6 @@ yarn add @maiar-ai/plugin-time
 
 # Telegram integration
 yarn add @maiar-ai/plugin-telegram
-
-# Terminal interface
-yarn add @maiar-ai/plugin-terminal
 ````
 
   </TabItem>
@@ -264,10 +259,6 @@ pnpm add @maiar-ai/plugin-time
 
 pnpm add @maiar-ai/plugin-telegram
 
-# Terminal interface
-
-pnpm add @maiar-ai/plugin-terminal
-
 ````
   </TabItem>
 </Tabs>
@@ -275,23 +266,24 @@ pnpm add @maiar-ai/plugin-terminal
 Then add them to your runtime configuration:
 
 ```typescript
-import { PluginTerminal } from "@maiar-ai/plugin-terminal";
+import { PluginWebSocket } from "@maiar-ai/plugin-websocket";
 // ... other imports
 
 const runtime = createRuntime({
   // ... other config
   plugins: [
     new PluginTextGeneration(),
-    new PluginTerminal({ prompt: "maiar> " })
+    new PluginWebSocket({ port: 8080 })
   ]
 });
 ````
 
-## Next Steps
+:::tip Next Steps
 
 - Explore the [API Reference](/api) to learn about available methods and configurations
 - Check out the Plugins Guide to learn how to extend your agent's capabilities
-- Join our [Discord](https://discord.gg/maiar) to get help and share your experiences
+- Join our [Discord](https://discord.gg/7CAjkpCsED) to get help and share your experiences
+  :::
 
 ## Troubleshooting
 

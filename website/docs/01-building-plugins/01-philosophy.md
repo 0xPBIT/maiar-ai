@@ -143,4 +143,3 @@ This pipeline architecture enables:
 - Understand [Triggers](./triggers) and event handling
 - Explore [Core Utilities](../core-utilities/runtime) for implementation details
 - Check out [Model Providers](../model-providers/overview) for LLM integration
-- See [Memory Providers](../memory-providers/overview) for state management

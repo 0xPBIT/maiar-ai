@@ -65,6 +65,21 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Monitor Providers",
+      link: {
+        type: "doc",
+        id: "monitor-providers/index"
+      },
+      items: [
+        "monitor-providers/overview",
+        "monitor-providers/console-monitor",
+        "monitor-providers/websocket-monitor",
+        "monitor-providers/custom-monitors",
+        "monitor-providers/maiar-client"
+      ]
+    },
+    {
+      type: "category",
       label: "Core Utilities",
       link: {
         type: "doc",

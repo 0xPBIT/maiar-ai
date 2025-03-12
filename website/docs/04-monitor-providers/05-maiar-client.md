@@ -43,7 +43,7 @@ const runtime = createRuntime({
 await runtime.start();
 ```
 
-For more detailed configuration options for the WebSocket Monitor, see the [WebSocket Monitor documentation](./websocket-monitor.md#configuration-options).
+For more detailed configuration options for the WebSocket Monitor, see the [WebSocket Monitor documentation](./websocket-monitor#configuration-options).
 
 ### Launching the Dashboard
 
@@ -140,47 +140,6 @@ The Maiar Client Dashboard operates on a WebSocket connection to your agent:
 2. The monitor broadcasts events and state changes as JSON messages
 3. The dashboard client connects to this WebSocket endpoint
 4. Messages are processed, categorized, and visualized in the interface
-
-The communication protocol between the client and agent is the same as described in the [WebSocket Monitor documentation](./websocket-monitor.md#connecting-from-a-client), with additional message types specific to the dashboard interface.
-
-### Message Structure
-
-The WebSocket Monitor sends several types of messages:
-
-```javascript
-// Connection confirmation
-{
-  type: "connection",
-  message: "Connected to Maiar WebSocket Monitor",
-  timestamp: 1679012345678
-}
-
-// Event publication
-{
-  type: "publish_event",
-  data: {
-    type: "model_request", // Event type
-    message: "Sending prompt to model",
-    timestamp: 1679012345678,
-    metadata: {
-      tokens: 156,
-      model: "gpt-4o"
-    }
-  },
-  timestamp: 1679012345678
-}
-
-// Pipeline update
-{
-  type: "pipeline_update",
-  data: {
-    steps: [...],
-    current_step: 2,
-    status: "running"
-  },
-  timestamp: 1679012345678
-}
-```
 
 ## Use Cases
 

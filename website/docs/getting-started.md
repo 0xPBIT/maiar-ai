@@ -123,6 +123,15 @@ process.on("SIGINT", async () => {
 
 5. Create a `.env` file in your project root:
 
+:::info OpenAI API Setup
+Since we're using OpenAI's API for this quickstart, you'll need to:
+
+1. Create an OpenAI account at [platform.openai.com](https://platform.openai.com)
+2. Generate an API key in your account settings
+3. Add funds to your account to use the API
+4. Create a `.env` file with your API key as shown below
+   :::
+
 ```bash
 # Required for the OpenAI model provider
 OPENAI_API_KEY=your_api_key_here

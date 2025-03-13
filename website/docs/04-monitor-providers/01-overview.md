@@ -1,16 +1,16 @@
 ---
 title: Monitor Providers
-description: Learn how to use monitor providers in Maiar
+description: Learn how to use monitor providers in MAIAR
 sidebar_position: 1
 ---
 
-# Monitoring in Maiar
+# Monitoring in MAIAR
 
-Maiar's monitoring system provides a way to observe and track your agent's activities in real-time. Whether you need to debug complex behavior, visualize performance metrics, or integrate with external monitoring solutions, Maiar's monitor providers offer a flexible solution.
+Maiar's monitoring system provides a way to observe and track your agent's activities in real-time. Whether you need to debug complex behavior, visualize performance metrics, or integrate with external monitoring solutions, MAIAR's monitor providers offer a flexible solution.
 
 ## The Monitor Provider System
 
-At its core, a monitor provider in Maiar implements a simple interface that receives events from the runtime:
+At its core, a monitor provider in MAIAR implements a simple interface that receives events from the runtime:
 
 ```typescript
 interface MonitorProvider {
@@ -29,7 +29,7 @@ interface MonitorProvider {
 }
 ```
 
-This interface allows Maiar to:
+This interface allows MAIAR to:
 
 - Support multiple monitoring solutions simultaneously
 - Handle provider failures gracefully
@@ -48,7 +48,7 @@ Monitoring is critical for understanding your agent's behavior, especially as th
 
 ## Using Multiple Monitors
 
-One of the strengths of Maiar's monitoring system is the ability to use multiple providers simultaneously:
+One of the strengths of MAIAR's monitoring system is the ability to use multiple providers simultaneously:
 
 ```typescript
 import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 3
 title: Triggers
-description: Learn about the role of triggers in Maiar
+description: Learn about the role of triggers in MAIAR
 ---
 
 # Triggers

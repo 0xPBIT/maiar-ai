@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # getObject
 
-`getObject` is a powerful utility in Maiar that enables structured data extraction from model text responses using Zod schemas. It's particularly useful when you need to extract specific data structures from natural language or convert unstructured text into typed objects.
+`getObject` is a powerful utility in MAIAR that enables structured data extraction from model text responses using Zod schemas. It's particularly useful when you need to extract specific data structures from natural language or convert unstructured text into typed objects.
 
 ## Basic Usage
 

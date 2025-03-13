@@ -52,7 +52,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "model-providers/index"
       },
-      items: ["model-providers/overview"]
+      items: ["model-providers/overview", "model-providers/capabilities"]
     },
     {
       type: "category",

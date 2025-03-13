@@ -1,10 +1,10 @@
 ---
 title: Model Providers
-description: Learn how to use model providers in Maiar
+description: Learn how to use model providers in MAIAR
 sidebar_position: 1
 ---
 
-# Models in Maiar
+# Models in MAIAR
 
 Maiar's model system provides a simple interface for integrating any model into your agent. The framework comes with providers for popular services like OpenAI and Ollama, but its true power lies in its extensibility.
 
@@ -66,11 +66,26 @@ interface ModelRequestConfig {
 }
 ```
 
-This simplicity is what makes Maiar's model system so flexible. You can:
+This simplicity is what makes MAIAR's model system so flexible. You can:
 
 - Use our maintained providers (OpenAI, Ollama)
 - Create custom providers for other services
 - Wrap existing providers to add functionality
+
+## Understanding Capabilities
+
+A key part of the model provider system is the concept of capabilities. Capabilities define what a model can do, such as text generation, image creation, or embedding generation.
+
+Model providers implement specific capabilities, and plugins can then consume these capabilities, creating a flexible, extensible system. This abstraction allows plugins to work with any model provider that supports the required capabilities.
+
+For a comprehensive understanding of how capabilities work in MAIAR, including:
+
+- How they're defined in models
+- How plugins declare and consume them
+- How the runtime validates and manages them
+- Best practices for implementing capabilities
+
+See the detailed [Capabilities documentation](./02-capabilities.md).
 
 ## Why Custom Providers Matter
 

@@ -1,10 +1,10 @@
 ---
 title: Memory Providers
-description: Learn how to use memory providers in Maiar
+description: Learn how to use memory providers in MAIAR
 sidebar_position: 1
 ---
 
-# Memory in Maiar
+# Memory in MAIAR
 
 Maiar's memory system provides a flexible way to store and retrieve conversation history, contexts, and metadata. We've implemented some simple database providers (SQLite, filesystem) to handle standard operations, but the real power lies in how easy it is to add your own storage solutions.
 
@@ -12,7 +12,7 @@ The provider system is designed to be database-agnostic. Whether you want to use
 
 ## The Memory Provider System
 
-At its core, a memory provider in Maiar handles persistent storage of conversations and their associated data. The interface is comprehensive but straightforward:
+At its core, a memory provider in MAIAR handles persistent storage of conversations and their associated data. The interface is comprehensive but straightforward:
 
 ```typescript
 interface MemoryProvider {

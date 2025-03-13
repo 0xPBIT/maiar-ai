@@ -1,6 +1,6 @@
 ---
 title: Console Monitor
-description: Monitor your Maiar agent through the console
+description: Monitor your MAIAR agent through the console
 sidebar_position: 2
 ---
 

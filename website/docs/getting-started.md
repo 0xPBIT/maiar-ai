@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Getting Started with Maiar
+# Getting Started with MAIAR
 
-Welcome to Maiar! This guide will help you set up and run your own AI agent using the Maiar framework.
+Welcome to MAIAR! This guide will help you set up and run your own AI agent using the MAIAR framework.
 
 ## Prerequisites
 
@@ -49,7 +49,7 @@ pnpm init
 </TabItem>
 </Tabs>
 
-2. Install the core Maiar packages, providers, and some starter plugins:
+2. Install the core MAIAR packages, providers, and some starter plugins:
 
 <Tabs groupId="package-manager">
 <TabItem value="npm" label="npm">

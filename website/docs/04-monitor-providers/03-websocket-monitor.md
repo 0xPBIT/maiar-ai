@@ -1,12 +1,12 @@
 ---
 title: WebSocket Monitor
-description: Monitor your Maiar agent through WebSockets for real-time dashboards
+description: Monitor your MAIAR agent through WebSockets for real-time dashboards
 sidebar_position: 3
 ---
 
 # WebSocket Monitor
 
-The WebSocket Monitor provides real-time monitoring capabilities for your Maiar agent through WebSockets. This is particularly useful for building dashboards, visualizations, or any real-time monitoring interface.
+The WebSocket Monitor provides real-time monitoring capabilities for your MAIAR agent through WebSockets. This is particularly useful for building dashboards, visualizations, or any real-time monitoring interface.
 
 :::tip Ready-Made Dashboard
 Instead of building your own dashboard from scratch, you can use the [Maiar Client Dashboard](./maiar-client) which offers a full-featured monitoring UI built on top of the WebSocket Monitor.

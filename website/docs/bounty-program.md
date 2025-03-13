@@ -1,4 +1,4 @@
-# Maiar Bounty Program Overview
+# MAIAR Bounty Program Overview
 
 ## Introduction
 
@@ -53,7 +53,7 @@ Our **GitHub Action-Based Bounty Program** is designed to **reward contributors 
 
 ## Governance & Discretion
 
-The **Maiar Core Team** has sole discretion over:
+The **MAIAR Core Team** has sole discretion over:
 
 - RFC approvals and bounty assignments
 - Timeline extensions
@@ -61,6 +61,6 @@ The **Maiar Core Team** has sole discretion over:
 
 ## Summary
 
-The **Maiar Bounty Program** is designed to foster **high-quality contributions**, provide **fair rewards**, and maintain **a streamlined development process**. By automating payments and maintaining strict quality control, we ensure a **transparent and efficient** experience for all contributors.
+The **MAIAR Bounty Program** is designed to foster **high-quality contributions**, provide **fair rewards**, and maintain **a streamlined development process**. By automating payments and maintaining strict quality control, we ensure a **transparent and efficient** experience for all contributors.
 
 We look forward to growing the project together with our developer community!

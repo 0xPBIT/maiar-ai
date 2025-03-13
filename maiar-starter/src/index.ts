@@ -16,7 +16,11 @@ import { createRuntime } from "@maiar-ai/core";
 
 // Import providers
 import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
-import { OpenAIProvider } from "@maiar-ai/model-openai";
+import {
+  OpenAIImageGenerationModel,
+  OpenAIProvider,
+  OpenAITextGenerationModel
+} from "@maiar-ai/model-openai";
 import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
 import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
 // Import all plugins
@@ -39,7 +43,10 @@ import { router } from "./express-app";
 const runtime = createRuntime({
   models: [
     new OpenAIProvider({
-      models: ["gpt-4o", "dall-e-3"],
+      models: [
+        OpenAITextGenerationModel.GPT4O,
+        OpenAIImageGenerationModel.DALLE3
+      ],
       apiKey: process.env.OPENAI_API_KEY as string
     })
   ],

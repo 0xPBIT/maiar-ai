@@ -23,15 +23,17 @@ High level rules you must follow:
 3. You will not inject chinese characters, mandarin, or chinese into your thoughts, output operations, generated text, or anything else.
 `;
 
+// Constants for provider information
+const PROVIDER_ID = "deepseek";
+const PROVIDER_NAME = "Deepseek";
+const PROVIDER_DESCRIPTION = "Deepseek models running through Ollama";
+
 export class DeepseekProvider extends ModelProviderBase {
-  readonly id = "deepseek";
-  readonly name = "Deepseek";
-  readonly description = "Deepseek models running through Ollama";
   private baseUrl: string;
   private model: string;
 
   constructor(config: DeepseekConfig) {
-    super("deepseek", "Deepseek", "Deepseek models running through Ollama");
+    super(PROVIDER_ID, PROVIDER_NAME, PROVIDER_DESCRIPTION);
     if (!config.baseUrl) {
       throw new Error("baseUrl is required");
     }

@@ -6,9 +6,24 @@ import { createLogger } from "@maiar-ai/core";
 
 const log = createLogger("model:openai");
 
+export enum OpenAITextGenerationModel {
+  GPT4O = "gpt-4o",
+  GPT4O_MINI = "gpt-4o-mini",
+  GPT35_TURBO = "gpt-3.5-turbo"
+}
+
+export enum OpenAIImageGenerationModel {
+  DALLE2 = "dall-e-2",
+  DALLE3 = "dall-e-3"
+}
+
+export type OpenAIModel =
+  | OpenAITextGenerationModel
+  | OpenAIImageGenerationModel;
+
 export interface OpenAIConfig {
   apiKey: string;
-  models: string[];
+  models: OpenAIModel[];
 }
 
 interface OpenAIModelRequestConfig extends ModelRequestConfig {
@@ -27,22 +42,38 @@ export const imageGenerationSchema = {
   output: z.array(z.string())
 };
 
-const textGenerationModels = ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"];
-const imageGenerationModels = ["dall-e-2", "dall-e-3"];
+// Helper functions to check model types
+const isTextGenerationModel = (
+  model: OpenAIModel
+): model is OpenAITextGenerationModel => {
+  return Object.values(OpenAITextGenerationModel).includes(
+    model as OpenAITextGenerationModel
+  );
+};
+
+const isImageGenerationModel = (
+  model: OpenAIModel
+): model is OpenAIImageGenerationModel => {
+  return Object.values(OpenAIImageGenerationModel).includes(
+    model as OpenAIImageGenerationModel
+  );
+};
+
+// Constants for provider information
+const PROVIDER_ID = "openai";
+const PROVIDER_NAME = "OpenAI";
+const PROVIDER_DESCRIPTION = "OpenAI API models like GPT-4 and GPT-3.5";
 
 export class OpenAIProvider extends ModelProviderBase {
-  readonly id = "openai";
-  readonly name = "OpenAI";
-  readonly description = "OpenAI API models like GPT-4 and GPT-3.5";
   private client: OpenAI;
-  private models: string[];
+  private models: OpenAIModel[];
 
   constructor(config: OpenAIConfig) {
-    super("openai", "OpenAI", "OpenAI API models like GPT-4 and GPT-3.5");
+    super(PROVIDER_ID, PROVIDER_NAME, PROVIDER_DESCRIPTION);
     this.client = new OpenAI({ apiKey: config.apiKey });
     this.models = config.models;
 
-    if (this.models.some((model) => textGenerationModels.includes(model))) {
+    if (this.models.some(isTextGenerationModel)) {
       this.addCapability({
         id: "text-generation",
         name: "Text generation capability",
@@ -53,7 +84,7 @@ export class OpenAIProvider extends ModelProviderBase {
       });
     }
 
-    if (this.models.some((model) => imageGenerationModels.includes(model))) {
+    if (this.models.some(isImageGenerationModel)) {
       this.addCapability({
         id: "image-generation",
         name: "Image generation capability",
@@ -94,10 +125,14 @@ export class OpenAIProvider extends ModelProviderBase {
     config?: ModelRequestConfig
   ): Promise<z.infer<typeof textGenerationSchema.output>> {
     try {
+      const textModel = this.models.find(isTextGenerationModel);
+
+      if (!textModel) {
+        throw new Error("No text generation model configured");
+      }
+
       const completion = await this.client.chat.completions.create({
-        model: this.models.find((model) =>
-          textGenerationModels.includes(model)
-        ) as string,
+        model: textModel,
         messages: [{ role: "user", content: prompt }],
         temperature: config?.temperature ?? 0.7,
         max_tokens: config?.maxTokens,

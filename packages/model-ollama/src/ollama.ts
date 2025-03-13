@@ -16,15 +16,17 @@ export const textGenerationSchema = {
   output: z.string()
 };
 
+// Constants for provider information
+const PROVIDER_ID = "ollama";
+const PROVIDER_NAME = "Ollama";
+const PROVIDER_DESCRIPTION = "Local Ollama models like Llama 2 and Mistral";
+
 export class OllamaProvider extends ModelProviderBase {
-  readonly id = "ollama";
-  readonly name = "Ollama";
-  readonly description = "Local Ollama models like Llama 2 and Mistral";
   private baseUrl: string;
   private model: string;
 
   constructor(config: OllamaConfig) {
-    super("ollama", "Ollama", "Local Ollama models like Llama 2 and Mistral");
+    super(PROVIDER_ID, PROVIDER_NAME, PROVIDER_DESCRIPTION);
     if (!config.baseUrl) {
       throw new Error("baseUrl is required");
     }

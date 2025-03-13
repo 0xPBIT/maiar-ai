@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # createEvent
 
-`createEvent` is a core utility in Maiar that enables plugins to create and queue new events in the runtime. It's particularly important for triggers, which need to initiate new processing pipelines in response to external events.
+`createEvent` is a core utility in MAIAR that enables plugins to create and queue new events in the runtime. It's particularly important for triggers, which need to initiate new processing pipelines in response to external events.
 
 ## Basic Usage
 
@@ -22,7 +22,7 @@ await runtime.createEvent({
 
 ## Understanding Events
 
-Events in Maiar are the starting point of processing pipelines. They consist of:
+Events in MAIAR are the starting point of processing pipelines. They consist of:
 
 1. **Initial Context**: The starting state and trigger information
 2. **Platform Context**: Optional platform-specific data and handlers
@@ -65,7 +65,7 @@ class DiscordPlugin extends PluginBase {
     super({
       id: "plugin-discord",
       name: "Discord",
-      description: "Discord integration for Maiar"
+      description: "Discord integration for MAIAR"
     });
 
     this.addTrigger({
@@ -110,7 +110,7 @@ class SchedulerPlugin extends PluginBase {
     super({
       id: "plugin-scheduler",
       name: "Scheduler",
-      description: "Schedule events in Maiar"
+      description: "Schedule events in MAIAR"
     });
 
     this.addTrigger({
@@ -144,7 +144,7 @@ class WebhookPlugin extends PluginBase {
     super({
       id: "plugin-webhook",
       name: "Webhook",
-      description: "Handle webhook events in Maiar"
+      description: "Handle webhook events in MAIAR"
     });
 
     this.addTrigger({
@@ -217,7 +217,7 @@ export class WebSocketPlugin extends PluginBase {
     super({
       id: "plugin-websocket",
       name: "WebSocket",
-      description: "WebSocket server for Maiar"
+      description: "WebSocket server for MAIAR"
     });
 
     this.wss = new WebSocketServer({ port: config.port });

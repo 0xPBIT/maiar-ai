@@ -1,12 +1,12 @@
 ---
-title: Maiar Client Dashboard
-description: Real-time visualization and control for your Maiar agent
+title: MAIAR Client Dashboard
+description: Real-time visualization and control for your MAIAR agent
 sidebar_position: 5
 ---
 
-# Maiar Client Dashboard
+# MAIAR Client Dashboard
 
-The Maiar Client Dashboard provides a sleek, intuitive interface for real-time monitoring and interaction with your Maiar agent. By connecting to the WebSocket Monitor, it offers unparalleled visibility into your agent's operations, thought processes, and activities.
+The MAIAR Client Dashboard provides a sleek, intuitive interface for real-time monitoring and interaction with your MAIAR agent. By connecting to the WebSocket Monitor, it offers unparalleled visibility into your agent's operations, thought processes, and activities.
 
 :::tip Related Documentation
 This dashboard relies on the [WebSocket Monitor Provider](./websocket-monitor) to function. We recommend reviewing the WebSocket Monitor documentation to understand the underlying communication system.
@@ -16,11 +16,11 @@ This dashboard relies on the [WebSocket Monitor Provider](./websocket-monitor) t
 
 ### Prerequisites
 
-To use the Maiar Client Dashboard, you need:
+To use the MAIAR Client Dashboard, you need:
 
-1. A running Maiar agent with the WebSocket Monitor enabled
+1. A running MAIAR agent with the WebSocket Monitor enabled
 2. A web browser to access the dashboard
-3. Access to the Maiar monorepo (for now, as the client is not yet available as a standalone package)
+3. Access to the MAIAR monorepo (for now, as the client is not yet available as a standalone package)
 
 ### Setting Up the WebSocket Monitor
 
@@ -47,9 +47,9 @@ For more detailed configuration options for the WebSocket Monitor, see the [WebS
 
 ### Launching the Dashboard
 
-To run the Maiar Client Dashboard:
+To run the MAIAR Client Dashboard:
 
-1. Clone the Maiar monorepo if you haven't already:
+1. Clone the MAIAR monorepo if you haven't already:
 
 ```bash
 git clone https://github.com/maiar-ai/maiar.git
@@ -78,7 +78,7 @@ pnpm dev
 
 ## Dashboard Features
 
-The Maiar Client Dashboard is your agent's control center, offering comprehensive monitoring and interaction capabilities:
+The MAIAR Client Dashboard is your agent's control center, offering comprehensive monitoring and interaction capabilities:
 
 ### Agent Status
 
@@ -134,7 +134,7 @@ The live chat interface lets you interact directly with your agent:
 
 ### How It Works
 
-The Maiar Client Dashboard operates on a WebSocket connection to your agent:
+The MAIAR Client Dashboard operates on a WebSocket connection to your agent:
 
 1. Your agent runs with the WebSocket Monitor provider enabled
 2. The monitor broadcasts events and state changes as JSON messages
@@ -159,9 +159,9 @@ The Maiar Client Dashboard operates on a WebSocket connection to your agent:
 
 ## Conclusion
 
-The Maiar Client Dashboard transforms the way you interact with and understand your AI assistant. By providing real-time visibility into your agent's operations, it brings transparency, debuggability, and enhanced control to your Maiar experience.
+The MAIAR Client Dashboard transforms the way you interact with and understand your AI assistant. By providing real-time visibility into your agent's operations, it brings transparency, debuggability, and enhanced control to your MAIAR experience.
 
-Whether you're developing complex plugins, building a production application, or simply curious about how your AI assistant thinks, the client dashboard gives you the insights you need to make the most of Maiar's capabilities.
+Whether you're developing complex plugins, building a production application, or simply curious about how your AI assistant thinks, the client dashboard gives you the insights you need to make the most of MAIAR's capabilities.
 
 :::tip Next Steps
 

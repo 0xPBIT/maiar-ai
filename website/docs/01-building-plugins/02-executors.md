@@ -1,7 +1,7 @@
 ---
 sidebar_position: 2
 title: Executors
-description: Learn about the role of executors in Maiar
+description: Learn about the role of executors in MAIAR
 ---
 
 # Executors

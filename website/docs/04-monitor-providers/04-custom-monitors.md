@@ -1,6 +1,6 @@
 ---
 title: Custom Monitors
-description: Create your own monitor providers for Maiar
+description: Create your own monitor providers for MAIAR
 sidebar_position: 4
 ---
 
@@ -69,7 +69,7 @@ This simple interface is all you need to implement to create a custom monitor.
 
 ## Conclusion
 
-Creating custom monitor providers allows you to integrate your Maiar agent with your existing monitoring infrastructure or build specialized visualization and debugging tools. By starting with these patterns and ideas, you can create robust, efficient monitors tailored to your specific requirements.
+Creating custom monitor providers allows you to integrate your MAIAR agent with your existing monitoring infrastructure or build specialized visualization and debugging tools. By starting with these patterns and ideas, you can create robust, efficient monitors tailored to your specific requirements.
 
 :::tip Next Steps
 

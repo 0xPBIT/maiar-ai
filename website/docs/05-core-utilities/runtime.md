@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Runtime
 
-The Runtime is the core building block of Maiar's plugin system. It manages the execution of plugins, handles the event queue, and provides essential operations for plugins to interact with the model and memory services.
+The Runtime is the core building block of MAIAR's plugin system. It manages the execution of plugins, handles the event queue, and provides essential operations for plugins to interact with the model and memory services.
 
 ## Creating a Runtime
 

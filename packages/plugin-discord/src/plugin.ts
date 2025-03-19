@@ -304,10 +304,18 @@ export class PluginDiscord extends PluginBase {
           message.id
         );
 
-        log.debug("Skipping message processing - agent busy", {
-          content: message.content,
-          author: message.author.username
+        this.runtime.monitor.publishEvent({
+          type: "discord.message.skipped",
+          message: "Skipping message - not intended for agent",
+          metadata: {
+            content: message.content,
+            channelId: message.channelId,
+            messageId: message.id,
+            userId: message.author.id,
+            plugin: this.id
+          }
         });
+
         return;
       }
 
@@ -315,12 +323,16 @@ export class PluginDiscord extends PluginBase {
         `<@${this.config.clientId}>`
       );
 
-      log.info("Processing message", {
-        content: message.content,
-        author: message.author.username,
-        channelId: message.channelId,
-        isMention: isMentioned,
-        isReply: !!message.reference?.messageId
+      this.runtime.monitor.publishEvent({
+        type: "discord.message.processing",
+        message: "Processing message",
+        metadata: {
+          content: message.content,
+          author: message.author.username,
+          channelId: message.channelId,
+          isMention: isMentioned,
+          isReply: !!message.reference?.messageId
+        }
       });
 
       // Get recent conversation history
@@ -331,13 +343,17 @@ export class PluginDiscord extends PluginBase {
           10 // Limit to last 10 messages
         );
 
-      log.info("Retrieved conversation history", {
-        historyCount: recentHistory.length,
-        history: recentHistory.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: new Date(msg.timestamp).toISOString()
-        }))
+      this.runtime.monitor.publishEvent({
+        type: "discord.message.history",
+        message: "Retrieved conversation history",
+        metadata: {
+          historyCount: recentHistory.length,
+          history: recentHistory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp).toISOString()
+          }))
+        }
       });
 
       const intentTemplate = generateMessageIntentTemplate(
@@ -349,31 +365,32 @@ export class PluginDiscord extends PluginBase {
         recentHistory
       );
 
-      log.debug("Generated intent template", { template: intentTemplate });
-
       const intent = await this.runtime.operations.getObject(
         MessageIntentSchema,
         intentTemplate
       );
 
-      log.info("Intent analysis result", {
-        isIntendedForAgent: intent.isIntendedForAgent,
-        reason: intent.reason,
-        message: message.content
+      this.runtime.monitor.publishEvent({
+        type: "discord.message.intent",
+        message: "Intent analysis result",
+        metadata: {
+          isIntendedForAgent: intent.isIntendedForAgent,
+          reason: intent.reason,
+          message: message.content
+        }
       });
 
       if (intent.isIntendedForAgent) {
         // Set processing lock
         this.isProcessing = true;
-        log.info("Message processing started - agent locked", {
-          content: message.content,
-          author: message.author.username
-        });
 
-        log.info("Message intended for agent", {
-          reason: intent.reason,
-          content: message.content,
-          author: message.author.username
+        this.runtime.monitor.publishEvent({
+          type: "discord.message.processing",
+          message: "Message processing started - agent locked",
+          metadata: {
+            content: message.content,
+            author: message.author.username
+          }
         });
 
         // Start typing indicator
@@ -424,21 +441,20 @@ export class PluginDiscord extends PluginBase {
           message.id
         );
 
-        log.debug("Message not intended for agent", {
-          reason: intent.reason,
-          content: message.content,
-          author: message.author.username
-        });
         // Add detailed info logging for skipped messages
-        log.info("Skipping message - not intended for agent", {
-          content: message.content,
-          author: message.author.username,
-          reason: intent.reason,
-          isMention: isMentioned,
-          isReply: !!message.reference?.messageId,
-          hasPrefix: message.content.startsWith(
-            this.config.commandPrefix || "!"
-          )
+        this.runtime.monitor.publishEvent({
+          type: "discord.message.skipped",
+          message: "Skipping message - not intended for agent",
+          metadata: {
+            content: message.content,
+            author: message.author.username,
+            reason: intent.reason,
+            isMention: isMentioned,
+            isReply: !!message.reference?.messageId,
+            hasPrefix: message.content.startsWith(
+              this.config.commandPrefix || "!"
+            )
+          }
         });
       }
     } catch (error) {

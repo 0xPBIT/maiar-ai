@@ -32,10 +32,12 @@ export function Chat({ connected }: ChatProps) {
   const [username, setUsername] = useState("user-name");
   const [settingsAnchorEl, setSettingsAnchorEl] =
     useState<HTMLButtonElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { url: chatApiUrl, setUrl: setChatApiUrl } = useChatApi();
   const [urlInput, setUrlInput] = useState(chatApiUrl);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
+  const prevMessagesLengthRef = useRef<number>(messages.length);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const openSettings = Boolean(settingsAnchorEl);
   const settingsId = openSettings ? "chat-settings-popover" : undefined;
@@ -55,13 +57,37 @@ export function Chat({ connected }: ChatProps) {
     setUrlInput(defaultUrl);
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Handle scroll events to determine if auto-scroll should be enabled
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        chatContainerRef.current;
+      // If user is near the bottom (within 20px), enable auto-scrolling
+      setShouldAutoScroll(scrollHeight - scrollTop - clientHeight < 20);
+    }
   };
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only scroll if there are new messages and we should auto-scroll
+    if (
+      shouldAutoScroll &&
+      messages.length > prevMessagesLengthRef.current &&
+      chatContainerRef.current
+    ) {
+      // Use requestAnimationFrame to ensure the DOM has updated before scrolling
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          // Directly set the scrollTop to the bottom
+          chatContainerRef.current.scrollTop =
+            chatContainerRef.current.scrollHeight;
+        }
+      });
+    }
+
+    // Update the previous length ref
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, shouldAutoScroll]);
 
   const handleSend = async () => {
     if (!input.trim() || !connected) return;
@@ -142,6 +168,7 @@ export function Chat({ connected }: ChatProps) {
           overflow: "auto",
           p: 3
         }}
+        onScroll={handleScroll}
       >
         <Stack spacing={2}>
           {messages.map((message, index) => (

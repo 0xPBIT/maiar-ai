@@ -7,7 +7,7 @@ import {
   TimelineContent,
   TimelineDot
 } from "@mui/lab";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface BaseContextItem {
   id: string;
@@ -30,12 +30,47 @@ export function CurrentContextChain({
   const [lastContextChain, setLastContextChain] = useState<BaseContextItem[]>(
     []
   );
+  const contextChainContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
+  const prevChainLengthRef = useRef<number>(0);
+
+  // Handle scroll events to determine if auto-scroll should be enabled
+  const handleScroll = () => {
+    if (contextChainContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        contextChainContainerRef.current;
+      // If user is near the bottom (within 20px), enable auto-scrolling
+      setShouldAutoScroll(scrollHeight - scrollTop - clientHeight < 20);
+    }
+  };
 
   useEffect(() => {
     if (contextChain && contextChain.length > 0) {
       setLastContextChain(contextChain);
     }
   }, [contextChain]);
+
+  // Auto-scroll to bottom when context chain updates, but only if we should auto-scroll
+  useEffect(() => {
+    // Check if there are new items and if we should auto-scroll
+    if (
+      shouldAutoScroll &&
+      lastContextChain.length > prevChainLengthRef.current &&
+      contextChainContainerRef.current
+    ) {
+      // Use requestAnimationFrame to ensure the DOM has updated before scrolling
+      requestAnimationFrame(() => {
+        if (contextChainContainerRef.current) {
+          // Directly set the scrollTop to the bottom
+          contextChainContainerRef.current.scrollTop =
+            contextChainContainerRef.current.scrollHeight;
+        }
+      });
+    }
+
+    // Update the previous length ref
+    prevChainLengthRef.current = lastContextChain.length;
+  }, [lastContextChain, shouldAutoScroll]);
 
   // Use the last non-empty context chain or current one
   const displayChain =
@@ -78,11 +113,13 @@ export function CurrentContextChain({
       }}
     >
       <Box
+        ref={contextChainContainerRef}
         sx={{
           flex: 1,
           overflow: "auto",
           p: 3
         }}
+        onScroll={handleScroll}
       >
         <Timeline
           sx={{

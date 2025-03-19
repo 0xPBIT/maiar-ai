@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, Stack, alpha } from "@mui/material";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import JsonView from "./JsonView";
 
 interface Event {
@@ -15,6 +15,40 @@ interface EventsProps {
 
 export function Events({ events }: EventsProps) {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
+  const prevEventsLengthRef = useRef<number>(events.length);
+
+  // Handle scroll events to determine if auto-scroll should be enabled
+  const handleScroll = () => {
+    if (eventsContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        eventsContainerRef.current;
+      // If user is near the bottom (within 20px), enable auto-scrolling
+      setShouldAutoScroll(scrollHeight - scrollTop - clientHeight < 20);
+    }
+  };
+
+  // Auto-scroll to bottom when new events arrive, but only if we should auto-scroll
+  useEffect(() => {
+    // Only try to scroll if there are new events and we should auto-scroll
+    if (
+      shouldAutoScroll &&
+      events.length > prevEventsLengthRef.current &&
+      eventsContainerRef.current
+    ) {
+      // Use requestAnimationFrame to ensure the DOM has updated before scrolling
+      requestAnimationFrame(() => {
+        if (eventsContainerRef.current) {
+          // Directly set the scrollTop to the bottom
+          eventsContainerRef.current.scrollTop =
+            eventsContainerRef.current.scrollHeight;
+        }
+      });
+    }
+
+    // Update the previous length ref
+    prevEventsLengthRef.current = events.length;
+  }, [events, shouldAutoScroll]);
 
   const renderEventMetadata = (event: Event) => {
     if (event.type === "pipeline.generation.complete") {
@@ -95,6 +129,7 @@ export function Events({ events }: EventsProps) {
           overflow: "auto",
           p: 3
         }}
+        onScroll={handleScroll}
       >
         <Stack spacing={2}>
           {events.map((event, index) => (

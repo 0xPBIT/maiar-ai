@@ -1,4 +1,4 @@
-# @maiar-ai/plugin-terminal
+# @maiar-ai/plugin-discord
 
 This package is part of the [Maiar](https://maiar.dev) ecosystem, designed to work seamlessly with `@maiar-ai/core`.
 
@@ -9,7 +9,7 @@ https://maiar.dev/docs
 
 ## Important Notice
 
-The Discord plugin is currently in beta and some features may be unstable. We are working hard to iron out the kinks and make it more reliable.
+The Discord plugin is currently in beta and some features may be unstable. We are working hard to iron out any issues and make it more reliable.
 
 Furthermore, this plugin allows text-based commands to invoke the agent to post given simple instructions. This will mean anyone that has the ability to invoke a trigger will be able to invoke the agent to post a message to a channel. We suggest you use this plugin as a reference implementation, or add some sort of authorization and permissions to the plugin itself, or as another plugin using our extensible plugin system.
 

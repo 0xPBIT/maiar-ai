@@ -39,7 +39,8 @@ export class PluginDiscord extends PluginBase {
     super({
       id: "plugin-discord",
       name: "Discord",
-      description: "Handles Discord bot interactions and message processing"
+      description:
+        "Enables agent to send and recieve messages from Discord. Send messages in specific channels and interact using the Discord platform. When asked to send a message, the agent will select the most appropriate channel based on the channel description."
     });
 
     if (!config.token || !config.clientId) {
@@ -59,7 +60,7 @@ export class PluginDiscord extends PluginBase {
     this.addExecutor({
       name: "send_message",
       description:
-        "Send a message to a Discord channel based on channel description",
+        "This executor is used to send a message to a Discord channel. The agent will select the most appropriate channel based on the channel description.",
       execute: async (context: AgentContext): Promise<PluginResult> => {
         try {
           const response = await this.runtime.operations.getObject(
@@ -71,6 +72,15 @@ export class PluginDiscord extends PluginBase {
           const guild = this.config.guildId
             ? await this.client.guilds.fetch(this.config.guildId)
             : this.client.guilds.cache.first();
+
+          this.runtime.monitor.publishEvent({
+            type: "discord.guild.fetch",
+            message: "Fetched guild",
+            metadata: {
+              guildId: guild?.id,
+              guildName: guild?.name
+            }
+          });
 
           if (!guild) {
             return {
@@ -90,6 +100,22 @@ export class PluginDiscord extends PluginBase {
             };
           }
 
+          this.runtime.monitor.publishEvent({
+            type: "discord.message.sending",
+            message: "Text channels fetched",
+            metadata: {
+              size: textChannels.size,
+              channels: Array.from(textChannels.values()).map((channel) => ({
+                id: channel.id,
+                name: channel.name,
+                type: "text",
+                description:
+                  channel.topic ||
+                  `${channel.parent?.name || ""} / ${channel.name}`
+              }))
+            }
+          });
+
           // Convert channels to array for AI selection
           const channelInfo = Array.from(textChannels.values()).map(
             (channel) => ({
@@ -102,7 +128,14 @@ export class PluginDiscord extends PluginBase {
             })
           ) as ChannelInfo[];
 
-          log.info("Channel info", { channelInfo });
+          // Log channel info
+          this.runtime.monitor.publishEvent({
+            type: "discord.channel.info",
+            message: "Channel info fetched",
+            metadata: {
+              channels: channelInfo
+            }
+          });
 
           // Let the AI pick the most appropriate channel
           const channelSelection = await this.runtime.operations.getObject(
@@ -117,6 +150,15 @@ export class PluginDiscord extends PluginBase {
               error: "Selected channel not found"
             };
           }
+
+          this.runtime.monitor.publishEvent({
+            type: "discord.channel.selection",
+            message: "Channel selected",
+            metadata: {
+              channelId: selectedChannel.id,
+              channelName: selectedChannel.name
+            }
+          });
 
           await selectedChannel.send(response.message);
 
@@ -135,6 +177,7 @@ export class PluginDiscord extends PluginBase {
           return {
             success: true,
             data: {
+              helpfulInstruction: `Message sent to Discord channel ${selectedChannel.name} successfully. Attached is some metadata about the message and the channel.`,
               message: response.message,
               channelId: selectedChannel.id,
               channelName: selectedChannel.name

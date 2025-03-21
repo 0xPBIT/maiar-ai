@@ -15,7 +15,7 @@ config({
 import { createRuntime } from "@maiar-ai/core";
 
 // Import providers
-import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
+import { PostgresProvider } from "@maiar-ai/memory-postgres";
 import {
   OpenAIImageGenerationModel,
   OpenAIProvider,
@@ -50,8 +50,8 @@ const runtime = createRuntime({
       apiKey: process.env.OPENAI_API_KEY as string
     })
   ],
-  memory: new SQLiteProvider({
-    dbPath: path.join(process.cwd(), "data", "conversations.db")
+  memory: new PostgresProvider({
+    connectionString: process.env.DATABASE_URL as string
   }),
   monitor: [
     new ConsoleMonitorProvider(),

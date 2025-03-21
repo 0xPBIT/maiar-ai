@@ -47,6 +47,7 @@ const commitlintConfig: UserConfig = {
         "other", // Other changes
         "core", // core package
         "memory-filesystem", // memory-filesystem plugin
+        "memory-postgres", // memory-postgres plugin
         "memory-sqlite", // memory-sqlite plugin
         "model-ollama", // model-ollama plugin
         "model-openai", // model-openai plugin

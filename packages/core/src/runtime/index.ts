@@ -34,8 +34,18 @@ import { formatZodSchema, OperationConfig } from "../operations/base";
 import { MemoryService } from "../memory/service";
 import { MonitorService } from "../monitor/service";
 import { LoggingModelDecorator, ModelRequestConfig } from "../models/base";
+import { ICapabilities } from "../models/types";
 
 const log = createLogger("runtime");
+
+declare module "../models/types" {
+  interface ICapabilities {
+    "text-generation": {
+      input: string;
+      output: string;
+    };
+  }
+}
 
 type ContextItemWithHistory = BaseContextItem & {
   messageHistory: { role: string; content: string; timestamp: number }[];
@@ -150,7 +160,7 @@ export async function getObject<T extends z.ZodType>(
               lastResponse: lastResponse!,
               error: lastError!.message
             });
-      const response = await service.executeCapability<string, string>(
+      const response = await service.executeCapability(
         "text-generation",
         fullPrompt,
         config
@@ -219,18 +229,13 @@ export class Runtime {
       prompt: string,
       config?: OperationConfig
     ) => getObject(this.modelService, schema, prompt, config),
-    executeCapability: <I, O>(
-      capabilityId: string,
-      input: I,
+    executeCapability: <K extends keyof ICapabilities>(
+      capabilityId: K,
+      input: ICapabilities[K]["input"],
       config?: OperationConfig,
       modelId?: string
     ) =>
-      this.modelService.executeCapability<I, O>(
-        capabilityId,
-        input,
-        config,
-        modelId
-      )
+      this.modelService.executeCapability(capabilityId, input, config, modelId)
   };
 
   /**
@@ -1061,12 +1066,12 @@ export class Runtime {
   /**
    * Execute a capability on the model service
    */
-  public async executeCapability<I = unknown, O = unknown>(
-    id: string,
-    input: I,
+  public async executeCapability<K extends keyof ICapabilities>(
+    capabilityId: K,
+    input: ICapabilities[K]["input"],
     config?: ModelRequestConfig
-  ): Promise<O> {
-    return this.modelService.executeCapability<I, O>(id, input, config);
+  ): Promise<ICapabilities[K]["output"]> {
+    return this.modelService.executeCapability(capabilityId, input, config);
   }
 }
 

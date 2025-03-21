@@ -1,6 +1,7 @@
 import { logModelInteraction } from "../utils/logger";
 import { ModelCapability } from "./capabilities";
 import { MonitorService } from "../monitor/service";
+import { ICapabilities } from "./types";
 
 /**
  * Configuration for model requests
@@ -43,11 +44,11 @@ export interface ModelProvider {
   /**
    * Execute a capability
    */
-  executeCapability<I, O>(
-    capabilityId: string,
-    input: I,
+  executeCapability<K extends keyof ICapabilities>(
+    capabilityId: K,
+    input: ICapabilities[K]["input"],
     config?: ModelRequestConfig
-  ): Promise<O>;
+  ): Promise<ICapabilities[K]["output"]>;
 
   /**
    * Initialize the model with any necessary setup
@@ -103,18 +104,20 @@ export abstract class ModelProviderBase implements ModelProvider {
     return this.capabilities.has(capabilityId);
   }
 
-  public async executeCapability<I, O>(
-    capabilityId: string,
-    input: I,
+  public async executeCapability<K extends keyof ICapabilities>(
+    capabilityId: K,
+    input: ICapabilities[K]["input"],
     config?: ModelRequestConfig
-  ): Promise<O> {
-    const capability = this.capabilities.get(capabilityId);
+  ): Promise<ICapabilities[K]["output"]> {
+    const capability = this.capabilities.get(capabilityId as string);
     if (!capability) {
       throw new Error(
         `Capability ${capabilityId} not found on model ${this.id}`
       );
     }
-    return capability.execute(input, config) as Promise<O>;
+    return capability.execute(input, config) as Promise<
+      ICapabilities[K]["output"]
+    >;
   }
 
   public abstract checkHealth(): Promise<void>;

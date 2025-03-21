@@ -1,6 +1,7 @@
 // Export all public APIs
 export * from "./models/service";
 export * from "./models/base";
+export * from "./models/types";
 export * from "./plugin";
 export * from "./runtime";
 export * from "./registry";

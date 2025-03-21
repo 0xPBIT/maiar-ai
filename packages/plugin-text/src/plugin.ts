@@ -7,6 +7,14 @@ import {
 } from "@maiar-ai/core";
 import { generateTextTemplate } from "./templates";
 
+declare module "@maiar-ai/core" {
+  interface ICapabilities {
+    "text-generation": {
+      input: string;
+      output: string;
+    };
+  }
+}
 export class PluginTextGeneration extends PluginBase {
   constructor() {
     super({
@@ -27,7 +35,7 @@ export class PluginTextGeneration extends PluginBase {
           };
         }
 
-        const generated = await this.runtime.executeCapability<string, string>(
+        const generated = await this.runtime.executeCapability(
           "text-generation",
           generateTextTemplate(userInput.rawMessage, context.contextChain),
           {

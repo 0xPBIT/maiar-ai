@@ -1,6 +1,23 @@
 import { PluginBase, AgentContext, PluginResult } from "@maiar-ai/core";
 import { PromptResponseSchema } from "./types";
 import { generatePromptTemplate } from "./templates";
+import { z } from "zod";
+
+export const imageGenerationSchema = {
+  input: z.string(),
+  output: z.array(z.string())
+};
+
+type ImageGenerationCapability = {
+  input: string;
+  output: string[];
+};
+
+declare module "@maiar-ai/core" {
+  export interface ICapabilities {
+    "image-generation": ImageGenerationCapability;
+  }
+}
 
 export class PluginImageGeneration extends PluginBase {
   constructor() {
@@ -30,8 +47,8 @@ export class PluginImageGeneration extends PluginBase {
 
           const prompt = promptResponse.prompt;
 
-          const urls = await this.runtime.executeCapability<string, string[]>(
-            "generate_image",
+          const urls = await this.runtime.executeCapability(
+            "image-generation",
             prompt
           );
 

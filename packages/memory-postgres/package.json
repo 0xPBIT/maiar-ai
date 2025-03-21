@@ -1,0 +1,60 @@
+{
+  "name": "@maiar-ai/memory-postgres",
+  "version": "0.13.0",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "description": "Maiar: A Composable, Plugin-Based AI Agent Framework",
+  "keywords": [
+    "ai",
+    "agent",
+    "framework",
+    "plugin",
+    "postgres",
+    "postgresql"
+  ],
+  "author": "UraniumCorporation <contact@maiar.dev> (https://maiar.dev)",
+  "license": "MIT",
+  "homepage": "https://maiar.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UraniumCorporation/maiar-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UraniumCorporation/maiar-ai/issues"
+  },
+  "scripts": {
+    "dev": "tsup --config ../../tsup.config.base.ts --watch",
+    "lint": "tsc --project tsconfig.json",
+    "lint:emit": "tsc --project tsconfig.json --noEmit false",
+    "build": "tsup --config ../../tsup.config.base.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@maiar-ai/core": "workspace:*",
+    "pg": "^8.11.3",
+    "pg-pool": "^3.6.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.4",
+    "@types/node": "22.13.1",
+    "tsup": "8.3.6",
+    "typescript": "5.7.3"
+  }
+}

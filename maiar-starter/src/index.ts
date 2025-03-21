@@ -15,7 +15,7 @@ config({
 import { createRuntime } from "@maiar-ai/core";
 
 // Import providers
-import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
+import { PostgresProvider } from "@maiar-ai/memory-postgres";
 import {
   OpenAIImageGenerationModel,
   OpenAIProvider,
@@ -31,11 +31,11 @@ import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
 import { PluginExpress } from "@maiar-ai/plugin-express";
-import {
-  createPostExecutor,
-  periodicPostTrigger,
-  PluginX
-} from "@maiar-ai/plugin-x";
+// import {
+//   createPostExecutor,
+//   periodicPostTrigger,
+//   PluginX
+// } from "@maiar-ai/plugin-x";
 import { PluginImageGeneration } from "@maiar-ai/plugin-image";
 import { router } from "./express-app";
 
@@ -50,8 +50,8 @@ const runtime = createRuntime({
       apiKey: process.env.OPENAI_API_KEY as string
     })
   ],
-  memory: new SQLiteProvider({
-    dbPath: path.join(process.cwd(), "data", "conversations.db")
+  memory: new PostgresProvider({
+    connectionString: process.env.DATABASE_URL as string
   }),
   monitor: [
     new ConsoleMonitorProvider(),
@@ -83,16 +83,16 @@ const runtime = createRuntime({
     new PluginTerminal({
       user: "ligma",
       agentName: "maiar-starter"
-    }),
-    new PluginX({
-      client_id: process.env.X_CLIENT_ID as string,
-      client_secret: process.env.X_CLIENT_SECRET as string,
-      callback_url: process.env.X_CALLBACK_URL as string,
-      // You can customize which executors and triggers to use
-      // If not specified, all default ones will be used automatically
-      customExecutors: [createPostExecutor],
-      customTriggers: [periodicPostTrigger]
     })
+    // new PluginX({
+    //   client_id: process.env.X_CLIENT_ID as string,
+    //   client_secret: process.env.X_CLIENT_SECRET as string,
+    //   callback_url: process.env.X_CALLBACK_URL as string,
+    //   // You can customize which executors and triggers to use
+    //   // If not specified, all default ones will be used automatically
+    //   customExecutors: [createPostExecutor],
+    //   customTriggers: [periodicPostTrigger]
+    // })
   ],
   capabilityAliases: [["image-generation", "generate_image"]]
 });

@@ -2,6 +2,7 @@ import { ModelProvider } from "./base";
 import { createLogger } from "../utils/logger";
 import { CapabilityRegistry, ModelCapability } from "./capabilities";
 import { OperationConfig } from "../operations/base";
+import { ICapabilities } from "./types";
 
 const log = createLogger("models");
 
@@ -62,20 +63,22 @@ export class ModelService {
   /**
    * Execute a capability with the given input
    */
-  async executeCapability<I, O>(
-    capabilityId: string,
-    input: I,
+  async executeCapability<K extends keyof ICapabilities>(
+    capabilityId: K,
+    input: ICapabilities[K]["input"],
     config?: OperationConfig,
     modelId?: string
-  ): Promise<O> {
+  ): Promise<ICapabilities[K]["output"]> {
     // Resolve the canonical capability ID
     const resolvedCapabilityId =
-      this.capabilityAliases.get(capabilityId) || capabilityId;
+      this.capabilityAliases.get(capabilityId as string) || capabilityId;
 
     // Get the effective model to use
     const effectiveModelId =
       modelId ||
-      this.registry.getDefaultModelForCapability(resolvedCapabilityId);
+      this.registry.getDefaultModelForCapability(
+        resolvedCapabilityId as string
+      );
 
     if (!effectiveModelId) {
       throw new Error(
@@ -89,7 +92,7 @@ export class ModelService {
     }
 
     // Try to get the capability from the model
-    const capability = model.getCapability<I, O>(resolvedCapabilityId);
+    const capability = model.getCapability(resolvedCapabilityId as string);
     if (!capability) {
       throw new Error(
         `Capability ${resolvedCapabilityId} not found on model ${model.id}`
@@ -104,7 +107,7 @@ export class ModelService {
       );
     }
     const result = await capability.execute(validatedInput.data, config);
-    return capability.output.parse(result);
+    return capability.output.parse(result) as ICapabilities[K]["output"];
   }
 
   /**

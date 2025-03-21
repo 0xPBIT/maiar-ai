@@ -6,6 +6,19 @@ import { createLogger } from "@maiar-ai/core";
 
 const log = createLogger("model:openai");
 
+declare module "@maiar-ai/core" {
+  interface ICapabilities {
+    "text-generation": {
+      input: z.infer<typeof textGenerationSchema.input>;
+      output: z.infer<typeof textGenerationSchema.output>;
+    };
+    "image-generation": {
+      input: z.infer<typeof imageGenerationSchema.input>;
+      output: z.infer<typeof imageGenerationSchema.output>;
+    };
+  }
+}
+
 export enum OpenAITextGenerationModel {
   GPT4O = "gpt-4o",
   GPT4O_MINI = "gpt-4o-mini",
@@ -158,7 +171,7 @@ export class OpenAIProvider extends ModelProviderBase {
   async checkHealth(): Promise<void> {
     // Verifying if we can call the API
     try {
-      const resp = await this.executeCapability<string, string>(
+      const resp = await this.executeCapability(
         "text-generation",
         "are you alive? Please respond 'yes' or 'no' only.",
         {

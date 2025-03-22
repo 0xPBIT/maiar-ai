@@ -18,7 +18,9 @@ import {
   PipelineModificationSchema,
   RuntimeConfig,
   RuntimeOptions,
-  ErrorContextItem
+  ErrorContextItem,
+  ContextItemWithHistory,
+  GetObjectConfig
 } from "./types";
 import {
   generatePipelineTemplate,
@@ -38,18 +40,7 @@ import { ICapabilities } from "../models/types";
 
 const log = createLogger("runtime");
 
-declare module "../models/types" {
-  interface ICapabilities {
-    "text-generation": {
-      input: string;
-      output: string;
-    };
-  }
-}
-
-type ContextItemWithHistory = BaseContextItem & {
-  messageHistory: { role: string; content: string; timestamp: number }[];
-};
+const REQUIRED_CAPABILITIES = ["text-generation"];
 
 export function createRuntime(options: RuntimeOptions): Runtime {
   const modelService = new ModelService();
@@ -114,10 +105,6 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     memoryService,
     monitorService
   });
-}
-
-export interface GetObjectConfig extends OperationConfig {
-  maxRetries?: number;
 }
 
 export async function getObject<T extends z.ZodType>(
@@ -440,8 +427,7 @@ export class Runtime {
     }
 
     // validate required capabilities exist for core runtime operations
-    const requiredCapabilities = ["text-generation"];
-    for (const capability of requiredCapabilities) {
+    for (const capability of REQUIRED_CAPABILITIES) {
       if (!this.modelService.hasCapability(capability)) {
         throw new Error(
           `${capability} capability is required for core runtime operations`

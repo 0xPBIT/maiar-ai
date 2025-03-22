@@ -1,10 +1,11 @@
 import { z } from "zod";
 
 import OpenAI from "openai";
-import { ModelProviderBase, ModelRequestConfig } from "@maiar-ai/core";
-import { createLogger } from "@maiar-ai/core";
-
-const log = createLogger("model:openai");
+import {
+  ModelProviderBase,
+  ModelRequestConfig,
+  MonitorService
+} from "@maiar-ai/core";
 
 export enum OpenAITextGenerationModel {
   GPT4O = "gpt-4o",
@@ -82,6 +83,18 @@ export class OpenAIProvider extends ModelProviderBase {
         output: textGenerationSchema.output,
         execute: this.generateText.bind(this)
       });
+
+      this.monitor.publishEvent({
+        type: "openai.model.capability.registration",
+        message: "capabilty.registration",
+        metadata: {
+          model: this.id,
+          capability: "text-generation",
+          input: textGenerationSchema.input,
+          output: textGenerationSchema.output
+        },
+        timestamp: Date.now()
+      });
     }
 
     if (this.models.some(isImageGenerationModel)) {
@@ -144,9 +157,32 @@ export class OpenAIProvider extends ModelProviderBase {
         throw new Error("No content in response");
       }
 
+      // Log the interaction
+      MonitorService.publishEvent({
+        type: "model_interaction",
+        message: `Model ${this.id} executed capability text-generation`,
+        metadata: {
+          modelId: this.id,
+          capabilityId: "text-generation",
+          input: prompt,
+          output: content
+        },
+        timestamp: Date.now()
+      });
+
       return content;
     } catch (error) {
-      log.error("Error getting text from OpenAI:", error);
+      // Log the error
+      MonitorService.publishEvent({
+        type: "model_error",
+        message: `Error executing capability text-generation on model ${this.id}`,
+        metadata: {
+          modelId: this.id,
+          capabilityId: "text-generation",
+          error: error instanceof Error ? error.message : String(error)
+        },
+        timestamp: Date.now()
+      });
       throw error;
     }
   }
@@ -166,10 +202,25 @@ export class OpenAIProvider extends ModelProviderBase {
           maxTokens: 5
         }
       );
-      log.debug(`checkHealth result: ${resp}`);
-      log.info({ msg: `Model ${this.id} health check passed` });
+      MonitorService.publishEvent({
+        type: "openai.model.health.check",
+        message: "health.check.passed",
+        metadata: {
+          model: this.id,
+          response: resp
+        },
+        timestamp: Date.now()
+      });
     } catch (error) {
-      log.error({ msg: `Model ${this.id} health check failed`, error });
+      MonitorService.publishEvent({
+        type: "openai.model.health.check",
+        message: "health.check.failed",
+        metadata: {
+          model: this.id,
+          error: error instanceof Error ? error.message : String(error)
+        },
+        timestamp: Date.now()
+      });
       throw new Error(
         `Failed to initialize Model ${this.id}: ${error instanceof Error ? error.message : String(error)}`
       );

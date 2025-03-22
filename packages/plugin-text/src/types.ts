@@ -6,9 +6,11 @@ export const TextGenerationSchema = z.object({
 
 export type TextGeneration = z.infer<typeof TextGenerationSchema>;
 
+export const TEXT_GENERATION_CAPABILITY_ID = "text-generation";
+
 declare module "@maiar-ai/core" {
   interface ICapabilities {
-    "text-generation": {
+    [TEXT_GENERATION_CAPABILITY_ID]: {
       input: string;
       output: string;
     };

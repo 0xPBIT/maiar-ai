@@ -100,7 +100,10 @@ const runtime = createRuntime({
       commandPrefix: "!"
     })
   ],
-  capabilityAliases: [["image-generation", "generate_image"]]
+  capabilityAliases: [
+    ["image-generation", "generate_image"],
+    ["text-generation", "text-creation"]
+  ]
 });
 
 // Start the runtime if this file is run directly

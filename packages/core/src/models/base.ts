@@ -1,5 +1,6 @@
 import { logModelInteraction } from "../utils/logger";
 import { ModelCapability } from "./capabilities";
+import { MonitorService } from "../monitor/service";
 
 /**
  * Configuration for model requests
@@ -73,6 +74,13 @@ export abstract class ModelProviderBase implements ModelProvider {
     this.name = name;
     this.description = description;
     this.capabilities = new Map();
+  }
+
+  /**
+   * Get access to the monitor service
+   */
+  protected get monitor() {
+    return MonitorService;
   }
 
   public addCapability(capability: ModelCapability): void {

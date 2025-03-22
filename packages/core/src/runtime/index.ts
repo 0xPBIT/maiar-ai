@@ -44,21 +44,35 @@ type ContextItemWithHistory = BaseContextItem & {
 export function createRuntime(options: RuntimeOptions): Runtime {
   const modelService = new ModelService();
 
+  // Initialize the global monitor service with providers
+  MonitorService.init(options.monitor || []);
+  const monitorService = MonitorService.getInstance();
+
+  const memoryService = new MemoryService(options.memory);
+
+  // Create the runtime instance
+  const runtime = new Runtime({
+    modelService,
+    monitorService,
+    memoryService,
+    plugins: options.plugins
+  });
+
   for (const model of options.models) {
     // Register the model with the model service
     // and wrap it with the logging decorator
     modelService.registerModel(new LoggingModelDecorator(model));
 
     // Initialize model if it has an init method
-    if (model.init) {
+    if ("init" in model && model.init) {
       model
         .init()
         .then(() => {
           log.debug("Model initialized successfully!");
         })
-        .catch((err) => {
-          log.error("Model failed to initialize", err);
-          throw new Error(err.message);
+        .catch((error: Error) => {
+          log.error("Model failed to initialize", error);
+          throw new Error(error.message);
         });
     }
 
@@ -68,9 +82,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       .then(() => {
         log.debug("Model healthcheck passed!");
       })
-      .catch((err) => {
-        log.error("Model healthcheck failed", err);
-        throw new Error(err.message);
+      .catch((error: Error) => {
+        log.error("Model healthcheck failed", error);
+        throw new Error(error.message);
       });
   }
 
@@ -92,18 +106,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     }
   }
 
-  // Initialize memory service with configured memory provider
-  const memoryService = new MemoryService(options.memory);
-
-  // Initialize monitor service if provider is available
-  const monitorService = new MonitorService(options.monitor);
-
-  return new Runtime({
-    plugins: options.plugins,
-    modelService,
-    memoryService,
-    monitorService
-  });
+  return runtime;
 }
 
 export interface GetObjectConfig extends OperationConfig {
@@ -366,15 +369,14 @@ export class Runtime {
     this.monitorService = config.monitorService;
 
     // Initialize monitoring if available
-    if (this.monitorService) {
-      this.monitorService.publishEvent({
-        type: "runtime.init",
-        message: "Runtime initialized",
-        metadata: {
-          plugins: this.plugins.map((p) => p.id)
-        }
-      });
-    }
+    MonitorService.publishEvent({
+      type: "runtime.init",
+      message: "Runtime initialized",
+      metadata: {
+        plugins: this.plugins.map((p) => p.id)
+      },
+      timestamp: Date.now()
+    });
   }
 
   private async validatePluginCapabilities(plugin: Plugin): Promise<void> {
@@ -468,15 +470,14 @@ export class Runtime {
     this.isRunning = true;
 
     // Log start event
-    if (this.monitorService) {
-      await this.monitorService.publishEvent({
-        type: "runtime.start",
-        message: "Runtime started",
-        metadata: {
-          plugins: this.registry.getAllPlugins().map((p) => p.id)
-        }
-      });
-    }
+    MonitorService.publishEvent({
+      type: "runtime.start",
+      message: "Runtime started",
+      metadata: {
+        plugins: this.registry.getAllPlugins().map((p) => p.id)
+      },
+      timestamp: Date.now()
+    });
 
     this.runEvaluationLoop().catch((error) => {
       console.error("Error in evaluation loop:", error);
@@ -495,12 +496,11 @@ export class Runtime {
     this.isRunning = false;
 
     // Log stop event
-    if (this.monitorService) {
-      await this.monitorService.publishEvent({
-        type: "runtime.stop",
-        message: "Runtime stopped"
-      });
-    }
+    MonitorService.publishEvent({
+      type: "runtime.stop",
+      message: "Runtime stopped",
+      timestamp: Date.now()
+    });
   }
 
   /**
@@ -635,6 +635,15 @@ export class Runtime {
             user: userInput?.user
           }
         });
+        // Log the error
+        await MonitorService.publishEvent({
+          type: "runtime_error",
+          message: `Runtime error occurred`,
+          metadata: {
+            error: error instanceof Error ? error.message : String(error)
+          },
+          timestamp: Date.now()
+        });
         throw error;
       } finally {
         // Clear current context after execution
@@ -695,14 +704,15 @@ export class Runtime {
       const template = generatePipelineTemplate(pipelineContext);
 
       // Log pipeline generation start
-      await this.monitorService.publishEvent({
+      MonitorService.publishEvent({
         type: "pipeline.generation.start",
         message: "Starting pipeline generation",
         metadata: {
           platform,
           message,
           template
-        }
+        },
+        timestamp: Date.now()
       });
 
       log.debug({
@@ -725,7 +735,7 @@ export class Runtime {
       log.info("Pipeline steps:", steps);
 
       // Log successful pipeline generation
-      await this.monitorService.publishEvent({
+      MonitorService.publishEvent({
         type: "pipeline.generation.complete",
         message: "Pipeline generation completed successfully",
         metadata: {
@@ -734,7 +744,8 @@ export class Runtime {
           template,
           pipeline,
           steps
-        }
+        },
+        timestamp: Date.now()
       });
 
       log.info({
@@ -744,7 +755,7 @@ export class Runtime {
       return pipeline;
     } catch (error) {
       // Log pipeline generation error
-      await this.monitorService.publishEvent({
+      MonitorService.publishEvent({
         type: "pipeline.generation.error",
         message: "Pipeline generation failed",
         metadata: {
@@ -759,7 +770,8 @@ export class Runtime {
                 }
               : error,
           template: generatePipelineTemplate(pipelineContext)
-        }
+        },
+        timestamp: Date.now()
       });
 
       log.error({
@@ -970,7 +982,7 @@ export class Runtime {
             });
 
             // Emit pipeline modification event
-            await this.monitorService.publishEvent({
+            MonitorService.publishEvent({
               type: "pipeline.modification",
               message: "Pipeline modified during execution",
               metadata: {
@@ -978,7 +990,8 @@ export class Runtime {
                 currentStep,
                 modifiedSteps: modification.modifiedSteps,
                 pipeline: currentPipeline
-              }
+              },
+              timestamp: Date.now()
             });
           }
         } catch (error) {
@@ -1027,21 +1040,19 @@ export class Runtime {
   }
 
   private async updateMonitoringState() {
-    if (this.monitorService) {
-      await this.monitorService.publishEvent({
-        type: "state",
-        message: "Agent state update",
-        timestamp: Date.now(),
-        metadata: {
-          state: {
-            currentContext: this.currentContext,
-            queueLength: this.eventQueue.length,
-            isRunning: this.isRunning,
-            lastUpdate: Date.now()
-          }
+    MonitorService.publishEvent({
+      type: "state",
+      message: "Agent state update",
+      metadata: {
+        state: {
+          currentContext: this.currentContext,
+          queueLength: this.eventQueue.length,
+          isRunning: this.isRunning,
+          lastUpdate: Date.now()
         }
-      });
-    }
+      },
+      timestamp: Date.now()
+    });
   }
 
   /**

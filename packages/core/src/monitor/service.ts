@@ -1,107 +1,74 @@
-import { createLogger } from "../utils/logger";
 import { MonitorProvider } from "./types";
 
+export interface MonitorEvent {
+  type: string;
+  message: string;
+  timestamp?: number;
+  metadata?: Record<string, unknown>;
+}
+
 /**
- * Service for managing monitoring operations.
- *
- * The MonitorService acts as a facade over multiple monitor implementations,
- * allowing the runtime to easily communicate with all registered monitors.
- * It handles the distribution of state updates and event logging to all
- * registered monitor providers.
- *
- * This service is designed to:
- * - Support zero, one, or multiple monitor providers
- * - Handle failures in individual monitors gracefully
- * - Provide consistent logging across all monitoring activities
+ * Global monitor service that can be accessed by any component
  */
 export class MonitorService {
-  private logger = createLogger("monitor");
+  private static instance: MonitorService;
   private providers: MonitorProvider[] = [];
 
+  private constructor() {}
+
   /**
-   * Creates a new MonitorService with the specified providers.
-   *
-   * @param providers - One or more monitor providers to initialize the service with
+   * Get the singleton instance of the monitor service
    */
-  constructor(providers?: MonitorProvider | MonitorProvider[]) {
-    const log = this.logger;
-
-    if (!providers) {
-      log.info({
-        msg: "Initialized monitor service with no providers"
-      });
-      return;
+  public static getInstance(): MonitorService {
+    if (!MonitorService.instance) {
+      MonitorService.instance = new MonitorService();
     }
-
-    if (Array.isArray(providers)) {
-      this.providers = providers;
-      log.info({
-        msg: `Initialized monitor service with ${providers.length} providers: ${providers.map((p) => p.id).join(", ")}`
-      });
-    } else {
-      this.providers = [providers];
-      log.info({
-        msg: `Initialized monitor service with provider: ${providers.id}`
-      });
-    }
+    return MonitorService.instance;
   }
 
   /**
-   * Publishes an event to all registered monitor providers.
-   *
-   * @param event - Event details to publish
-   * @returns Promise that resolves when all providers have published the event (or failed)
+   * Initialize the monitor service with providers
+   * This should be called during runtime creation
    */
-  async publishEvent(event: {
-    type: string;
-    message: string;
-    timestamp?: number;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
-    if (this.providers.length === 0) return;
+  public static init(providers: MonitorProvider[]): void {
+    const instance = MonitorService.getInstance();
+    instance.providers = providers;
+  }
 
+  /**
+   * Publish an event to all registered monitors
+   */
+  public static publishEvent(event: MonitorEvent): void {
+    const instance = MonitorService.getInstance();
     const eventWithTimestamp = {
       ...event,
       timestamp: event.timestamp || Date.now()
     };
 
-    const log = this.logger;
-    log.debug({
-      msg: "MonitorService.publishEvent called",
-      event: eventWithTimestamp
-    });
-
-    // Call publishEvent on all providers
-    await Promise.all(
-      this.providers.map((provider) =>
-        provider.publishEvent(eventWithTimestamp).catch((err) => {
-          log.error({
-            msg: `Error publishing event to provider ${provider.id}`,
-            error: err
-          });
-        })
-      )
-    );
+    for (const provider of instance.providers) {
+      provider.publishEvent(eventWithTimestamp);
+    }
   }
 
   /**
    * Checks the health of all registered monitor providers.
-   *
-   * @returns Promise that resolves when all health checks complete (or fail)
    */
-  async checkHealth(): Promise<void> {
-    if (this.providers.length === 0) return;
-
-    // Check health of all providers
-    await Promise.all(
-      this.providers.map((provider) =>
-        provider.checkHealth().catch((err) => {
-          this.logger.error({
-            msg: `Health check failed for provider ${provider.id}`,
-            error: err
+  public static checkHealth(): Promise<void> {
+    const instance = MonitorService.getInstance();
+    return Promise.all(
+      instance.providers.map((provider) =>
+        provider.checkHealth().catch((error: unknown) => {
+          MonitorService.publishEvent({
+            type: "monitor_health_check_failed",
+            message: `Health check failed for monitor provider ${provider.id}`,
+            metadata: {
+              providerId: provider.id,
+              error: error instanceof Error ? error.message : String(error)
+            },
+            timestamp: Date.now()
           });
         })
       )
-    );
+    ).then(() => {});
   }
 }

@@ -7,6 +7,7 @@ import { ModelService } from "../models/service";
 import { BaseContextItem } from "../types/agent";
 import { MonitorService } from "../monitor/service";
 import { MonitorProvider } from "../monitor/types";
+import { OperationConfig } from "../operations/base";
 /**
  * A step in the execution pipeline
  */
@@ -120,3 +121,11 @@ export const PipelineModificationSchema = z
   .describe("Result of pipeline modification evaluation");
 
 export type PipelineModification = z.infer<typeof PipelineModificationSchema>;
+
+export type ContextItemWithHistory = BaseContextItem & {
+  messageHistory: { role: string; content: string; timestamp: number }[];
+};
+
+export interface GetObjectConfig extends OperationConfig {
+  maxRetries?: number;
+}

@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+export const imageGenerationSchema = {
+  input: z.string(),
+  output: z.array(z.string())
+};
+
+type ImageGenerationCapability = {
+  input: string;
+  output: string[];
+};
+
+declare module "@maiar-ai/core" {
+  export interface ICapabilities {
+    "image-generation": ImageGenerationCapability;
+  }
+}
+
 export interface GenerateImageParams {
   prompt: string;
   negative_prompt: string;

@@ -7,14 +7,6 @@ import {
 } from "@maiar-ai/core";
 import { generateTextTemplate } from "./templates";
 
-declare module "@maiar-ai/core" {
-  interface ICapabilities {
-    "text-generation": {
-      input: string;
-      output: string;
-    };
-  }
-}
 export class PluginTextGeneration extends PluginBase {
   constructor() {
     super({

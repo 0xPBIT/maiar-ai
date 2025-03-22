@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 /**
  * This is the base interface for all capabilities.
  * Model providers and plugins will extend ICapabilities with the input and output types
@@ -12,9 +14,7 @@ export interface BaseCapability {
  * Model providers and plugins can extend this interface
  * to add their own capabilities.
  */
-export interface ICapabilities {
-  [key: string]: BaseCapability;
-}
+export interface ICapabilities {}
 
 /**
  * This is how model providers and plugins can extend the ICapabilities interface

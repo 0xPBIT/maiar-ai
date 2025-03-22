@@ -13,6 +13,11 @@ import {
   imageGenerationSchema
 } from "./types";
 
+import {
+  TEXT_CREATION_CAPABILITY_ID,
+  IMAGE_GENERATION_CAPABILITY_ID
+} from "./types";
+
 const log = createLogger("model:openai");
 
 // Helper functions to check model types
@@ -48,7 +53,7 @@ export class OpenAIProvider extends ModelProviderBase {
 
     if (this.models.some(isTextGenerationModel)) {
       this.addCapability({
-        id: "text-generation",
+        id: TEXT_CREATION_CAPABILITY_ID,
         name: "Text generation capability",
         description: "Generate text completions from prompts",
         input: textGenerationSchema.input,
@@ -59,7 +64,7 @@ export class OpenAIProvider extends ModelProviderBase {
 
     if (this.models.some(isImageGenerationModel)) {
       this.addCapability({
-        id: "image-generation",
+        id: IMAGE_GENERATION_CAPABILITY_ID,
         name: "Image generation capability",
         description: "Generate images from prompts",
         input: imageGenerationSchema.input,
@@ -132,7 +137,7 @@ export class OpenAIProvider extends ModelProviderBase {
     // Verifying if we can call the API
     try {
       const resp = await this.executeCapability(
-        "text-generation",
+        "text-creation",
         "are you alive? Please respond 'yes' or 'no' only.",
         {
           temperature: 0.7,

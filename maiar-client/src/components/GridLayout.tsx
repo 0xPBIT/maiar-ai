@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useRef } from "react";
+import { ReactNode, useState, useEffect, useRef, useCallback } from "react";
 import { Responsive, Layout } from "react-grid-layout";
 // CSS is imported in index.html
 import {
@@ -122,6 +122,9 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
   const theme = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number>(1200); // Default width
+  const saveTimeoutRef = useRef<number | null>(null);
+  const isInitialMount = useRef<boolean>(true);
+  const hasLoadedSavedLayout = useRef<boolean>(false);
 
   // Prevent text selection during drag/resize operations
   const handleDragStart = () => {
@@ -177,10 +180,16 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
 
   // Load saved layouts from localStorage if available
   useEffect(() => {
+    if (hasLoadedSavedLayout.current) return;
+
     const savedLayouts = localStorage.getItem("maiarDashboardLayouts");
+    console.log("Loading saved layouts from localStorage:", savedLayouts);
     if (savedLayouts) {
       try {
-        setLayouts(JSON.parse(savedLayouts) as LayoutType);
+        const parsedLayouts = JSON.parse(savedLayouts) as LayoutType;
+        console.log("Successfully parsed saved layouts:", parsedLayouts);
+        setLayouts(parsedLayouts);
+        hasLoadedSavedLayout.current = true;
       } catch (e) {
         console.error("Failed to parse saved layouts", e);
       }
@@ -188,16 +197,53 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
   }, []);
 
   // Save layouts to localStorage when changed
-  const handleLayoutChange = (_layout: Layout[], allLayouts: LayoutType) => {
-    localStorage.setItem("maiarDashboardLayouts", JSON.stringify(allLayouts));
-    setLayouts(allLayouts);
-  };
+  const handleLayoutChange = useCallback(
+    (_layout: Layout[], allLayouts: LayoutType) => {
+      // Skip saving on initial mount or if we haven't loaded saved layouts yet
+      if (isInitialMount.current || !hasLoadedSavedLayout.current) {
+        isInitialMount.current = false;
+        return;
+      }
+
+      // Clear any pending save
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+
+      // Debounce the save operation
+      saveTimeoutRef.current = window.setTimeout(() => {
+        console.log("Layout changed, saving to localStorage:", allLayouts);
+        try {
+          localStorage.setItem(
+            "maiarDashboardLayouts",
+            JSON.stringify(allLayouts)
+          );
+          console.log("Successfully saved layouts to localStorage");
+        } catch (e) {
+          console.error("Failed to save layouts to localStorage:", e);
+        }
+        setLayouts(allLayouts);
+      }, 500); // Wait 500ms before saving
+    },
+    [setLayouts]
+  );
 
   // Reset layouts to default
   const handleResetLayout = () => {
+    console.log("Resetting layouts to default");
     localStorage.removeItem("maiarDashboardLayouts");
     setLayouts(DEFAULT_LAYOUTS);
+    hasLoadedSavedLayout.current = false;
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Box

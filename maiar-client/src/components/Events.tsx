@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Stack, alpha } from "@mui/material";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import JsonView from "./JsonView";
+import { EventFilter } from "./EventFilter";
 
 interface Event {
   type: string;
@@ -17,6 +18,7 @@ export function Events({ events }: EventsProps) {
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
   const prevEventsLengthRef = useRef<number>(events.length);
+  const [filter, setFilter] = useState<string>("");
 
   // Handle scroll events to determine if auto-scroll should be enabled
   const handleScroll = () => {
@@ -109,6 +111,31 @@ export function Events({ events }: EventsProps) {
     ) : null;
   };
 
+  // Filter events based on the filter pattern
+  const filteredEvents = useMemo(() => {
+    if (!filter) return events;
+
+    const patterns = filter
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    return events.filter((event) => {
+      return patterns.some((pattern) => {
+        // Convert glob pattern to regex
+        const regexPattern = pattern
+          .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape special regex chars
+          .replace(/\*/g, ".*"); // Convert * to regex wildcard
+        const regex = new RegExp(regexPattern, "i"); // 'i' flag for case-insensitive
+        return regex.test(event.type);
+      });
+    });
+  }, [events, filter]);
+
+  const lastEventTime = useMemo(() => {
+    return events.length > 0 ? events[events.length - 1].timestamp : undefined;
+  }, [events]);
+
   return (
     <Paper
       elevation={0}
@@ -123,6 +150,23 @@ export function Events({ events }: EventsProps) {
       }}
     >
       <Box
+        sx={{
+          p: 2,
+          borderBottom: 1,
+          borderColor: "divider",
+          bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+          display: "flex",
+          justifyContent: "flex-end"
+        }}
+      >
+        <EventFilter
+          onFilterChange={setFilter}
+          totalEvents={events.length}
+          filteredEvents={filteredEvents.length}
+          lastEventTime={lastEventTime}
+        />
+      </Box>
+      <Box
         ref={eventsContainerRef}
         sx={{
           flex: 1,
@@ -132,7 +176,7 @@ export function Events({ events }: EventsProps) {
         onScroll={handleScroll}
       >
         <Stack spacing={2}>
-          {events.map((event, index) => (
+          {filteredEvents.map((event, index) => (
             <Paper
               key={index}
               elevation={0}

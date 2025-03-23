@@ -1,6 +1,7 @@
 import {
   AgentContext,
   createLogger,
+  MonitorService,
   PluginBase,
   PluginResult,
   Runtime,
@@ -73,7 +74,7 @@ export class PluginDiscord extends PluginBase {
             ? await this.client.guilds.fetch(this.config.guildId)
             : this.client.guilds.cache.first();
 
-          this.runtime.monitor.publishEvent({
+          MonitorService.publishEvent({
             type: "discord.guild.fetch",
             message: "Fetched guild",
             metadata: {
@@ -100,7 +101,7 @@ export class PluginDiscord extends PluginBase {
             };
           }
 
-          this.runtime.monitor.publishEvent({
+          MonitorService.publishEvent({
             type: "discord.message.sending",
             message: "Text channels fetched",
             metadata: {
@@ -129,7 +130,7 @@ export class PluginDiscord extends PluginBase {
           ) as ChannelInfo[];
 
           // Log channel info
-          this.runtime.monitor.publishEvent({
+          MonitorService.publishEvent({
             type: "discord.channel.info",
             message: "Channel info fetched",
             metadata: {
@@ -151,7 +152,7 @@ export class PluginDiscord extends PluginBase {
             };
           }
 
-          this.runtime.monitor.publishEvent({
+          MonitorService.publishEvent({
             type: "discord.channel.selection",
             message: "Channel selected",
             metadata: {
@@ -347,7 +348,7 @@ export class PluginDiscord extends PluginBase {
           message.id
         );
 
-        this.runtime.monitor.publishEvent({
+        MonitorService.publishEvent({
           type: "discord.message.skipped",
           message: "Skipping message - not intended for agent",
           metadata: {
@@ -366,7 +367,7 @@ export class PluginDiscord extends PluginBase {
         `<@${this.config.clientId}>`
       );
 
-      this.runtime.monitor.publishEvent({
+      MonitorService.publishEvent({
         type: "discord.message.processing",
         message: "Processing message",
         metadata: {
@@ -386,7 +387,7 @@ export class PluginDiscord extends PluginBase {
           10 // Limit to last 10 messages
         );
 
-      this.runtime.monitor.publishEvent({
+      MonitorService.publishEvent({
         type: "discord.message.history",
         message: "Retrieved conversation history",
         metadata: {
@@ -413,7 +414,7 @@ export class PluginDiscord extends PluginBase {
         intentTemplate
       );
 
-      this.runtime.monitor.publishEvent({
+      MonitorService.publishEvent({
         type: "discord.message.intent",
         message: "Intent analysis result",
         metadata: {
@@ -427,7 +428,7 @@ export class PluginDiscord extends PluginBase {
         // Set processing lock
         this.isProcessing = true;
 
-        this.runtime.monitor.publishEvent({
+        MonitorService.publishEvent({
           type: "discord.message.processing",
           message: "Message processing started - agent locked",
           metadata: {
@@ -485,7 +486,7 @@ export class PluginDiscord extends PluginBase {
         );
 
         // Add detailed info logging for skipped messages
-        this.runtime.monitor.publishEvent({
+        MonitorService.publishEvent({
           type: "discord.message.skipped",
           message: "Skipping message - not intended for agent",
           metadata: {

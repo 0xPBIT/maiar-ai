@@ -46,6 +46,18 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 
   // Initialize the global monitor service with providers
   MonitorService.init(options.monitor || []);
+
+  MonitorService.checkHealth()
+    .then(() => {
+      MonitorService.publishEvent({
+        type: "monitor.healthcheck.passed",
+        message: "Monitor service healthcheck passed"
+      });
+    })
+    .catch((error) => {
+      log.error("Monitor service healthcheck failed", error);
+    });
+
   const monitorService = MonitorService.getInstance();
 
   const memoryService = new MemoryService(options.memory);

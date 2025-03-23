@@ -52,9 +52,9 @@ export class MonitorService {
   /**
    * Checks the health of all registered monitor providers.
    */
-  public static checkHealth(): Promise<void> {
+  public static async checkHealth(): Promise<void> {
     const instance = MonitorService.getInstance();
-    return Promise.all(
+    await Promise.all(
       instance.providers.map((provider) =>
         provider.checkHealth().catch((error: unknown) => {
           MonitorService.publishEvent({
@@ -67,6 +67,6 @@ export class MonitorService {
           });
         })
       )
-    ).then(() => {});
+    );
   }
 }

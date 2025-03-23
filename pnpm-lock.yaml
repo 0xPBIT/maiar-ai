@@ -258,11 +258,11 @@ importers:
         specifier: workspace:*
         version: link:../core
       pg:
-        specifier: ^8.11.3
-        version: 8.14.1
+        specifier: 8.11.3
+        version: 8.11.3
       pg-pool:
-        specifier: ^3.6.1
-        version: 3.8.0(pg@8.14.1)
+        specifier: 3.6.1
+        version: 3.6.1(pg@8.11.3)
     devDependencies:
       "@types/node":
         specifier: 22.13.1
@@ -5472,6 +5472,13 @@ packages:
       {
         integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==
       }
+
+  buffer-writer@2.0.0:
+    resolution:
+      {
+        integrity: sha512-a7ZpuTZU1TRtnwyCNW3I5dc0wWNC3VR9S++Ewyk2HHZdrO3CQJqSpd+95Us590V6AL7JqUAH2IwZ/398PmNFgw==
+      }
+    engines: { node: ">=4" }
 
   buffer@5.7.1:
     resolution:
@@ -10871,6 +10878,12 @@ packages:
       }
     engines: { node: ">=14.16" }
 
+  packet-reader@1.0.0:
+    resolution:
+      {
+        integrity: sha512-HAKu/fG3HpHFO0AA8WE8q2g+gBJaZ9MG7fcKk+IJPLTGAD6Psw4443l+9DGRbOIh3/aXr7Phy0TjilYivJo5XQ==
+      }
+
   pacote@18.0.6:
     resolution:
       {
@@ -11081,10 +11094,10 @@ packages:
       }
     engines: { node: ">=4" }
 
-  pg-pool@3.8.0:
+  pg-pool@3.6.1:
     resolution:
       {
-        integrity: sha512-VBw3jiVm6ZOdLBTIcXLNdSotb6Iy3uOCwDGFAksZCXmi10nyRvnP2v3jl4d+IsLYRyXf6o9hIm/ZtUzlByNUdw==
+        integrity: sha512-jizsIzhkIitxCGfPRzJn1ZdcosIt3pz9Sh3V01fm1vZnbnCMgmGl5wvGGdNN2EL9Rmb0EcFoCkixH4Pu+sP9Og==
       }
     peerDependencies:
       pg: ">=8.0"
@@ -11109,10 +11122,10 @@ packages:
       }
     engines: { node: ">=10" }
 
-  pg@8.14.1:
+  pg@8.11.3:
     resolution:
       {
-        integrity: sha512-0TdbqfjwIun9Fm/r89oB7RFQ0bLgduAhiIqIXOsyKoiC/L54DbuAAzIEN/9Op0f1Po9X7iCPXGoa/Ah+2aI8Xw==
+        integrity: sha512-+9iuvG8QfaaUrrph+kpF24cXkH1YOOUeArRNYIxq1viYHZagBxrTno7cecY1Fa44tJeZvaoG+Djpkc3JwehN5g==
       }
     engines: { node: ">= 8.0.0" }
     peerDependencies:
@@ -18813,6 +18826,8 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
+  buffer-writer@2.0.0: {}
+
   buffer@5.7.1:
     dependencies:
       base64-js: 1.5.1
@@ -22475,6 +22490,8 @@ snapshots:
       registry-url: 6.0.1
       semver: 7.7.0
 
+  packet-reader@1.0.0: {}
+
   pacote@18.0.6:
     dependencies:
       "@npmcli/git": 5.0.8
@@ -22605,9 +22622,9 @@ snapshots:
 
   pg-numeric@1.0.2: {}
 
-  pg-pool@3.8.0(pg@8.14.1):
+  pg-pool@3.6.1(pg@8.11.3):
     dependencies:
-      pg: 8.14.1
+      pg: 8.11.3
 
   pg-protocol@1.8.0: {}
 
@@ -22629,10 +22646,12 @@ snapshots:
       postgres-interval: 3.0.0
       postgres-range: 1.1.4
 
-  pg@8.14.1:
+  pg@8.11.3:
     dependencies:
+      buffer-writer: 2.0.0
+      packet-reader: 1.0.0
       pg-connection-string: 2.7.0
-      pg-pool: 3.8.0(pg@8.14.1)
+      pg-pool: 3.6.1(pg@8.11.3)
       pg-protocol: 1.8.0
       pg-types: 2.2.0
       pgpass: 1.0.5

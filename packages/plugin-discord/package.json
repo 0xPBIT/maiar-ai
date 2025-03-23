@@ -1,6 +1,6 @@
 {
   "name": "@maiar-ai/plugin-discord",
-  "version": "0.9.0",
+  "version": "0.15.0",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@maiar-ai/core": "workspace:*",
-    "discord.js": "^14.14.1",
+    "discord.js": "14.18.0",
     "zod": "3.24.1"
   },
   "devDependencies": {

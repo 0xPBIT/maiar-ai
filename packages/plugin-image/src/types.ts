@@ -10,9 +10,11 @@ type ImageGenerationCapability = {
   output: string[];
 };
 
+export const IMAGE_GENERATION_CAPABILITY_ID = "image-generation";
+
 declare module "@maiar-ai/core" {
   export interface ICapabilities {
-    "image-generation": ImageGenerationCapability;
+    [IMAGE_GENERATION_CAPABILITY_ID]: ImageGenerationCapability;
   }
 }
 

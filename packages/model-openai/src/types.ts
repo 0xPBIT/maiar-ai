@@ -1,12 +1,12 @@
 import { ModelRequestConfig } from "@maiar-ai/core";
 import { z } from "zod";
 
-export const TEXT_CREATION_CAPABILITY_ID = "text-creation";
+export const TEXT_GENERATION_CAPABILITY_ID = "text-generation";
 export const IMAGE_GENERATION_CAPABILITY_ID = "image-generation";
 
 declare module "@maiar-ai/core" {
   interface ICapabilities {
-    [TEXT_CREATION_CAPABILITY_ID]: {
+    [TEXT_GENERATION_CAPABILITY_ID]: {
       input: z.infer<typeof textGenerationSchema.input>;
       output: z.infer<typeof textGenerationSchema.output>;
     };

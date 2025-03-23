@@ -17,7 +17,7 @@ import {
 } from "./types";
 
 import {
-  TEXT_CREATION_CAPABILITY_ID,
+  TEXT_GENERATION_CAPABILITY_ID,
   IMAGE_GENERATION_CAPABILITY_ID
 } from "./types";
 
@@ -54,7 +54,7 @@ export class OpenAIProvider extends ModelProviderBase {
 
     if (this.models.some(isTextGenerationModel)) {
       this.addCapability({
-        id: TEXT_CREATION_CAPABILITY_ID,
+        id: TEXT_GENERATION_CAPABILITY_ID,
         name: "Text generation capability",
         description: "Generate text completions from prompts",
         input: textGenerationSchema.input,
@@ -170,7 +170,7 @@ export class OpenAIProvider extends ModelProviderBase {
     // Verifying if we can call the API
     try {
       const resp = await this.executeCapability(
-        "text-creation",
+        TEXT_GENERATION_CAPABILITY_ID,
         "are you alive? Please respond 'yes' or 'no' only.",
         {
           temperature: 0.7,

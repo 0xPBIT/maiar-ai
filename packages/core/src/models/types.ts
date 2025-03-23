@@ -2,15 +2,6 @@
 
 /**
  * This is the base interface for all capabilities.
- * Model providers and plugins will extend ICapabilities with the input and output types
- */
-export interface BaseCapability {
-  input: unknown;
-  output: unknown;
-}
-
-/**
- * This is the base interface for all capabilities.
  * Model providers and plugins can extend this interface
  * to add their own capabilities.
  */

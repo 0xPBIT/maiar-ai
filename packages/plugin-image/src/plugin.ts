@@ -1,5 +1,5 @@
 import { PluginBase, AgentContext, PluginResult } from "@maiar-ai/core";
-import { PromptResponseSchema } from "./types";
+import { IMAGE_GENERATION_CAPABILITY_ID, PromptResponseSchema } from "./types";
 import { generatePromptTemplate } from "./templates";
 
 export class PluginImageGeneration extends PluginBase {
@@ -10,7 +10,7 @@ export class PluginImageGeneration extends PluginBase {
       description: "Generate images from text descriptions using GetImg.ai API",
       capabilities: [
         {
-          id: "generate_image",
+          id: IMAGE_GENERATION_CAPABILITY_ID,
           description: "Generate an image based on a text prompt",
           required: true
         }

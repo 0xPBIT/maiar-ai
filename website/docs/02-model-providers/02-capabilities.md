@@ -126,6 +126,69 @@ private async validatePluginCapabilities(plugin: Plugin): Promise<void> {
 }
 ```
 
+## Compile Time Type Checking
+
+The developer configuration also performs compile time type checking to ensure that the capabilities are valid. This is done with a module augmentation system that provides type safety across the entire ecosystem.
+
+### Module Augmentation
+
+MAIAR uses TypeScript's module augmentation to provide type-safe capabilities. Here's how it works:
+
+1. The core package defines the base interface:
+
+```typescript
+// In @maiar-ai/core
+export interface ICapabilities {}
+
+// Core runtime declares required capabilities
+declare module "../models/types" {
+  interface ICapabilities {
+    "text-generation": {
+      input: string;
+      output: string;
+    };
+  }
+}
+```
+
+2. Model providers extend the interface to declare their capabilities:
+
+```typescript
+// In your model provider
+declare module "@maiar-ai/core" {
+  interface ICapabilities {
+    "your-capability": {
+      input: YourInputType;
+      output: YourOutputType;
+    };
+  }
+}
+```
+
+3. Plugins can also extend the interface to declare the capabilities they consume:
+
+```typescript
+// In your plugin
+declare module "@maiar-ai/core" {
+  interface ICapabilities {
+    "required-capability": {
+      input: RequiredInputType;
+      output: RequiredOutputType;
+    };
+  }
+}
+```
+
+This system ensures type safety when using capabilities:
+
+```typescript
+// TypeScript ensures correct types
+const result = await runtime.executeCapability(
+  "your-capability",
+  input // Must match the declared input type
+); // Result is typed as the declared output type
+```
+
 ### Capability Aliases
 
 The runtime supports capability aliases, which allow different names to refer to the same capability:

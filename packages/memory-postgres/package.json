@@ -48,11 +48,11 @@
   },
   "dependencies": {
     "@maiar-ai/core": "workspace:*",
-    "pg": "8.11.3",
+    "pg": "8.14.1",
     "pg-pool": "3.6.1"
   },
   "devDependencies": {
-    "@types/pg": "8.11.4",
+    "@types/pg": "8.11.11",
     "@types/node": "22.13.1",
     "tsup": "8.3.6",
     "typescript": "5.7.3"

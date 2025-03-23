@@ -374,8 +374,7 @@ export class Runtime {
       message: "Runtime initialized",
       metadata: {
         plugins: this.plugins.map((p) => p.id)
-      },
-      timestamp: Date.now()
+      }
     });
   }
 
@@ -475,8 +474,7 @@ export class Runtime {
       message: "Runtime started",
       metadata: {
         plugins: this.registry.getAllPlugins().map((p) => p.id)
-      },
-      timestamp: Date.now()
+      }
     });
 
     this.runEvaluationLoop().catch((error) => {
@@ -498,8 +496,7 @@ export class Runtime {
     // Log stop event
     MonitorService.publishEvent({
       type: "runtime.stop",
-      message: "Runtime stopped",
-      timestamp: Date.now()
+      message: "Runtime stopped"
     });
   }
 
@@ -641,8 +638,7 @@ export class Runtime {
           message: `Runtime error occurred`,
           metadata: {
             error: error instanceof Error ? error.message : String(error)
-          },
-          timestamp: Date.now()
+          }
         });
         throw error;
       } finally {
@@ -711,8 +707,7 @@ export class Runtime {
           platform,
           message,
           template
-        },
-        timestamp: Date.now()
+        }
       });
 
       log.debug({
@@ -744,8 +739,7 @@ export class Runtime {
           template,
           pipeline,
           steps
-        },
-        timestamp: Date.now()
+        }
       });
 
       log.info({
@@ -770,8 +764,7 @@ export class Runtime {
                 }
               : error,
           template: generatePipelineTemplate(pipelineContext)
-        },
-        timestamp: Date.now()
+        }
       });
 
       log.error({
@@ -990,8 +983,7 @@ export class Runtime {
                 currentStep,
                 modifiedSteps: modification.modifiedSteps,
                 pipeline: currentPipeline
-              },
-              timestamp: Date.now()
+              }
             });
           }
         } catch (error) {
@@ -1050,8 +1042,7 @@ export class Runtime {
           isRunning: this.isRunning,
           lastUpdate: Date.now()
         }
-      },
-      timestamp: Date.now()
+      }
     });
   }
 

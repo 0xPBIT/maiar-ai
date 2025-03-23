@@ -3,7 +3,6 @@ import { MonitorProvider } from "./types";
 export interface MonitorEvent {
   type: string;
   message: string;
-  timestamp?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -42,7 +41,7 @@ export class MonitorService {
     const instance = MonitorService.getInstance();
     const eventWithTimestamp = {
       ...event,
-      timestamp: event.timestamp || Date.now()
+      timestamp: Date.now()
     };
 
     for (const provider of instance.providers) {
@@ -64,8 +63,7 @@ export class MonitorService {
             metadata: {
               providerId: provider.id,
               error: error instanceof Error ? error.message : String(error)
-            },
-            timestamp: Date.now()
+            }
           });
         })
       )

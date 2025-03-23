@@ -92,8 +92,7 @@ export class OpenAIProvider extends ModelProviderBase {
           capability: "text-generation",
           input: textGenerationSchema.input,
           output: textGenerationSchema.output
-        },
-        timestamp: Date.now()
+        }
       });
     }
 
@@ -166,8 +165,7 @@ export class OpenAIProvider extends ModelProviderBase {
           capabilityId: "text-generation",
           input: prompt,
           output: content
-        },
-        timestamp: Date.now()
+        }
       });
 
       return content;
@@ -180,8 +178,7 @@ export class OpenAIProvider extends ModelProviderBase {
           modelId: this.id,
           capabilityId: "text-generation",
           error: error instanceof Error ? error.message : String(error)
-        },
-        timestamp: Date.now()
+        }
       });
       throw error;
     }
@@ -208,8 +205,7 @@ export class OpenAIProvider extends ModelProviderBase {
         metadata: {
           model: this.id,
           response: resp
-        },
-        timestamp: Date.now()
+        }
       });
     } catch (error) {
       MonitorService.publishEvent({
@@ -218,8 +214,7 @@ export class OpenAIProvider extends ModelProviderBase {
         metadata: {
           model: this.id,
           error: error instanceof Error ? error.message : String(error)
-        },
-        timestamp: Date.now()
+        }
       });
       throw new Error(
         `Failed to initialize Model ${this.id}: ${error instanceof Error ? error.message : String(error)}`

@@ -125,8 +125,7 @@ export const periodicPostTrigger = createXTrigger(
             const recoveryMs = (30 + Math.random() * 30) * 60 * 1000;
             MonitorService.publishEvent({
               type: "plugin-x",
-              message: `Scheduling recovery attempt in ${Math.round(recoveryMs / 1000 / 60)} minutes`,
-              timestamp: Date.now()
+              message: `Scheduling recovery attempt in ${Math.round(recoveryMs / 1000 / 60)} minutes`
             });
             setTimeout(scheduleNextPost, recoveryMs);
           }

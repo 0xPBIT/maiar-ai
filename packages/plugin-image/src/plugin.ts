@@ -31,7 +31,7 @@ export class PluginImageGeneration extends PluginBase {
           const prompt = promptResponse.prompt;
 
           const urls = await this.runtime.executeCapability(
-            "image-generation",
+            IMAGE_GENERATION_CAPABILITY_ID,
             prompt
           );
 

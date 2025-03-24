@@ -6,6 +6,7 @@ import {
   getUserInput
 } from "@maiar-ai/core";
 import { generateTextTemplate } from "./templates";
+import { TEXT_GENERATION_CAPABILITY_ID } from "./types";
 
 export class PluginTextGeneration extends PluginBase {
   constructor() {
@@ -28,7 +29,7 @@ export class PluginTextGeneration extends PluginBase {
         }
 
         const generated = await this.runtime.executeCapability(
-          "text-generation",
+          TEXT_GENERATION_CAPABILITY_ID,
           generateTextTemplate(userInput.rawMessage, context.contextChain),
           {
             temperature: 0.7

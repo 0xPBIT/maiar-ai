@@ -3,7 +3,9 @@ import {
   Client,
   Events,
   GatewayIntentBits,
-  Message
+  Message,
+  OAuth2Scopes,
+  PermissionsBitField
 } from "discord.js";
 
 import {
@@ -47,14 +49,37 @@ export class PluginDiscord extends PluginBase {
       throw new Error("Discord token and clientId are required");
     }
 
-    this.client = new Client({
-      intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
-      ]
-    });
+    const intents = [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMembers
+    ];
+
+    this.client = new Client({ intents });
+
+    const scopes = [OAuth2Scopes.Bot];
+    const permissions = [
+      PermissionsBitField.Flags.SendMessages,
+      PermissionsBitField.Flags.EmbedLinks,
+      PermissionsBitField.Flags.ReadMessageHistory,
+      PermissionsBitField.Flags.ViewChannel
+    ];
+
+    // log the oauth invite url after 5 seconds
+    // we delay this to ensure monitor is connected and the event is captured
+    setTimeout(() => {
+      MonitorService.publishEvent({
+        type: "discord.oauth.invite",
+        message: "OAuth invite URL",
+        metadata: {
+          url: this.client.generateInvite({
+            scopes,
+            permissions
+          })
+        }
+      });
+    }, 5000);
 
     // Add send message executor for proactive messages
     this.addExecutor({

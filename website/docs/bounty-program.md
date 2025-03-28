@@ -36,6 +36,18 @@ Our **GitHub Action-Based Bounty Program** is designed to **reward contributors 
    - The workflow comments on the PR with the **transaction signature** for confirmation.
    - The bounty issue(s) are then marked with the `bounty paid` label.
 
+:::warning Use a Valid Solana Wallet
+Please use a valid Solana wallet that supports token address creation to receive $MAIAR payments. We recommend using a non-custodial wallet like Phantom.
+
+Wallets confirmed to work:
+
+- Phantom
+
+Wallets confirmed to not work:
+
+- Bybit
+  :::
+
 ## Contributor Guidelines
 
 - **Issue Proposals**: Contributors can propose new issues, which the core team may assign a bounty to.

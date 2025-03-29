@@ -1,17 +1,7 @@
-import {
-  ExecutorImplementation,
-  MonitorService,
-  PluginBase,
-  Runtime,
-  Trigger
-} from "@maiar-ai/core";
+import { MonitorService, PluginBase, Runtime } from "@maiar-ai/core";
 
 import { DiscordService } from "./services/discord-service";
-import {
-  DiscordExecutorFactory,
-  DiscordPluginConfig,
-  DiscordTriggerFactory
-} from "./types";
+import { DiscordPluginConfig } from "./types";
 
 export class PluginDiscord extends PluginBase {
   private discordService: DiscordService;
@@ -64,36 +54,16 @@ export class PluginDiscord extends PluginBase {
 
   private registerExecutors(): void {
     if (this.config.customExecutors) {
-      const customExecutors = this.config.customExecutors as (
-        | ExecutorImplementation
-        | DiscordExecutorFactory
-      )[];
-
-      for (const executorOrFactory of customExecutors) {
-        if (typeof executorOrFactory === "function") {
-          this.addExecutor(
-            executorOrFactory(this.discordService, this.runtime)
-          );
-        } else {
-          this.addExecutor(executorOrFactory);
-        }
+      for (const executorFactory of this.config.customExecutors) {
+        this.addExecutor(executorFactory(this.discordService, this.runtime));
       }
     }
   }
 
   private registerTriggers(): void {
     if (this.config.customTriggers) {
-      const customTriggers = this.config.customTriggers as (
-        | Trigger
-        | DiscordTriggerFactory
-      )[];
-
-      for (const triggerOrFactory of customTriggers) {
-        if (typeof triggerOrFactory === "function") {
-          this.addTrigger(triggerOrFactory(this.discordService, this.runtime));
-        } else {
-          this.addTrigger(triggerOrFactory);
-        }
+      for (const triggerFactory of this.config.customTriggers) {
+        this.addTrigger(triggerFactory(this.discordService, this.runtime));
       }
     }
   }

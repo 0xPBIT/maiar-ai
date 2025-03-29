@@ -23,17 +23,6 @@ import {
 } from "./types";
 
 /**
- * Creates an executor with a bound DiscordService and Runtime instance
- * @param factory Factory function that takes DiscordService and Runtime and returns an executor implementation
- * @returns A function that will receive the DiscordService and Runtime instances from the plugin
- */
-export function createDiscordExecutor(
-  factory: DiscordExecutorFactory
-): DiscordExecutorFactory {
-  return factory;
-}
-
-/**
  * Helper to create a simple executor with name, description, and execute function
  * The execute function will receive context, xService, and runtime
  */

@@ -14,7 +14,7 @@ import {
 } from "@maiar-ai/model-openai";
 
 // Import memory provider
-import { PostgresProvider } from "@maiar-ai/memory-postgres";
+import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
 
 // Import monitor providers
 import { ConsoleMonitorProvider } from "@maiar-ai/monitor-console";
@@ -34,11 +34,12 @@ import { PluginSearch } from "@maiar-ai/plugin-search";
 import { PluginTerminal } from "@maiar-ai/plugin-terminal";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import { PluginTime } from "@maiar-ai/plugin-time";
-import {
-  createPostExecutor,
-  periodicPostTrigger,
-  PluginX
-} from "@maiar-ai/plugin-x";
+
+// import {
+//   createPostExecutor,
+//   periodicPostTrigger,
+//   PluginX
+// } from "@maiar-ai/plugin-x";
 
 import { router } from "./express-app";
 import { PluginPermissionsSearch } from "./plugins/plugin-permissions-search";
@@ -62,8 +63,8 @@ const runtime = createRuntime({
       apiKey: process.env.OPENAI_API_KEY as string
     })
   ],
-  memory: new PostgresProvider({
-    connectionString: process.env.DATABASE_URL as string
+  memory: new SQLiteProvider({
+    dbPath: path.join(process.cwd(), "data", "conversations.db")
   }),
   monitor: [
     new ConsoleMonitorProvider(),
@@ -96,15 +97,15 @@ const runtime = createRuntime({
       user: "ligma",
       agentName: "maiar-starter"
     }),
-    new PluginX({
-      client_id: process.env.X_CLIENT_ID as string,
-      client_secret: process.env.X_CLIENT_SECRET as string,
-      callback_url: process.env.X_CALLBACK_URL as string,
-      // You can customize which executors and triggers to use
-      // If not specified, all default ones will be used automatically
-      customExecutors: [createPostExecutor],
-      customTriggers: [periodicPostTrigger]
-    }),
+    // new PluginX({
+    //   client_id: process.env.X_CLIENT_ID as string,
+    //   client_secret: process.env.X_CLIENT_SECRET as string,
+    //   callback_url: process.env.X_CALLBACK_URL as string,
+    //   // You can customize which executors and triggers to use
+    //   // If not specified, all default ones will be used automatically
+    //   customExecutors: [createPostExecutor],
+    //   customTriggers: [periodicPostTrigger]
+    // }),
     new PluginDiscord({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,

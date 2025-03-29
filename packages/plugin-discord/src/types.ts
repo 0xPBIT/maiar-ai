@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-import { AgentContext } from "@maiar-ai/core";
+import {
+  AgentContext,
+  ExecutorImplementation,
+  Runtime,
+  Trigger
+} from "@maiar-ai/core";
+
+import { DiscordService } from "./services";
 
 export interface DiscordPlatformContext
   extends NonNullable<AgentContext["platformContext"]> {
@@ -26,6 +33,8 @@ export interface DiscordPluginConfig {
   guildId?: string; // Optional: Specific guild/server ID to restrict the bot to
   commandPrefix?: string; // Optional: Command prefix for the bot (default: "!")
   agentName?: string; // Optional: Name of the agent for intent checking
+  customExecutors?: DiscordExecutorFactory[];
+  customTriggers?: DiscordTriggerFactory[];
 }
 
 // Schema for channel information
@@ -98,3 +107,29 @@ export const MessageIntentSchema = z.object({
 });
 
 export type MessageIntent = z.infer<typeof MessageIntentSchema>;
+
+/**
+ * Function that receives XService and returns an ExecutorImplementation
+ * This allows for dependency injection of the XService
+ */
+export type DiscordExecutorFactory = (
+  service: DiscordService,
+  runtime: Runtime
+) => ExecutorImplementation;
+
+/**
+ * Configuration for triggers
+ */
+export interface DiscordTriggerConfig {
+  commandPrefix?: string;
+}
+
+/**
+ * Function that receives XService and config and returns a Trigger
+ * This allows for dependency injection of the XService
+ */
+export type DiscordTriggerFactory = (
+  service: DiscordService,
+  runtime: Runtime,
+  config?: DiscordTriggerConfig
+) => Trigger;

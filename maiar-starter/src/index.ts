@@ -22,7 +22,12 @@ import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
 
 // Import plugins
 import { PluginCharacter } from "@maiar-ai/plugin-character";
-import { PluginDiscord } from "@maiar-ai/plugin-discord";
+import {
+  PluginDiscord,
+  postListenerTrigger,
+  replyMessageExecutor,
+  sendMessageExecutor
+} from "@maiar-ai/plugin-discord";
 import { PluginExpress } from "@maiar-ai/plugin-express";
 import { PluginImageGeneration } from "@maiar-ai/plugin-image";
 import { PluginSearch } from "@maiar-ai/plugin-search";
@@ -103,7 +108,9 @@ const runtime = createRuntime({
     new PluginDiscord({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,
-      commandPrefix: "!"
+      commandPrefix: "!",
+      customExecutors: [sendMessageExecutor, replyMessageExecutor],
+      customTriggers: [postListenerTrigger]
     })
   ],
   capabilityAliases: [

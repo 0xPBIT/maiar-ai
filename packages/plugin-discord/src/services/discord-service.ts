@@ -13,15 +13,6 @@ import { MonitorService, Runtime, UserInputContext } from "@maiar-ai/core";
 import { generateMessageIntentTemplate } from "../templates";
 import { DiscordPlatformContext, MessageIntentSchema } from "../types";
 
-interface DiscordServiceConfig {
-  token: string;
-  clientId: string;
-  guildId?: string;
-  runtime: Runtime;
-  pluginId: string;
-  commandPrefix?: string;
-}
-
 export class DiscordService {
   public client: Client;
   public clientId: string;
@@ -31,13 +22,29 @@ export class DiscordService {
   public commandPrefix: string | undefined;
   public isProcessing: boolean = false;
   private typingIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private token: string;
 
-  constructor(private config: DiscordServiceConfig) {
-    this.runtime = config.runtime;
-    this.clientId = config.clientId;
-    this.pluginId = config.pluginId;
-    this.commandPrefix = config.commandPrefix;
-    this.guildId = config.guildId;
+  constructor({
+    token,
+    clientId,
+    guildId,
+    runtime,
+    pluginId,
+    commandPrefix
+  }: {
+    token: string;
+    clientId: string;
+    guildId?: string;
+    runtime: Runtime;
+    pluginId: string;
+    commandPrefix?: string;
+  }) {
+    this.runtime = runtime;
+    this.clientId = clientId;
+    this.pluginId = pluginId;
+    this.commandPrefix = commandPrefix;
+    this.guildId = guildId;
+    this.token = token;
     const intents = [
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
@@ -49,7 +56,7 @@ export class DiscordService {
       intents
     });
 
-    this.client.login(this.config.token);
+    this.client.login(this.token);
 
     if (!this.client.listenerCount(Events.MessageCreate)) {
       this.client.on(Events.MessageCreate, this.handleMessage.bind(this));
@@ -76,7 +83,7 @@ export class DiscordService {
     if (message.author.bot) return;
 
     // Skip messages from other guilds if guildId is specified
-    if (this.config.guildId && message.guildId !== this.config.guildId) return;
+    if (this.guildId && message.guildId !== this.guildId) return;
 
     // Skip messages not in text channels
     if (
@@ -112,9 +119,7 @@ export class DiscordService {
         return;
       }
 
-      const isMentioned = message.content.includes(
-        `<@${this.config.clientId}>`
-      );
+      const isMentioned = message.content.includes(`<@${this.clientId}>`);
 
       MonitorService.publishEvent({
         type: "discord.message.processing",
@@ -153,8 +158,8 @@ export class DiscordService {
         message.content,
         isMentioned,
         !!message.reference?.messageId,
-        this.config.clientId,
-        this.config.commandPrefix,
+        this.clientId,
+        this.commandPrefix,
         recentHistory
       );
 
@@ -244,9 +249,7 @@ export class DiscordService {
             reason: intent.reason,
             isMention: isMentioned,
             isReply: !!message.reference?.messageId,
-            hasPrefix: message.content.startsWith(
-              this.config.commandPrefix || "!"
-            )
+            hasPrefix: message.content.startsWith(this.commandPrefix || "!")
           }
         });
       }

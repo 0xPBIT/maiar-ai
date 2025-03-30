@@ -6,12 +6,11 @@ import {
   PermissionsBitField
 } from "discord.js";
 
-import { MonitorService, Runtime } from "@maiar-ai/core";
+import { MonitorService } from "@maiar-ai/core";
 
 export class DiscordService {
   private _client: Client;
   private _clientId: string;
-  private runtime: Runtime;
   private _pluginId: string;
   private _guildId: string | undefined;
   private _commandPrefix: string | undefined;
@@ -52,18 +51,15 @@ export class DiscordService {
     token,
     clientId,
     guildId,
-    runtime,
     pluginId,
     commandPrefix
   }: {
     token: string;
     clientId: string;
     guildId?: string;
-    runtime: Runtime;
     pluginId: string;
     commandPrefix?: string;
   }) {
-    this.runtime = runtime;
     this._clientId = clientId;
     this._pluginId = pluginId;
     this._commandPrefix = commandPrefix;

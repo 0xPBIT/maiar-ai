@@ -4,7 +4,7 @@ import { DiscordService } from "./services";
 import { DiscordPluginConfig } from "./types";
 
 export class PluginDiscord extends PluginBase {
-  private discordService: DiscordService | undefined;
+  private discordService: DiscordService;
   private token: string;
   private clientId: string;
   private guildId: string | undefined;
@@ -25,28 +25,28 @@ export class PluginDiscord extends PluginBase {
     this.token = config.token;
     this.clientId = config.clientId;
     this.guildId = config.guildId;
+
+    // initialize the discord service
+    this.discordService = new DiscordService({
+      token: this.token,
+      clientId: this.clientId,
+      guildId: this.guildId,
+      pluginId: this.id
+    });
   }
 
   async init(runtime: Runtime): Promise<void> {
     await super.init(runtime);
 
-    // we have to initialize the discord service here because we need to wait for the runtime to be initialized
-    this.discordService = new DiscordService({
-      token: this.token,
-      clientId: this.clientId,
-      guildId: this.guildId,
-      runtime: this.runtime,
-      pluginId: this.id
-    });
-
     setTimeout(async () => {
       MonitorService.publishEvent({
         type: "plugin-discord",
         message: "Discord plugin initialized",
-        metadata: { inviteUrl: await this.discordService!.generateInviteUrl() }
+        metadata: { inviteUrl: await this.discordService.generateInviteUrl() }
       });
     }, 3000);
 
+    // register the executors and triggers now that the runtime is initialized
     this.registerExecutors();
     this.registerTriggers();
   }
@@ -58,13 +58,13 @@ export class PluginDiscord extends PluginBase {
       this.typingIntervals.delete(channelId);
     }
 
-    await this.discordService!.client.destroy();
+    await this.discordService.client.destroy();
   }
 
   private registerExecutors(): void {
     if (this.config.customExecutors) {
       for (const executorFactory of this.config.customExecutors) {
-        this.addExecutor(executorFactory(this.discordService!, this.runtime));
+        this.addExecutor(executorFactory(this.discordService, this.runtime));
       }
     }
   }
@@ -72,7 +72,7 @@ export class PluginDiscord extends PluginBase {
   private registerTriggers(): void {
     if (this.config.customTriggers) {
       for (const triggerFactory of this.config.customTriggers) {
-        this.addTrigger(triggerFactory(this.discordService!, this.runtime));
+        this.addTrigger(triggerFactory(this.discordService, this.runtime));
       }
     }
   }

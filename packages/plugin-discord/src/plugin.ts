@@ -1,6 +1,6 @@
 import { MonitorService, PluginBase, Runtime } from "@maiar-ai/core";
 
-import { DiscordService } from "./services/discord-service";
+import { DiscordService } from "./services";
 import { DiscordPluginConfig } from "./types";
 
 export class PluginDiscord extends PluginBase {

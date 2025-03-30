@@ -9,12 +9,16 @@ import { MonitorService, Runtime, UserInputContext } from "@maiar-ai/core";
 
 import { DiscordService } from "./services";
 import { generateMessageIntentTemplate } from "./templates";
-import { DiscordPlatformContext, MessageIntentSchema } from "./types";
+import {
+  DiscordPlatformContext,
+  DiscordTriggerFactory,
+  MessageIntentSchema
+} from "./types";
 
 /**
  * Trigger that listens for new messages on discord
  */
-export const postListenerTrigger = (
+export const postListenerTrigger: DiscordTriggerFactory = (
   discordService: DiscordService,
   runtime: Runtime
 ) => {

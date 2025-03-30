@@ -32,7 +32,6 @@ export interface DiscordPluginConfig {
   clientId: string; // Discord application client ID
   guildId?: string; // Optional: Specific guild/server ID to restrict the bot to
   commandPrefix?: string; // Optional: Command prefix for the bot (default: "!")
-  agentName?: string; // Optional: Name of the agent for intent checking
   customExecutors?: DiscordExecutorFactory[];
   customTriggers?: DiscordTriggerFactory[];
 }

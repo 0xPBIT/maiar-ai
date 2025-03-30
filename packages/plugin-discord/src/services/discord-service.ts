@@ -14,15 +14,44 @@ import { generateMessageIntentTemplate } from "../templates";
 import { DiscordPlatformContext, MessageIntentSchema } from "../types";
 
 export class DiscordService {
-  public client: Client;
-  public clientId: string;
+  private _client: Client;
+  private _clientId: string;
   private runtime: Runtime;
-  public pluginId: string;
-  public guildId: string | undefined;
-  public commandPrefix: string | undefined;
-  public isProcessing: boolean = false;
+  private _pluginId: string;
+  private _guildId: string | undefined;
+  private _commandPrefix: string | undefined;
+  private _isProcessing: boolean = false;
   private typingIntervals: Map<string, NodeJS.Timeout> = new Map();
   private token: string;
+
+  // Accessors
+  get client(): Client {
+    return this._client;
+  }
+
+  get clientId(): string {
+    return this._clientId;
+  }
+
+  get pluginId(): string {
+    return this._pluginId;
+  }
+
+  get guildId(): string | undefined {
+    return this._guildId;
+  }
+
+  get commandPrefix(): string | undefined {
+    return this._commandPrefix;
+  }
+
+  get isProcessing(): boolean {
+    return this._isProcessing;
+  }
+
+  set isProcessing(value: boolean) {
+    this._isProcessing = value;
+  }
 
   constructor({
     token,
@@ -40,10 +69,10 @@ export class DiscordService {
     commandPrefix?: string;
   }) {
     this.runtime = runtime;
-    this.clientId = clientId;
-    this.pluginId = pluginId;
-    this.commandPrefix = commandPrefix;
-    this.guildId = guildId;
+    this._clientId = clientId;
+    this._pluginId = pluginId;
+    this._commandPrefix = commandPrefix;
+    this._guildId = guildId;
     this.token = token;
     const intents = [
       GatewayIntentBits.Guilds,
@@ -52,14 +81,14 @@ export class DiscordService {
       GatewayIntentBits.GuildMembers
     ];
 
-    this.client = new Client({
+    this._client = new Client({
       intents
     });
 
-    this.client.login(this.token);
+    this._client.login(this.token);
 
-    if (!this.client.listenerCount(Events.MessageCreate)) {
-      this.client.on(Events.MessageCreate, this.handleMessage.bind(this));
+    if (!this._client.listenerCount(Events.MessageCreate)) {
+      this._client.on(Events.MessageCreate, this.handleMessage.bind(this));
     }
   }
 
@@ -72,7 +101,7 @@ export class DiscordService {
       PermissionsBitField.Flags.ViewChannel
     ];
 
-    return this.client.generateInvite({
+    return this._client.generateInvite({
       scopes,
       permissions
     });
@@ -83,7 +112,7 @@ export class DiscordService {
     if (message.author.bot) return;
 
     // Skip messages from other guilds if guildId is specified
-    if (this.guildId && message.guildId !== this.guildId) return;
+    if (this._guildId && message.guildId !== this._guildId) return;
 
     // Skip messages not in text channels
     if (
@@ -94,11 +123,11 @@ export class DiscordService {
 
     try {
       // If we're already processing a message, skip intent check
-      if (this.isProcessing) {
+      if (this._isProcessing) {
         // Store message in DB since it won't be processed by the event system
         await this.runtime.memory.storeUserInteraction(
           message.author.id,
-          this.pluginId,
+          this._pluginId,
           message.content,
           Date.now(),
           message.id
@@ -112,14 +141,14 @@ export class DiscordService {
             channelId: message.channelId,
             messageId: message.id,
             userId: message.author.id,
-            plugin: this.pluginId
+            plugin: this._pluginId
           }
         });
 
         return;
       }
 
-      const isMentioned = message.content.includes(`<@${this.clientId}>`);
+      const isMentioned = message.content.includes(`<@${this._clientId}>`);
 
       MonitorService.publishEvent({
         type: "discord.message.processing",
@@ -137,7 +166,7 @@ export class DiscordService {
       const recentHistory =
         await this.runtime.memory.getRecentConversationHistory(
           message.author.id,
-          this.pluginId,
+          this._pluginId,
           10 // Limit to last 10 messages
         );
 
@@ -158,8 +187,8 @@ export class DiscordService {
         message.content,
         isMentioned,
         !!message.reference?.messageId,
-        this.clientId,
-        this.commandPrefix,
+        this._clientId,
+        this._commandPrefix,
         recentHistory
       );
 
@@ -180,7 +209,7 @@ export class DiscordService {
 
       if (intent.isIntendedForAgent) {
         // Set processing lock
-        this.isProcessing = true;
+        this._isProcessing = true;
 
         MonitorService.publishEvent({
           type: "discord.message.processing",
@@ -197,8 +226,8 @@ export class DiscordService {
         }
 
         const userContext: UserInputContext = {
-          id: `${this.pluginId}-${message.id}`,
-          pluginId: this.pluginId,
+          id: `${this._pluginId}-${message.id}`,
+          pluginId: this._pluginId,
           type: "user_input",
           action: "receiveMessage",
           content: message.content,
@@ -216,7 +245,7 @@ export class DiscordService {
         };
 
         const platformContext: DiscordPlatformContext = {
-          platform: this.pluginId,
+          platform: this._pluginId,
           responseHandler: async () => {
             // Empty response handler - logic moved to reply executor
           },
@@ -233,7 +262,7 @@ export class DiscordService {
         // (if we process it, the event system will handle storage)
         await this.runtime.memory.storeUserInteraction(
           message.author.id,
-          this.pluginId,
+          this._pluginId,
           message.content,
           Date.now(),
           message.id
@@ -249,13 +278,13 @@ export class DiscordService {
             reason: intent.reason,
             isMention: isMentioned,
             isReply: !!message.reference?.messageId,
-            hasPrefix: message.content.startsWith(this.commandPrefix || "!")
+            hasPrefix: message.content.startsWith(this._commandPrefix || "!")
           }
         });
       }
     } catch (error) {
       // Make sure we unlock if there's an error
-      this.isProcessing = false;
+      this._isProcessing = false;
       MonitorService.publishEvent({
         type: "discord.message.intent.error",
         message: "Error processing message intent",

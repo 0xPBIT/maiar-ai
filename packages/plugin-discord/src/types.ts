@@ -20,22 +20,6 @@ export interface DiscordPlatformContext
   };
 }
 
-export interface DiscordMessage {
-  channelId: string;
-  messageId: string;
-  content: string;
-  author: string;
-}
-
-export interface DiscordPluginConfig {
-  token: string; // Discord bot token
-  clientId: string; // Discord application client ID
-  guildId?: string; // Optional: Specific guild/server ID to restrict the bot to
-  commandPrefix?: string; // Optional: Command prefix for the bot (default: "!")
-  customExecutors?: DiscordExecutorFactory[];
-  customTriggers?: DiscordTriggerFactory[];
-}
-
 // Schema for channel information
 export interface ChannelInfo {
   id: string;
@@ -117,18 +101,13 @@ export type DiscordExecutorFactory = (
 ) => ExecutorImplementation;
 
 /**
- * Configuration for triggers
- */
-export interface DiscordTriggerConfig {
-  commandPrefix?: string;
-}
-
-/**
  * Function that receives XService and config and returns a Trigger
  * This allows for dependency injection of the XService
  */
 export type DiscordTriggerFactory = (
   service: DiscordService,
   runtime: Runtime,
-  config?: DiscordTriggerConfig
+  config?: {
+    commandPrefix: string;
+  }
 ) => Trigger;

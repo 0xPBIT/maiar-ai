@@ -26,7 +26,7 @@ import {
  * Helper to create a simple executor with name, description, and execute function
  * The execute function will receive context, xService, and runtime
  */
-export function createSimpleDiscordExecutor(
+export function discordExecutorFactory(
   name: string,
   description: string,
   execute: (
@@ -48,7 +48,7 @@ export function createSimpleDiscordExecutor(
 /**
  * Default executor for sending a message to a Discord channel
  */
-export const sendMessageExecutor = createSimpleDiscordExecutor(
+export const sendMessageExecutor = discordExecutorFactory(
   "send_message",
   "Send a message to a Discord channel",
   async (
@@ -193,7 +193,7 @@ export const sendMessageExecutor = createSimpleDiscordExecutor(
 /**
  * Default executor for replying to a message in a Discord channel
  */
-export const replyMessageExecutor = createSimpleDiscordExecutor(
+export const replyMessageExecutor = discordExecutorFactory(
   "reply_message",
   "Reply to a message in a Discord channel",
   async (

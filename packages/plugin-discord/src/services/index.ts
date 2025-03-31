@@ -9,35 +9,16 @@ import {
 import { MonitorService } from "@maiar-ai/core";
 
 export class DiscordService {
-  private _client: Client;
-  private _clientId: string;
-  private _pluginId: string;
-  private _guildId: string | undefined;
-  private _commandPrefix: string | undefined;
-  private _isProcessing: boolean = false;
-  private typingIntervals: Map<string, NodeJS.Timeout> = new Map();
+  public readonly clientId: string;
+  public readonly pluginId: string;
+  public readonly guildId: string | undefined;
+  public readonly commandPrefix: string | undefined;
+  public readonly client: Client;
+
   private token: string;
+  private _isProcessing: boolean;
 
-  // Accessors
-  get client(): Client {
-    return this._client;
-  }
-
-  get clientId(): string {
-    return this._clientId;
-  }
-
-  get pluginId(): string {
-    return this._pluginId;
-  }
-
-  get guildId(): string | undefined {
-    return this._guildId;
-  }
-
-  get commandPrefix(): string | undefined {
-    return this._commandPrefix;
-  }
+  private typingIntervals: Map<string, NodeJS.Timeout>;
 
   get isProcessing(): boolean {
     return this._isProcessing;
@@ -48,22 +29,22 @@ export class DiscordService {
   }
 
   constructor({
-    token,
     clientId,
-    guildId,
     pluginId,
-    commandPrefix
+    guildId,
+    commandPrefix,
+    token
   }: {
-    token: string;
     clientId: string;
-    guildId?: string;
     pluginId: string;
+    guildId?: string;
     commandPrefix?: string;
+    token: string;
   }) {
-    this._clientId = clientId;
-    this._pluginId = pluginId;
-    this._commandPrefix = commandPrefix;
-    this._guildId = guildId;
+    this.clientId = clientId;
+    this.pluginId = pluginId;
+    this.commandPrefix = commandPrefix;
+    this.guildId = guildId;
     this.token = token;
     const intents = [
       GatewayIntentBits.Guilds,
@@ -72,14 +53,18 @@ export class DiscordService {
       GatewayIntentBits.GuildMembers
     ];
 
-    this._client = new Client({
-      intents
-    });
+    this.client = new Client({ intents });
 
-    this._client.login(this.token);
+    this._isProcessing = false;
+
+    this.typingIntervals = new Map<string, NodeJS.Timeout>();
   }
 
-  public async generateInviteUrl(): Promise<string> {
+  public login(): Promise<string> {
+    return this.client.login(this.token);
+  }
+
+  public generateInviteUrl(): string {
     const scopes = [OAuth2Scopes.Bot];
     const permissions = [
       PermissionsBitField.Flags.SendMessages,
@@ -88,13 +73,13 @@ export class DiscordService {
       PermissionsBitField.Flags.ViewChannel
     ];
 
-    return this._client.generateInvite({
+    return this.client.generateInvite({
       scopes,
       permissions
     });
   }
 
-  public startTypingIndicator(channel: BaseGuildTextChannel) {
+  public startTypingIndicator(channel: BaseGuildTextChannel): void {
     // Clear any existing interval for this channel
     this.stopTypingIndicator(channel.id);
 
@@ -131,11 +116,23 @@ export class DiscordService {
     });
   }
 
-  public stopTypingIndicator(channelId: string) {
+  public stopTypingIndicator(channelId: string): void {
     const interval = this.typingIntervals.get(channelId);
     if (interval) {
       clearInterval(interval);
       this.typingIntervals.delete(channelId);
     }
+  }
+
+  private cleanTypingIntervals(): void {
+    for (const [channelId, interval] of this.typingIntervals) {
+      clearInterval(interval);
+      this.typingIntervals.delete(channelId);
+    }
+  }
+
+  public cleanUp(): Promise<void> {
+    this.cleanTypingIntervals();
+    return this.client.destroy();
   }
 }

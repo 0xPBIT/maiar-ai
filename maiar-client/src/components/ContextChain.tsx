@@ -11,26 +11,58 @@ import {
 import { Box, Paper, Typography } from "@mui/material";
 
 import { useMonitor } from "../hooks/useMonitor";
-import { ContextChainItem } from "../types/monitor";
 import { AutoScroll } from "./AutoScroll";
 
 export function ContextChain() {
   const { contextChain } = useMonitor();
 
-  // Store the last non-empty context chain
-  const [lastContextChain, setLastContextChain] = useState<ContextChainItem[]>(
-    []
-  );
+  /**
+   * Once the agent is done running it emits an empty context chain.
+   * So we store the last non-empty context chain and use it to display the timeline.
+   */
+  const [lastNonEmptyChain, setLastNonEmptyChain] = useState<
+    typeof contextChain
+  >([]);
 
   useEffect(() => {
     if (contextChain && contextChain.length > 0) {
-      setLastContextChain(contextChain);
+      setLastNonEmptyChain(contextChain);
     }
   }, [contextChain]);
 
-  // Use the last non-empty context chain or current one
   const displayChain =
-    lastContextChain.length > 0 ? lastContextChain : contextChain || [];
+    contextChain && contextChain.length > 0
+      ? contextChain
+      : lastNonEmptyChain || [];
+
+  if (displayChain.length === 0) {
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          bgcolor: "background.paper",
+          border: 1,
+          borderColor: "divider",
+          overflow: "hidden"
+        }}
+      >
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            p: 3
+          }}
+        >
+          <Typography variant="body1" color="text.secondary">
+            No context chain available
+          </Typography>
+        </Box>
+      </Paper>
+    );
+  }
 
   return (
     <Paper
@@ -45,7 +77,7 @@ export function ContextChain() {
         overflow: "hidden"
       }}
     >
-      <AutoScroll flex={1} p={3} triggerValue={lastContextChain.length}>
+      <AutoScroll flex={1} p={3} triggerValue={displayChain.length}>
         <Timeline
           sx={{
             [`& .MuiTimelineItem-root:before`]: {

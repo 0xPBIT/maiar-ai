@@ -16,18 +16,10 @@ import {
 } from "@mui/material";
 
 import { DEFAULT_URLS } from "../config";
+import { useMonitor } from "../hooks/useMonitor";
 
-interface ConnectionSettingsProps {
-  connected: boolean;
-  url: string;
-  onChangeUrl: (url: string) => void;
-}
-
-export function ConnectionSettings({
-  connected,
-  url,
-  onChangeUrl
-}: ConnectionSettingsProps) {
+export function ConnectionSettings() {
+  const { connected, url, setUrl } = useMonitor();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [urlInput, setUrlInput] = useState(url);
 
@@ -41,12 +33,12 @@ export function ConnectionSettings({
   };
 
   const handleSave = () => {
-    onChangeUrl(urlInput);
+    setUrl(urlInput);
     handleClose();
   };
 
   const handleReset = () => {
-    onChangeUrl(DEFAULT_URLS.MONITOR_WEBSOCKET);
+    setUrl(DEFAULT_URLS.MONITOR_WEBSOCKET);
     setUrlInput(DEFAULT_URLS.MONITOR_WEBSOCKET);
     handleClose();
   };

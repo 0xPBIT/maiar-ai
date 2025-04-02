@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Timeline,
@@ -10,40 +10,17 @@ import {
 } from "@mui/lab";
 import { Box, Paper, Typography } from "@mui/material";
 
-interface BaseContextItem {
-  id: string;
-  pluginId: string;
-  type: string;
-  action: string;
-  content: string;
-  timestamp: number;
-  error?: string;
-}
+import { useMonitor } from "../hooks/useMonitor";
+import { ContextChainItem } from "../types/monitor";
+import { AutoScroll } from "./AutoScroll";
 
-interface CurrentContextChainProps {
-  contextChain?: BaseContextItem[];
-}
+export function ContextChain() {
+  const { contextChain } = useMonitor();
 
-export function CurrentContextChain({
-  contextChain
-}: CurrentContextChainProps) {
   // Store the last non-empty context chain
-  const [lastContextChain, setLastContextChain] = useState<BaseContextItem[]>(
+  const [lastContextChain, setLastContextChain] = useState<ContextChainItem[]>(
     []
   );
-  const contextChainContainerRef = useRef<HTMLDivElement>(null);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
-  const prevChainLengthRef = useRef<number>(0);
-
-  // Handle scroll events to determine if auto-scroll should be enabled
-  const handleScroll = () => {
-    if (contextChainContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        contextChainContainerRef.current;
-      // If user is near the bottom (within 20px), enable auto-scrolling
-      setShouldAutoScroll(scrollHeight - scrollTop - clientHeight < 20);
-    }
-  };
 
   useEffect(() => {
     if (contextChain && contextChain.length > 0) {
@@ -51,54 +28,9 @@ export function CurrentContextChain({
     }
   }, [contextChain]);
 
-  // Auto-scroll to bottom when context chain updates, but only if we should auto-scroll
-  useEffect(() => {
-    // Check if there are new items and if we should auto-scroll
-    if (
-      shouldAutoScroll &&
-      lastContextChain.length > prevChainLengthRef.current &&
-      contextChainContainerRef.current
-    ) {
-      // Use requestAnimationFrame to ensure the DOM has updated before scrolling
-      requestAnimationFrame(() => {
-        if (contextChainContainerRef.current) {
-          // Directly set the scrollTop to the bottom
-          contextChainContainerRef.current.scrollTop =
-            contextChainContainerRef.current.scrollHeight;
-        }
-      });
-    }
-
-    // Update the previous length ref
-    prevChainLengthRef.current = lastContextChain.length;
-  }, [lastContextChain, shouldAutoScroll]);
-
   // Use the last non-empty context chain or current one
   const displayChain =
-    lastContextChain.length > 0 ? lastContextChain : contextChain;
-
-  if (!displayChain || displayChain.length === 0) {
-    return (
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          width: "100%",
-          bgcolor: "background.paper",
-          border: 1,
-          borderColor: "divider",
-          overflow: "hidden",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
-        <Typography variant="body1" color="text.secondary">
-          No active context chain
-        </Typography>
-      </Paper>
-    );
-  }
+    lastContextChain.length > 0 ? lastContextChain : contextChain || [];
 
   return (
     <Paper
@@ -113,15 +45,7 @@ export function CurrentContextChain({
         overflow: "hidden"
       }}
     >
-      <Box
-        ref={contextChainContainerRef}
-        sx={{
-          flex: 1,
-          overflow: "auto",
-          p: 3
-        }}
-        onScroll={handleScroll}
-      >
+      <AutoScroll flex={1} p={3} triggerValue={lastContextChain.length}>
         <Timeline
           sx={{
             [`& .MuiTimelineItem-root:before`]: {
@@ -180,7 +104,7 @@ export function CurrentContextChain({
             </TimelineItem>
           ))}
         </Timeline>
-      </Box>
+      </AutoScroll>
     </Paper>
   );
 }

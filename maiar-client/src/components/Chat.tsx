@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SendIcon from "@mui/icons-material/Send";
@@ -17,6 +17,8 @@ import {
 
 import { DEFAULT_URLS } from "../config";
 import { useChatApi } from "../hooks/useChatApi";
+import { useMonitor } from "../hooks/useMonitor";
+import { AutoScroll } from "./AutoScroll";
 
 interface Message {
   content: string;
@@ -24,22 +26,15 @@ interface Message {
   timestamp: number;
 }
 
-interface ChatProps {
-  connected: boolean;
-}
-
-export function Chat({ connected }: ChatProps) {
+export function Chat() {
+  const { connected } = useMonitor();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [username, setUsername] = useState("user-name");
   const [settingsAnchorEl, setSettingsAnchorEl] =
     useState<HTMLButtonElement | null>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { url: chatApiUrl, setUrl: setChatApiUrl } = useChatApi();
   const [urlInput, setUrlInput] = useState(chatApiUrl);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState<boolean>(true);
-  const prevMessagesLengthRef = useRef<number>(messages.length);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const openSettings = Boolean(settingsAnchorEl);
   const settingsId = openSettings ? "chat-settings-popover" : undefined;
@@ -58,38 +53,6 @@ export function Chat({ connected }: ChatProps) {
     setChatApiUrl(defaultUrl);
     setUrlInput(defaultUrl);
   };
-
-  // Handle scroll events to determine if auto-scroll should be enabled
-  const handleScroll = () => {
-    if (chatContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        chatContainerRef.current;
-      // If user is near the bottom (within 20px), enable auto-scrolling
-      setShouldAutoScroll(scrollHeight - scrollTop - clientHeight < 20);
-    }
-  };
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    // Only scroll if there are new messages and we should auto-scroll
-    if (
-      shouldAutoScroll &&
-      messages.length > prevMessagesLengthRef.current &&
-      chatContainerRef.current
-    ) {
-      // Use requestAnimationFrame to ensure the DOM has updated before scrolling
-      requestAnimationFrame(() => {
-        if (chatContainerRef.current) {
-          // Directly set the scrollTop to the bottom
-          chatContainerRef.current.scrollTop =
-            chatContainerRef.current.scrollHeight;
-        }
-      });
-    }
-
-    // Update the previous length ref
-    prevMessagesLengthRef.current = messages.length;
-  }, [messages, shouldAutoScroll]);
 
   const handleSend = async () => {
     if (!input.trim() || !connected) return;
@@ -116,7 +79,6 @@ export function Chat({ connected }: ChatProps) {
       });
 
       const data = await response.json();
-      console.log("Server response:", data);
       const agentMessage: Message = {
         content:
           typeof data === "string"
@@ -163,15 +125,7 @@ export function Chat({ connected }: ChatProps) {
         overflow: "hidden"
       }}
     >
-      <Box
-        ref={chatContainerRef}
-        sx={{
-          flex: 1,
-          overflow: "auto",
-          p: 3
-        }}
-        onScroll={handleScroll}
-      >
+      <AutoScroll flex={1} p={3} triggerValue={messages.length}>
         <Stack spacing={2}>
           {messages.map((message, index) => (
             <Box
@@ -213,9 +167,8 @@ export function Chat({ connected }: ChatProps) {
               </Paper>
             </Box>
           ))}
-          <div ref={messagesEndRef} />
         </Stack>
-      </Box>
+      </AutoScroll>
       <Box
         component="form"
         onSubmit={handleSubmit}

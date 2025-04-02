@@ -1,16 +1,10 @@
-import { FC } from "react";
-
 import { Box, Grid, Typography } from "@mui/material";
 
-interface AgentStatusProps {
-  agentState?: {
-    queueLength: number;
-    isRunning: boolean;
-    lastUpdate: number;
-  };
-}
+import { useMonitor } from "../hooks/useMonitor";
 
-export const AgentStatus: FC<AgentStatusProps> = ({ agentState }) => {
+export function AgentStatus() {
+  const { agentState } = useMonitor();
+
   return (
     <Grid container spacing={3}>
       <Grid item xs={12} sm={4}>
@@ -63,4 +57,4 @@ export const AgentStatus: FC<AgentStatusProps> = ({ agentState }) => {
       </Grid>
     </Grid>
   );
-};
+}

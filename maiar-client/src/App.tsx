@@ -1,4 +1,7 @@
-import { AppBar, Box, Toolbar, Typography } from "@mui/material";
+import { useCallback, useRef } from "react";
+
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 
 import { AgentStatus } from "./components/AgentStatus";
 import { Chat } from "./components/Chat";
@@ -11,6 +14,30 @@ import { MonitorProvider } from "./contexts/MonitorProvider";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
 function AppContent() {
+  // Reference to the reset function provided by GridLayout
+  const resetLayoutRef = useRef<() => void>(() => {
+    console.log(
+      "Reset layout requested from App bar, but handler not yet initialized"
+    );
+  });
+
+  const setResetFn = useCallback((resetFn: () => void) => {
+    console.log("Setting reset layout function");
+    resetLayoutRef.current = resetFn;
+  }, []);
+
+  const handleResetLayout = useCallback(() => {
+    console.log("Reset layout button clicked");
+
+    // Call the reset function from GridLayout
+    resetLayoutRef.current();
+
+    // Force a redraw of the entire dashboard after a short delay
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 100);
+  }, []);
+
   return (
     <Box
       sx={{
@@ -36,7 +63,24 @@ function AppContent() {
           <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
             Maiar Agent Monitor
           </Typography>
-          <ConnectionSettings />
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<RestartAltIcon />}
+              onClick={handleResetLayout}
+              sx={{
+                borderColor: "divider",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  bgcolor: "action.hover"
+                }
+              }}
+            >
+              Reset Layout
+            </Button>
+            <ConnectionSettings />
+          </Box>
         </Toolbar>
       </AppBar>
       <Toolbar /> {/* Spacer for fixed AppBar */}
@@ -48,6 +92,7 @@ function AppContent() {
           chat: <Chat />,
           events: <Events />
         }}
+        onResetLayout={setResetFn}
       />
     </Box>
   );

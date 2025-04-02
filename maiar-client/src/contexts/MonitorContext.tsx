@@ -22,7 +22,6 @@ export interface MonitorContextType {
 
   // Events
   events: MonitorEvent[];
-  filteredEvents: (filter: string) => MonitorEvent[];
   lastEventTime?: number;
 }
 

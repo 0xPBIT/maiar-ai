@@ -2,15 +2,12 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Layout, Responsive } from "react-grid-layout";
 
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
 // CSS is imported in index.html
 import {
   alpha,
   Box,
-  Button,
   IconButton,
   Paper,
-  Tooltip,
   Typography,
   useTheme
 } from "@mui/material";
@@ -115,17 +112,17 @@ interface GridLayoutProps {
     chat: ReactNode;
     events: ReactNode;
   };
+  onResetLayout?: (resetFn: () => void) => void;
 }
 
 // Main grid layout component
-export const GridLayout = ({ children }: GridLayoutProps) => {
+export const GridLayout = ({ children, onResetLayout }: GridLayoutProps) => {
   const [layouts, setLayouts] = useState<LayoutType>(DEFAULT_LAYOUTS);
-  const theme = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState<number>(1200); // Default width
-  const saveTimeoutRef = useRef<number | null>(null);
   const isInitialMount = useRef<boolean>(true);
   const hasLoadedSavedLayout = useRef<boolean>(false);
+  const [layoutKey, setLayoutKey] = useState<number>(0); // Add a key for forcing re-render
 
   // Prevent text selection during drag/resize operations
   const handleDragStart = () => {
@@ -136,7 +133,50 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
   const handleDragStop = () => {
     // Remove class to re-enable selection
     document.body.classList.remove("select-none");
+
+    // Save the current layout to localStorage after dragging is complete
+    saveLayoutToLocalStorage();
   };
+
+  const handleResizeStop = () => {
+    // Remove class to re-enable selection
+    document.body.classList.remove("select-none");
+
+    // Save the current layout to localStorage after resizing is complete
+    saveLayoutToLocalStorage();
+  };
+
+  // Function to save the current layout to localStorage
+  const saveLayoutToLocalStorage = useCallback(() => {
+    // Skip saving during initial mount or if we haven't loaded saved layouts yet
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    console.log("Saving layout to localStorage:", layouts);
+    try {
+      localStorage.setItem("maiarDashboardLayouts", JSON.stringify(layouts));
+      console.log("Successfully saved layouts to localStorage");
+    } catch (e) {
+      console.error("Failed to save layouts to localStorage:", e);
+    }
+  }, [layouts]);
+
+  // Save layouts to localStorage when changed - now just updates state
+  const handleLayoutChange = useCallback(
+    (_layout: Layout[], allLayouts: LayoutType) => {
+      // Skip state update during initial mount
+      if (isInitialMount.current) {
+        isInitialMount.current = false;
+        return;
+      }
+
+      // Update layouts state without saving to localStorage
+      setLayouts(allLayouts);
+    },
+    [setLayouts]
+  );
 
   // Update width on mount and window resize
   useEffect(() => {
@@ -181,7 +221,14 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
 
   // Load saved layouts from localStorage if available
   useEffect(() => {
-    if (hasLoadedSavedLayout.current) return;
+    // Don't load from localStorage after a reset (when layoutKey > 0)
+    if (hasLoadedSavedLayout.current && layoutKey === 0) return;
+
+    // After a reset, we don't want to load from localStorage
+    if (layoutKey > 0) {
+      hasLoadedSavedLayout.current = true;
+      return;
+    }
 
     const savedLayouts = localStorage.getItem("maiarDashboardLayouts");
     console.log("Loading saved layouts from localStorage:", savedLayouts);
@@ -191,60 +238,55 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
         console.log("Successfully parsed saved layouts:", parsedLayouts);
         setLayouts(parsedLayouts);
         hasLoadedSavedLayout.current = true;
+
+        // Trigger a resize after layout is loaded to ensure proper rendering
+        setTimeout(() => {
+          window.dispatchEvent(new Event("resize"));
+        }, 100);
       } catch (e) {
         console.error("Failed to parse saved layouts", e);
+        // Use default layouts on error
+        setLayouts(DEFAULT_LAYOUTS);
       }
+    } else {
+      // No saved layouts found, use defaults
+      setLayouts(DEFAULT_LAYOUTS);
+      hasLoadedSavedLayout.current = true;
     }
-  }, []);
-
-  // Save layouts to localStorage when changed
-  const handleLayoutChange = useCallback(
-    (_layout: Layout[], allLayouts: LayoutType) => {
-      // Skip saving on initial mount or if we haven't loaded saved layouts yet
-      if (isInitialMount.current || !hasLoadedSavedLayout.current) {
-        isInitialMount.current = false;
-        return;
-      }
-
-      // Clear any pending save
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
-
-      // Debounce the save operation
-      saveTimeoutRef.current = window.setTimeout(() => {
-        console.log("Layout changed, saving to localStorage:", allLayouts);
-        try {
-          localStorage.setItem(
-            "maiarDashboardLayouts",
-            JSON.stringify(allLayouts)
-          );
-          console.log("Successfully saved layouts to localStorage");
-        } catch (e) {
-          console.error("Failed to save layouts to localStorage:", e);
-        }
-        setLayouts(allLayouts);
-      }, 500); // Wait 500ms before saving
-    },
-    [setLayouts]
-  );
+  }, [layoutKey]);
 
   // Reset layouts to default
-  const handleResetLayout = () => {
+  const handleResetLayout = useCallback(() => {
     console.log("Resetting layouts to default");
-    localStorage.removeItem("maiarDashboardLayouts");
-    setLayouts(DEFAULT_LAYOUTS);
-    hasLoadedSavedLayout.current = false;
-  };
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
-    };
+    // Remove from localStorage
+    localStorage.removeItem("maiarDashboardLayouts");
+
+    // Reset layout state
+    isInitialMount.current = true; // Set to true to prevent immediate save
+    hasLoadedSavedLayout.current = true; // Set to true to prevent reloading
+
+    // Force immediate layout update
+    setLayouts(() => {
+      console.log("Setting layouts to default:", DEFAULT_LAYOUTS);
+      return { ...DEFAULT_LAYOUTS };
+    });
+
+    // Force component to re-render completely
+    setLayoutKey((prev) => prev + 1);
+
+    // Force a resize event to help the layout recalculate
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 50);
   }, []);
+
+  // Provide reset method to parent via prop
+  useEffect(() => {
+    if (onResetLayout) {
+      onResetLayout(handleResetLayout);
+    }
+  }, [onResetLayout, handleResetLayout]);
 
   return (
     <Box
@@ -256,29 +298,8 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
         boxSizing: "border-box"
       }}
     >
-      <Tooltip title="Reset Layout">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<RestartAltIcon />}
-          onClick={handleResetLayout}
-          sx={{
-            position: "absolute",
-            top: -48,
-            right: 0,
-            zIndex: 1,
-            borderColor: alpha(theme.palette.primary.main, 0.3),
-            color: theme.palette.primary.main,
-            "&:hover": {
-              borderColor: theme.palette.primary.main,
-              backgroundColor: alpha(theme.palette.primary.main, 0.1)
-            }
-          }}
-        >
-          Reset Layout
-        </Button>
-      </Tooltip>
       <ResponsiveGridLayout
+        key={`layout-${layoutKey}`}
         className="layout"
         layouts={layouts}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
@@ -294,7 +315,7 @@ export const GridLayout = ({ children }: GridLayoutProps) => {
         onDragStart={handleDragStart}
         onDragStop={handleDragStop}
         onResizeStart={handleDragStart}
-        onResizeStop={handleDragStop}
+        onResizeStop={handleResizeStop}
       >
         <div key="status">
           <Panel title="Agent Status">{children.status}</Panel>

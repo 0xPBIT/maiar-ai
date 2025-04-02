@@ -188,29 +188,6 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
     };
   }, [connect, url]);
 
-  // Event filtering utility
-  const filteredEvents = useCallback(
-    (filter: string) => {
-      if (!filter) return events;
-
-      const patterns = filter
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean);
-
-      return events.filter((event) => {
-        return patterns.some((pattern) => {
-          const regexPattern = pattern
-            .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-            .replace(/\*/g, ".*");
-          const regex = new RegExp(regexPattern, "i");
-          return regex.test(event.type);
-        });
-      });
-    },
-    [events]
-  );
-
   // Compute derived state
   const contextChain = agentState?.currentContext?.contextChain;
   const lastEventTime =
@@ -225,7 +202,6 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
     contextChain,
     pipelineState,
     events,
-    filteredEvents,
     lastEventTime
   };
 

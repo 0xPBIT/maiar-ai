@@ -22,11 +22,6 @@ export function Events() {
 
   // Debug: Log events array when it changes
   useEffect(() => {
-    console.log(`Events component: received ${events.length} events`);
-    if (events.length > 0) {
-      console.log("Sample event:", events[events.length - 1]);
-    }
-
     // Auto-scroll to the bottom when new events are added
     if (events.length > prevEventsLengthRef.current) {
       if (listRef.current) {

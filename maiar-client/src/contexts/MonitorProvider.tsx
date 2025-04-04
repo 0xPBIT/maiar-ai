@@ -1,7 +1,13 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { DEFAULT_URLS, STORAGE_KEYS } from "../config";
-import { AgentState, MonitorEvent, PipelineState } from "../types/monitor";
+import {
+  AgentState,
+  MonitorEvent,
+  PipelineModificationEvent,
+  PipelineState,
+  PipelineStepExecutedEvent
+} from "../types/monitor";
 import { MonitorContext } from "./MonitorContext";
 
 export function MonitorProvider({ children }: { children: ReactNode }) {
@@ -112,7 +118,10 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
           console.log("Processed monitor event:", monitorEvent.type);
 
           // Handle state updates
-          if (message.type === "runtime.state.update" && message.state) {
+          if (
+            monitorEvent.type === "runtime.state.update" &&
+            monitorEvent.metadata?.state
+          ) {
             console.log("Updating agent state");
             setAgentState(message.state as AgentState);
 
@@ -123,23 +132,39 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
 
           // Handle pipeline generation complete
           else if (
-            message.type === "pipeline.generation.complete" &&
-            message.pipeline
+            monitorEvent.type === "pipeline.generation.complete" &&
+            monitorEvent.metadata?.pipeline
           ) {
-            console.log("Updating pipeline state from generation complete");
             setPipelineState({
               pipeline: message.pipeline
             });
           }
 
+          // Handle pipeline step execution
+          else if (monitorEvent.type === "runtime.pipeline.step.executed") {
+            console.log("Pipeline step executed asdf");
+            console.log(monitorEvent);
+            const event = monitorEvent as PipelineStepExecutedEvent;
+            const prevPipelineState = pipelineState;
+
+            if (prevPipelineState) {
+              setPipelineState({
+                currentStepIndex: event.metadata?.currentStepIndex,
+                ...prevPipelineState
+              });
+            }
+          }
+
           // Handle pipeline modification
-          else if (message.type === "pipeline.modification") {
-            console.log("Updating pipeline state from modification");
+          else if (
+            monitorEvent.type === "runtime.pipeline.modification.applied"
+          ) {
+            const event = monitorEvent as PipelineModificationEvent;
             setPipelineState({
-              pipeline: message.pipeline,
-              currentStep: message.currentStep,
-              modifiedSteps: message.modifiedSteps,
-              explanation: message.explanation
+              pipeline: event.metadata?.pipeline,
+              currentStep: event.metadata?.currentStep,
+              modifiedSteps: event.metadata?.modifiedSteps,
+              explanation: event.metadata?.explanation
             });
           }
 

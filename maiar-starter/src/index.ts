@@ -29,13 +29,13 @@ import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
 
+import { router } from "./lib/express";
 // import {
 //   createPostExecutor,
 //   periodicPostTrigger,
 //   XPlugin
 // } from "@maiar-ai/plugin-x";
-
-import { router } from "./lib/express";
+import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -68,6 +68,7 @@ async function main() {
     }),
     new TextGenerationPlugin(),
     new TimePlugin(),
+    new SearchPermissionPlugin(["ligma"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),

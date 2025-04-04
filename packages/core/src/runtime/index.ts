@@ -955,8 +955,8 @@ by Uranium Corporation
           // Log step execution
           this.logger.debug("step execution completed", {
             type: "runtime.pipeline.step.executed",
-            currentPipeline,
-            currentStepIndex,
+            pipeline: currentPipeline,
+            currentStep,
             pipelineLength: currentPipeline.length,
             executedStep: {
               step: currentStep,

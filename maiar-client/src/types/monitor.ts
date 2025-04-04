@@ -14,10 +14,20 @@ export interface PipelineGenerationCompleteEvent extends BaseMonitorEvent {
   };
 }
 
+export interface PipelineStepExecutedEvent extends BaseMonitorEvent {
+  type: "runtime.pipeline.step.executed";
+  metadata: {
+    pipeline: Array<{ pluginId: string; action: string }>;
+    currentStep: { pluginId: string; action: string };
+    currentStepIndex?: number;
+  };
+}
+
 export interface PipelineModificationEvent extends BaseMonitorEvent {
   type: "pipeline.modification";
   metadata: {
     explanation: string;
+    shouldModify: boolean;
     currentStep: { pluginId: string; action: string };
     modifiedSteps: Array<{ pluginId: string; action: string }>;
     pipeline: Array<{ pluginId: string; action: string }>;
@@ -72,6 +82,7 @@ export interface ContextChainItem {
 // Pipeline state
 export interface PipelineState {
   pipeline: Array<{ pluginId: string; action: string }>;
+  currentStepIndex?: number;
   currentStep?: { pluginId: string; action: string };
   modifiedSteps?: Array<{ pluginId: string; action: string }>;
   explanation?: string;

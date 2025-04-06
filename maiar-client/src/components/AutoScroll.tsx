@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { Box, BoxProps } from "@mui/material";
 
@@ -8,10 +8,6 @@ interface AutoScrollProps extends BoxProps {
    * Value to watch for changes - component will scroll to bottom when this changes
    */
   triggerValue?: unknown;
-  /**
-   * Array of values to watch for changes - component will scroll when any of these change
-   */
-  triggerValues?: unknown[];
   /**
    * Custom function that returns true when scrolling should be triggered
    */
@@ -30,7 +26,6 @@ interface AutoScrollProps extends BoxProps {
 export function AutoScroll({
   children,
   triggerValue,
-  triggerValues = [],
   shouldScrollFn,
   ...props
 }: AutoScrollProps) {
@@ -47,7 +42,7 @@ export function AutoScroll({
   };
 
   // Scroll to bottom function
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (autoScroll && scrollRef.current) {
       requestAnimationFrame(() => {
         if (scrollRef.current) {
@@ -55,7 +50,7 @@ export function AutoScroll({
         }
       });
     }
-  };
+  }, [autoScroll]);
 
   // Watch for changes in trigger values
   useEffect(() => {
@@ -66,7 +61,7 @@ export function AutoScroll({
     } else {
       scrollToBottom();
     }
-  }, [triggerValue, ...triggerValues, shouldScrollFn]);
+  }, [triggerValue, shouldScrollFn, scrollToBottom]);
 
   return (
     <Box

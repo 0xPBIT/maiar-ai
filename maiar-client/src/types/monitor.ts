@@ -11,6 +11,7 @@ export interface PipelineGenerationCompleteEvent extends BaseMonitorEvent {
   type: "pipeline.generation.complete";
   metadata: {
     pipeline: Array<{ pluginId: string; action: string }>;
+    currentStepIndex: number;
   };
 }
 

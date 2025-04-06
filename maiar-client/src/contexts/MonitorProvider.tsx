@@ -4,6 +4,7 @@ import { DEFAULT_URLS, STORAGE_KEYS } from "../config";
 import {
   AgentState,
   MonitorEvent,
+  PipelineGenerationCompleteEvent,
   PipelineModificationEvent,
   PipelineState,
   PipelineStepExecutedEvent
@@ -101,8 +102,6 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
 
       ws.onmessage = (event) => {
         try {
-          // Log only that a message was received, not the entire data
-          console.log("WebSocket message received");
           const message = JSON.parse(event.data);
 
           // Convert the message to our MonitorEvent format
@@ -114,8 +113,6 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
               : Date.now(),
             metadata: { ...message }
           };
-
-          console.log("Processed monitor event:", monitorEvent.type);
 
           // Handle state updates
           if (
@@ -136,23 +133,22 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
             monitorEvent.metadata?.pipeline
           ) {
             setPipelineState({
-              pipeline: message.pipeline
+              pipeline: (monitorEvent as PipelineGenerationCompleteEvent)
+                .metadata.pipeline,
+              currentStepIndex: 0
             });
           }
 
           // Handle pipeline step execution
           else if (monitorEvent.type === "runtime.pipeline.step.executed") {
-            console.log("Pipeline step executed asdf");
-            console.log(monitorEvent);
             const event = monitorEvent as PipelineStepExecutedEvent;
-            const prevPipelineState = pipelineState;
-
-            if (prevPipelineState) {
-              setPipelineState({
-                currentStepIndex: event.metadata?.currentStepIndex,
-                ...prevPipelineState
-              });
-            }
+            setPipelineState((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                currentStepIndex: event.metadata?.currentStepIndex
+              };
+            });
           }
 
           // Handle pipeline modification

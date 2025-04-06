@@ -52,11 +52,11 @@ export function Pipeline() {
       <AutoScroll
         flex={1}
         p={3}
-        triggerValues={[
-          pipelineState.pipeline?.length,
-          pipelineState.currentStep?.pluginId,
-          pipelineState.currentStep?.action
-        ]}
+        triggerValue={{
+          pipelineLength: pipelineState.pipeline?.length,
+          currentStepPluginId: pipelineState.currentStep?.pluginId,
+          currentStepAction: pipelineState.currentStep?.action
+        }}
       >
         <PipelineSteps
           steps={pipelineState.pipeline}

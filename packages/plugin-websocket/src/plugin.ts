@@ -4,8 +4,6 @@ import { RawData } from "ws";
 import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
 import { UserInputContext } from "@maiar-ai/core";
 
-import { WebSocketPluginConfig } from "./types";
-
 interface WebSocketPlatformContext {
   platform: string;
   ws: WebSocket;
@@ -15,14 +13,17 @@ interface WebSocketPlatformContext {
 
 export class WebSocketPlugin extends Plugin {
   private wss: WebSocketServer | null = null;
+  private path: string;
 
-  constructor(private config: WebSocketPluginConfig = { port: 3001 }) {
+  constructor({ path }: { path: string }) {
     super({
       id: "plugin-websocket",
       name: "WebSocket Plugin",
       description: "Enables communication via WebSocket",
       requiredCapabilities: []
     });
+
+    this.path = path;
 
     this.executors = [
       {
@@ -90,9 +91,9 @@ export class WebSocketPlugin extends Plugin {
       return;
     }
 
-    this.wss = new WebSocketServer({ port: this.config.port });
-    this.logger.info("websocket server created on port", {
-      port: this.config.port
+    this.wss = new WebSocketServer({
+      server: this.runtime.server.server,
+      path: this.path
     });
 
     this.wss.on("connection", (ws) => {

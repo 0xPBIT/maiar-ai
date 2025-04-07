@@ -23,7 +23,7 @@ export type PluginTriggerHTTPMethod =
 
 export class ServerManager {
   private app: Express;
-  private server: Server | null = null;
+  private _server: Server | null = null;
   private port: number;
   private isRunning: boolean = false;
 
@@ -34,6 +34,13 @@ export class ServerManager {
 
   public get expressApp(): Express {
     return this.app;
+  }
+
+  public get server(): Server {
+    if (!this._server) {
+      throw new Error("Server not started");
+    }
+    return this._server;
   }
 
   public registerRoute(
@@ -65,14 +72,14 @@ export class ServerManager {
   public async start(): Promise<void> {
     if (this.isRunning) return;
 
-    this.server = this.app.listen(this.port);
+    this._server = this.app.listen(this.port);
     this.isRunning = true;
   }
 
   public async stop(): Promise<void> {
     if (!this.isRunning) return;
 
-    await new Promise((resolve) => this.server?.close(resolve));
+    await new Promise((resolve) => this._server?.close(resolve));
     this.isRunning = false;
   }
 }

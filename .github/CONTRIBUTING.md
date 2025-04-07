@@ -74,7 +74,6 @@ Common scopes for this project can be for main components and include:
 - memory-sqlite
 - model-ollama
 - model-openai
-- plugin-express
 - plugin-image
 - plugin-telegram
 - plugin-terminal
@@ -86,7 +85,7 @@ Common scopes for this project can be for main components and include:
 
 This is not an exhaustive list, and additional scopes can be added in [.commitlintrc.ts](https://github.com/UraniumCorporation/maiar-ai/blob/main/.commitlintrc.ts) as needed.
 
-For multiple scopes, use a comma-separated list i.e. `fix(bug,plugin-express): fix bug in express plugin`
+For multiple scopes, use a comma-separated list i.e. `fix(bug,plugin-time): fix bug in time plugin`
 
 ### Enforcing Conventional Commits
 

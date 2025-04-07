@@ -7,6 +7,7 @@ import { ModelManager } from "./managers/model";
 import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constants";
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
+import { ServerManager } from "./managers/server";
 import {
   AgentContext,
   BaseContextItem,
@@ -119,6 +120,7 @@ export async function getObject<T extends z.ZodType>(
 export class Runtime {
   public readonly operations; // operations that can be used by plugins
 
+  private serverManager: ServerManager;
   private modelManager: ModelManager;
   private memoryManager: MemoryManager;
   private pluginRegistry: PluginRegistry;
@@ -145,7 +147,8 @@ export class Runtime {
   private constructor(
     modelManager: ModelManager,
     memoryManager: MemoryManager,
-    pluginRegistry: PluginRegistry
+    pluginRegistry: PluginRegistry,
+    serverManager: ServerManager
   ) {
     this.operations = {
       getObject: <T extends z.ZodType<unknown>>(
@@ -164,7 +167,7 @@ export class Runtime {
     this.modelManager = modelManager;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
-
+    this.serverManager = serverManager;
     this.isRunning = false;
     this.eventQueue = [];
     this.queueInterface = {
@@ -306,22 +309,11 @@ export class Runtime {
     if (options && options.logger) {
       logger.configure(options.logger);
     }
-
-    this.logger.info(`
-      ___           ___                       ___           ___     
-     /__/\\         /  /\\        ___          /  /\\         /  /\\    
-    |  |::\\       /  /::\\      /  /\\        /  /::\\       /  /::\\   
-    |  |:|:\\     /  /:/\\:\\    /  /:/       /  /:/\\:\\     /  /:/\\:\\  
-  __|__|:|\\:\\   /  /:/~/::\\  /__/::\\      /  /:/~/::\\   /  /:/~/:/  
- /__/::::| \\:\\ /__/:/ /:/\\:\\ \\__\\/\\:\\__  /__/:/ /:/\\:\\ /__/:/ /:/___
- \\  \\:\\~~\\__\\/ \\  \\:\\/:/__\\/    \\  \\:\\/\\ \\  \\:\\/:/__\\/ \\  \\:\\/:::::/
-  \\  \\:\\        \\  \\::/          \\__\\::/  \\  \\::/       \\  \\::/~~~~ 
-   \\  \\:\\        \\  \\:\\          /__/:/    \\  \\:\\        \\  \\:\\     
-    \\  \\:\\        \\  \\:\\         \\__\\/      \\  \\:\\        \\  \\:\\    
-     \\__\\/         \\__\\/                     \\__\\/         \\__\\/    
-     
-      by Uranium Corporation`);
+    Runtime.logTitleHeader();
     this.logger.info("runtime initializing...");
+
+    const serverManager = new ServerManager();
+    await serverManager.start();
 
     const modelManager = new ModelManager();
     for (const modelProvider of modelProviders) {
@@ -417,7 +409,12 @@ export class Runtime {
       }))
     });
 
-    const runtime = new Runtime(modelManager, memoryManager, pluginRegistry);
+    const runtime = new Runtime(
+      modelManager,
+      memoryManager,
+      pluginRegistry,
+      serverManager
+    );
 
     process.on("SIGINT", async () => {
       console.log();
@@ -445,6 +442,13 @@ export class Runtime {
    */
   public get memory(): MemoryManager {
     return this.memoryManager;
+  }
+
+  /**
+   * Access to the server manager for plugins
+   */
+  public get server(): ServerManager {
+    return this.serverManager;
   }
 
   /**
@@ -493,10 +497,20 @@ export class Runtime {
           user: "system"
         };
 
-        trigger.start({
-          eventQueue: this.queueInterface,
-          contextChain: [initContext]
-        });
+        if (trigger.type === "route") {
+          this.server.registerRoute(
+            plugin.id,
+            trigger.route.method,
+            trigger.route.path,
+            trigger.route.handler
+          );
+        } else {
+          // Handle process-type triggers
+          trigger.start({
+            eventQueue: this.queueInterface,
+            contextChain: [initContext]
+          });
+        }
       }
     }
 
@@ -1106,5 +1120,22 @@ export class Runtime {
     config?: ModelRequestConfig
   ): Promise<ICapabilities[K]["output"]> {
     return this.modelManager.executeCapability(capabilityId, input, config);
+  }
+
+  private static logTitleHeader() {
+    this.logger.info(`
+      ___           ___                       ___           ___     
+     /__/\\         /  /\\        ___          /  /\\         /  /\\    
+    |  |::\\       /  /::\\      /  /\\        /  /::\\       /  /::\\   
+    |  |:|:\\     /  /:/\\:\\    /  /:/       /  /:/\\:\\     /  /:/\\:\\  
+  __|__|:|\\:\\   /  /:/~/::\\  /__/::\\      /  /:/~/::\\   /  /:/~/:/  
+ /__/::::| \\:\\ /__/:/ /:/\\:\\ \\__\\/\\:\\__  /__/:/ /:/\\:\\ /__/:/ /:/___
+ \\  \\:\\~~\\__\\/ \\  \\:\\/:/__\\/    \\  \\:\\/\\ \\  \\:\\/:/__\\/ \\  \\:\\/:::::/
+  \\  \\:\\        \\  \\::/          \\__\\::/  \\  \\::/       \\  \\::/~~~~ 
+   \\  \\:\\        \\  \\:\\          /__/:/    \\  \\:\\        \\  \\:\\     
+    \\  \\:\\        \\  \\:\\         \\__\\/      \\  \\:\\        \\  \\:\\    
+     \\__\\/         \\__\\/                     \\__\\/         \\__\\/    
+     
+      by Uranium Corporation`);
   }
 }

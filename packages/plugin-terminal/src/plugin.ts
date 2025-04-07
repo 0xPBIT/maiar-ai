@@ -48,6 +48,7 @@ export class TerminalPlugin extends Plugin {
     this.triggers = [
       {
         name: "terminal_server",
+        type: "process",
         start: this.startServer.bind(this)
       }
     ];

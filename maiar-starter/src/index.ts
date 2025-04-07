@@ -22,7 +22,6 @@ import {
   replyMessageExecutor,
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
-import { ExpressPlugin } from "@maiar-ai/plugin-express";
 import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
@@ -34,7 +33,6 @@ import {
   XPlugin
 } from "@maiar-ai/plugin-x";
 
-import { router } from "./lib/express";
 import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
 // Suppress deprecation warnings
@@ -62,10 +60,6 @@ async function main() {
 
   const plugins: Plugin[] = [
     new ImageGenerationPlugin(),
-    new ExpressPlugin({
-      port: 3002,
-      router
-    }),
     new TextGenerationPlugin(),
     new TimePlugin(),
     new SearchPermissionPlugin(["ligma"]),

@@ -124,7 +124,7 @@ pnpm init
 
 # Install core dependencies
 pnpm add @maiar-ai/core @maiar-ai/model-openai \
-  @maiar-ai/memory-sqlite @maiar-ai/plugin-express \
+  @maiar-ai/memory-sqlite \
   @maiar-ai/plugin-text dotenv
 \end{verbatim}
 
@@ -136,7 +136,6 @@ import "dotenv/config";
 import { createRuntime } from "@maiar-ai/core";
 import { OpenAIProvider } from "@maiar-ai/model-openai";
 import { SQLiteProvider } from "@maiar-ai/memory-sqlite";
-import { PluginExpress } from "@maiar-ai/plugin-express";
 import { PluginTextGeneration } from "@maiar-ai/plugin-text";
 import path from "path";
 

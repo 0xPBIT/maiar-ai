@@ -53,7 +53,6 @@ const commitlintConfig: UserConfig = {
         "model-openai", // model-openai model provider
         "plugin-character", // plugin-character plugin
         "plugin-discord", // plugin-discord plugin
-        "plugin-express", // plugin-express plugin
         "plugin-image", // plugin-image plugin
         "plugin-search", // plugin-search plugin
         "plugin-telegram", // plugin-telegram plugin

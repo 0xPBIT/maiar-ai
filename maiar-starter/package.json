@@ -20,7 +20,6 @@
     "@maiar-ai/model-openai": "workspace:*",
     "@maiar-ai/plugin-character": "workspace:*",
     "@maiar-ai/plugin-discord": "workspace:*",
-    "@maiar-ai/plugin-express": "workspace:*",
     "@maiar-ai/plugin-image": "workspace:*",
     "@maiar-ai/plugin-search": "workspace:*",
     "@maiar-ai/plugin-telegram": "workspace:*",

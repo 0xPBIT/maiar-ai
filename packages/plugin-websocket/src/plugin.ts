@@ -35,6 +35,7 @@ export class WebSocketPlugin extends Plugin {
     this.triggers = [
       {
         name: "ws_message_listener",
+        type: "process",
         start: this.startServer.bind(this)
       }
     ];

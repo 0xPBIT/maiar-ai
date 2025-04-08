@@ -566,6 +566,8 @@ export class Runtime {
       }
     );
 
+    await this.serverManager.stop();
+
     for (const plugin of this.pluginRegistry.plugins) {
       await this.pluginRegistry.unregisterPlugin(plugin);
     }

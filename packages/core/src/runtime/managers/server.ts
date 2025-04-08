@@ -1,3 +1,4 @@
+import cors from "cors";
 import express, {
   Express,
   Response as ExpressResponse,
@@ -71,6 +72,16 @@ export class ServerManager {
 
   public async start(): Promise<void> {
     if (this.isRunning) return;
+
+    this.app.use(express.json());
+
+    this.app.use(
+      cors({
+        origin: "*",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"]
+      })
+    );
 
     this._server = this.app.listen(this.port);
     this.isRunning = true;

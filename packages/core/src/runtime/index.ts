@@ -1,7 +1,10 @@
+import { Server } from "http";
 import { Logger, LoggerOptions } from "winston";
+import Transport from "winston-transport";
 import { z } from "zod";
 
 import logger from "../lib/logger";
+import { WebSocketTransport } from "../lib/winston/transports/websocket";
 import { MemoryManager } from "./managers/memory";
 import { ModelManager } from "./managers/model";
 import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constants";
@@ -142,6 +145,23 @@ export class Runtime {
    */
   public get logger(): Logger {
     return logger.child({ scope: "runtime" });
+  }
+
+  private static setupTransports(transports: Transport[], server: Server) {
+    for (const transport of transports) {
+      this.logger.info("setting up transport", {
+        type: "runtime.setup.transports.setup",
+        transport: transport.constructor.name
+      });
+      if (transport.constructor.name === "WebSocketTransport") {
+        this.logger.info("attaching transport to server", {
+          type: "runtime.setup.transports.attach",
+          transport: transport.constructor.name,
+          server: server.address()
+        });
+        (transport as WebSocketTransport).attachToServer(server);
+      }
+    }
   }
 
   private constructor(
@@ -314,6 +334,16 @@ export class Runtime {
 
     const serverManager = new ServerManager();
     await serverManager.start();
+
+    if (options?.logger?.transports) {
+      this.logger.info("setting up transports", {
+        type: "runtime.setup.transports"
+      });
+      Runtime.setupTransports(
+        options.logger.transports as Transport[],
+        serverManager.server
+      );
+    }
 
     const modelManager = new ModelManager();
     for (const modelProvider of modelProviders) {

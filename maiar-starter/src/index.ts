@@ -106,6 +106,9 @@ async function main() {
       logger: {
         level: "debug",
         transports: [stdout, websocket({ path: "/monitor" })]
+      },
+      server: {
+        port: 3000
       }
     }
   });

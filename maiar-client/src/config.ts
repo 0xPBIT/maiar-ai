@@ -14,7 +14,7 @@ export const DEFAULT_URLS = {
   /**
    * Default HTTP URL for chat API
    */
-  CHAT_API: "http://localhost:3002/message"
+  CHAT_API: "http://localhost:3001/message"
 };
 
 /**

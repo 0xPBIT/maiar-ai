@@ -324,6 +324,9 @@ export class Runtime {
     capabilityAliases: string[][];
     options?: {
       logger?: LoggerOptions;
+      server?: {
+        port?: number;
+      };
     };
   }): Promise<Runtime> {
     if (options && options.logger) {
@@ -332,7 +335,7 @@ export class Runtime {
     Runtime.logTitleHeader();
     this.logger.info("runtime initializing...");
 
-    const serverManager = new ServerManager();
+    const serverManager = new ServerManager(options?.server?.port);
     await serverManager.start();
 
     if (options?.logger?.transports) {

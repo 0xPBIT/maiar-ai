@@ -28,7 +28,7 @@ export class ServerManager {
   private port: number;
   private isRunning: boolean = false;
 
-  constructor(port: number = 3000) {
+  constructor(port: number = 3001) {
     this.app = express();
     this.port = port;
   }

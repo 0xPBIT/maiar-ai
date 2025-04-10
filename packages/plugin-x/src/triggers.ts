@@ -38,7 +38,6 @@ export const periodicPostTrigger = createXTrigger(
 
     return {
       name: "x_periodic_post",
-      type: "process",
       start: (): void => {
         logger.info(`starting x periodic post trigger`, {
           type: "plugin-x.trigger.start",

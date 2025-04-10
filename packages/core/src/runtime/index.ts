@@ -480,8 +480,8 @@ export class Runtime {
   /**
    * Access to the server manager for plugins
    */
-  public get server(): ServerManager {
-    return this.serverManager;
+  public get server(): Server {
+    return this.serverManager.server;
   }
 
   /**
@@ -530,8 +530,8 @@ export class Runtime {
           user: "system"
         };
 
-        if (trigger.type === "route") {
-          this.server.registerRoute(
+        if (trigger.route) {
+          this.serverManager.registerRoute(
             plugin.id,
             trigger.route.method,
             trigger.route.path,

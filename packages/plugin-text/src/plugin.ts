@@ -45,7 +45,6 @@ export class TextGenerationPlugin extends Plugin {
     this.triggers = [
       {
         name: "server_chat",
-        type: "route",
         route: {
           path: "/chat",
           method: "post",

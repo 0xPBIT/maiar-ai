@@ -44,27 +44,25 @@ export interface Executor {
  * Implementation of a trigger for a plugin.
  * Listens for events and creates an event to trigger the MAIAR agent
  */
-
-// TODO: is there a better way to do this? I read that including the type in the object is
-// the typical practice for discriminated unions in TypeScript.
-export type Trigger = {
+export interface TriggerRoute {
   name: string;
-} & (
-  | {
-      type: "route";
-      route: {
-        path: string;
-        method: PluginTriggerHTTPMethod;
-        handler: (
-          req: PluginTriggerRequest,
-          res: ExpressResponse,
-          next: NextFunction
-        ) => Promise<void>;
-        middleware?: RequestHandler[];
-      };
-    }
-  | {
-      type: "process";
-      start: (context: AgentContext) => Promise<void> | void;
-    }
-);
+  route: {
+    path: string;
+    method: PluginTriggerHTTPMethod;
+    handler: (
+      req: PluginTriggerRequest,
+      res: ExpressResponse,
+      next: NextFunction
+    ) => Promise<void>;
+    middleware?: RequestHandler[];
+  };
+  start?: never;
+}
+
+export interface TriggerStart {
+  name: string;
+  start: (context: AgentContext) => Promise<void> | void;
+  route?: never;
+}
+
+export type Trigger = TriggerRoute | TriggerStart;

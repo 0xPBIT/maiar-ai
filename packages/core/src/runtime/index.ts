@@ -1,3 +1,4 @@
+import cors from "cors";
 import { Server } from "http";
 import { Logger, LoggerOptions } from "winston";
 import Transport from "winston-transport";
@@ -10,7 +11,7 @@ import { ModelManager } from "./managers/model";
 import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constants";
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
-import { CorsOptions, ServerManager } from "./managers/server";
+import { ServerManager } from "./managers/server";
 import {
   AgentContext,
   BaseContextItem,
@@ -326,7 +327,7 @@ export class Runtime {
       logger?: LoggerOptions;
       server?: {
         port?: number;
-        cors?: CorsOptions;
+        cors?: cors.CorsOptions;
       };
     };
   }): Promise<Runtime> {

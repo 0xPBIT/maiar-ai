@@ -1,8 +1,4 @@
-import {
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-  NextFunction
-} from "express";
+import { Request, Response } from "express";
 
 import { AgentContext } from "../pipeline/agent";
 
@@ -61,11 +57,7 @@ export interface TriggerRoute {
     /**
      * The handler for the route.
      */
-    handler: (
-      req: ExpressRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => Promise<void>;
+    handler: (req: Request, res: Response) => Promise<void> | void;
   };
 
   /**

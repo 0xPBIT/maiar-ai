@@ -1,11 +1,5 @@
 import cors from "cors";
-import express, {
-  Express,
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-  NextFunction,
-  RequestHandler
-} from "express";
+import express, { Express, NextFunction, Request, Response } from "express";
 import { Server } from "http";
 
 export type CorsOptions = cors.CorsOptions;
@@ -33,21 +27,15 @@ export class ServerManager {
 
   public registerRoute(
     path: string,
-    handler: (
-      req: ExpressRequest,
-      res: ExpressResponse,
-      next: NextFunction
-    ) => Promise<void>
+    handler: (req: Request, res: Response) => Promise<void> | void
   ): void {
-    this.app.post(path, (req: ExpressRequest, res, next) => {
-      handler(req, res, next);
-    });
-  }
-
-  public registerMiddleware(middleware: RequestHandler): void {
-    this.app.use((req: ExpressRequest, res, next) => {
-      middleware(req, res, next);
-    });
+    this.app.post(
+      path,
+      async (req: Request, res: Response, next: NextFunction) => {
+        await handler(req, res);
+        next();
+      }
+    );
   }
 
   public async start(): Promise<void> {

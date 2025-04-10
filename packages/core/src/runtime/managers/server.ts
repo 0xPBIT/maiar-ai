@@ -2,8 +2,6 @@ import cors from "cors";
 import express, { Express, NextFunction, Request, Response } from "express";
 import { Server } from "http";
 
-export type CorsOptions = cors.CorsOptions;
-
 export interface ServerManagerConfig {
   port: number;
   cors: cors.CorsOptions;

@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 
 import {
   AgentContext,
@@ -6,7 +6,6 @@ import {
   getUserInput,
   Plugin,
   PluginResult,
-  PluginTriggerRequest,
   UserInputContext
 } from "@maiar-ai/core";
 
@@ -47,7 +46,6 @@ export class TextGenerationPlugin extends Plugin {
         name: "server_chat",
         route: {
           path: "/chat",
-          method: "post",
           handler: this.handleChat.bind(this)
         }
       }
@@ -88,10 +86,7 @@ export class TextGenerationPlugin extends Plugin {
     return { success: true };
   }
 
-  private async handleChat(
-    req: PluginTriggerRequest,
-    res: Response
-  ): Promise<void> {
+  private async handleChat(req: Request, res: Response): Promise<void> {
     const { message, user } = req.body;
 
     const initialContext: UserInputContext = {

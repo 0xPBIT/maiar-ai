@@ -10,7 +10,7 @@ import { ModelManager } from "./managers/model";
 import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constants";
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
-import { ServerManager } from "./managers/server";
+import { CorsOptions, ServerManager } from "./managers/server";
 import {
   AgentContext,
   BaseContextItem,
@@ -326,16 +326,24 @@ export class Runtime {
       logger?: LoggerOptions;
       server?: {
         port?: number;
+        cors?: CorsOptions;
       };
     };
   }): Promise<Runtime> {
     if (options && options.logger) {
       logger.configure(options.logger);
     }
-    Runtime.logTitleHeader();
+    Runtime.banner();
     this.logger.info("runtime initializing...");
 
-    const serverManager = new ServerManager(options?.server?.port);
+    const serverManager = new ServerManager({
+      port: options?.server?.port || 3001,
+      cors: options?.server?.cors || {
+        origin: "*",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type"]
+      }
+    });
     await serverManager.start();
 
     if (options?.logger?.transports) {
@@ -532,8 +540,6 @@ export class Runtime {
 
         if (trigger.route) {
           this.serverManager.registerRoute(
-            plugin.id,
-            trigger.route.method,
             trigger.route.path,
             trigger.route.handler
           );
@@ -1157,7 +1163,7 @@ export class Runtime {
     return this.modelManager.executeCapability(capabilityId, input, config);
   }
 
-  private static logTitleHeader() {
+  private static banner() {
     this.logger.info(`
       ___           ___                       ___           ___     
      /__/\\         /  /\\        ___          /  /\\         /  /\\    

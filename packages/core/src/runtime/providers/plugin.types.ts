@@ -1,10 +1,9 @@
 import {
+  Request as ExpressRequest,
   Response as ExpressResponse,
-  NextFunction,
-  RequestHandler
+  NextFunction
 } from "express";
 
-import { PluginTriggerHTTPMethod, PluginTriggerRequest } from "../managers";
 import { AgentContext } from "../pipeline/agent";
 
 /**
@@ -42,26 +41,53 @@ export interface Executor {
 
 /**
  * Implementation of a trigger for a plugin.
- * Listens for events and creates an event to trigger the MAIAR agent
+ * Listens for events or HTTP requests and creates an event to trigger the MAIAR agent
  */
 export interface TriggerRoute {
+  /**
+   * Unique identifier for the trigger.
+   */
   name: string;
+
+  /**
+   * HTTP route configuration for the trigger.
+   */
   route: {
+    /**
+     * The path of the route.
+     */
     path: string;
-    method: PluginTriggerHTTPMethod;
+
+    /**
+     * The handler for the route.
+     */
     handler: (
-      req: PluginTriggerRequest,
+      req: ExpressRequest,
       res: ExpressResponse,
       next: NextFunction
     ) => Promise<void>;
-    middleware?: RequestHandler[];
   };
+
+  /**
+   * Start is of type never because it is not used in the TriggerRoute type.
+   */
   start?: never;
 }
 
 export interface TriggerStart {
+  /**
+   * Unique identifier for the trigger.
+   */
   name: string;
+
+  /**
+   * The start function for the trigger.
+   */
   start: (context: AgentContext) => Promise<void> | void;
+
+  /**
+   * Route is of type never because it is not used in the TriggerStart type.
+   */
   route?: never;
 }
 

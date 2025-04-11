@@ -32,13 +32,6 @@ export class WebSocketTransport extends Transport {
 
     this.wss = new WebSocketServer({ server, path: this.path });
 
-    console.log(
-      "WebSocket server started on path",
-      this.wss.options.path,
-      "and is attached to server",
-      this.wss.address()
-    );
-
     this.wss.on("connection", (ws) => {
       this.clients.add(ws);
 

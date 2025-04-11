@@ -16,23 +16,22 @@ import {
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
 import { CharacterPlugin } from "@maiar-ai/plugin-character";
-// import {
-//   DiscordPlugin,
-//   postListenerTrigger,
-//   replyMessageExecutor,
-//   sendMessageExecutor
-// } from "@maiar-ai/plugin-discord";
+import {
+  DiscordPlugin,
+  postListenerTrigger,
+  replyMessageExecutor,
+  sendMessageExecutor
+} from "@maiar-ai/plugin-discord";
 import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
-
-// import {
-//   createPostExecutor,
-//   periodicPostTrigger,
-//   XPlugin
-// } from "@maiar-ai/plugin-x";
+import {
+  createPostExecutor,
+  periodicPostTrigger,
+  XPlugin
+} from "@maiar-ai/plugin-x";
 
 import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
@@ -73,23 +72,23 @@ async function main() {
     }),
     new CharacterPlugin({
       character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
+    }),
+    new XPlugin({
+      client_id: process.env.X_CLIENT_ID as string,
+      client_secret: process.env.X_CLIENT_SECRET as string,
+      callback_url: process.env.X_CALLBACK_URL as string,
+      // You can customize which executors and triggers to use
+      // If not specified, all default ones will be used automatically
+      customExecutors: [createPostExecutor],
+      customTriggers: [periodicPostTrigger]
+    }),
+    new DiscordPlugin({
+      token: process.env.DISCORD_BOT_TOKEN as string,
+      clientId: process.env.DISCORD_CLIENT_ID as string,
+      commandPrefix: "!",
+      customExecutors: [sendMessageExecutor, replyMessageExecutor],
+      customTriggers: [postListenerTrigger]
     })
-    // new XPlugin({
-    //   client_id: process.env.X_CLIENT_ID as string,
-    //   client_secret: process.env.X_CLIENT_SECRET as string,
-    //   callback_url: process.env.X_CALLBACK_URL as string,
-    //   // You can customize which executors and triggers to use
-    //   // If not specified, all default ones will be used automatically
-    //   customExecutors: [createPostExecutor],
-    //   customTriggers: [periodicPostTrigger]
-    // }),
-    // new DiscordPlugin({
-    //   token: process.env.DISCORD_BOT_TOKEN as string,
-    //   clientId: process.env.DISCORD_CLIENT_ID as string,
-    //   commandPrefix: "!",
-    //   customExecutors: [sendMessageExecutor, replyMessageExecutor],
-    //   customTriggers: [postListenerTrigger]
-    // })
   ];
 
   const capabilityAliases: string[][] = [

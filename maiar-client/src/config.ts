@@ -9,12 +9,12 @@ export const DEFAULT_URLS = {
   /**
    * Default WebSocket URL for monitoring
    */
-  MONITOR_WEBSOCKET: "http://localhost:3001/monitor",
+  MONITOR_WEBSOCKET: "http://localhost:3000/monitor",
 
   /**
    * Default HTTP URL for chat API
    */
-  CHAT_API: "http://localhost:3001/message"
+  CHAT_API: "http://localhost:3000/message"
 };
 
 /**

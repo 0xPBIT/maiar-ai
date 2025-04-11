@@ -338,7 +338,7 @@ export class Runtime {
     this.logger.info("runtime initializing...");
 
     const serverManager = new ServerManager({
-      port: options?.server?.port || 3001,
+      port: options?.server?.port || 3000,
       cors: options?.server?.cors || {
         origin: "*",
         methods: ["GET", "POST"],

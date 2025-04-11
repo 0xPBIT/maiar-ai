@@ -1,5 +1,5 @@
 import cors from "cors";
-import express, { Express, NextFunction, Request, Response } from "express";
+import express, { Express, Request, Response } from "express";
 import { Server } from "http";
 
 export interface ServerManagerConfig {
@@ -27,13 +27,9 @@ export class ServerManager {
     path: string,
     handler: (req: Request, res: Response) => Promise<void> | void
   ): void {
-    this.app.post(
-      path,
-      async (req: Request, res: Response, next: NextFunction) => {
-        await handler(req, res);
-        next();
-      }
-    );
+    this.app.post(path, async (req: Request, res: Response) => {
+      await handler(req, res);
+    });
   }
 
   private mountIntrospectionRoute(): void {

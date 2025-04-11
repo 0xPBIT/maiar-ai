@@ -544,7 +544,9 @@ export class Runtime {
             trigger.route.path,
             trigger.route.handler
           );
-        } else {
+        }
+
+        if (trigger.start) {
           // Handle process-type triggers
           trigger.start({
             eventQueue: this.queueInterface,

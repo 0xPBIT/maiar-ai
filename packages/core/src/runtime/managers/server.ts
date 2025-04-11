@@ -12,10 +12,10 @@ export class ServerManager {
   private _server: Server | undefined;
   private port: number;
   private cors: cors.CorsOptions;
-  constructor(config: ServerManagerConfig) {
+  constructor({ port, cors }: ServerManagerConfig) {
     this.app = express();
-    this.port = config.port;
-    this.cors = config.cors;
+    this.port = port;
+    this.cors = cors;
   }
 
   public get server(): Server {

@@ -37,7 +37,7 @@ export interface Executor {
 
 /**
  * Implementation of a trigger for a plugin.
- * Listens for events or HTTP requests and creates an event to trigger the MAIAR agent
+ * Listens for HTTP requests OR process triggers, then creates an event invoke the MAIAR agent.
  */
 export interface TriggerRoute {
   /**

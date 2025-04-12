@@ -22,8 +22,8 @@ export interface XPluginConfig {
 
   // Custom executors and triggers
   // Can be either plain implementations or factory functions that will receive XService
-  customExecutors?: (Executor | XExecutorFactory)[];
-  customTriggers?: (Trigger | XTriggerFactory)[];
+  executorFactories?: XExecutorFactory[];
+  triggerFactories?: XTriggerFactory[];
 }
 
 /**
@@ -45,7 +45,7 @@ export interface TriggerConfig {
  */
 export type XExecutorFactory = (
   service: XService,
-  runtime: Runtime
+  getRuntime: () => Runtime
 ) => Executor;
 
 /**
@@ -54,7 +54,7 @@ export type XExecutorFactory = (
  */
 export type XTriggerFactory = (
   service: XService,
-  runtime: Runtime,
+  getRuntime: () => Runtime,
   config?: TriggerConfig
 ) => Trigger;
 

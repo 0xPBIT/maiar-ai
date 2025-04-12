@@ -5,19 +5,10 @@ import { generateTweetTemplate } from "./templates";
 import { PostTweetSchema, TweetOptions, XExecutorFactory } from "./types";
 
 /**
- * Creates an executor with a bound XService and Runtime instance
- * @param factory Factory function that takes XService and Runtime and returns an executor implementation
- * @returns A function that will receive the XService and Runtime instances from the plugin
- */
-export function createXExecutor(factory: XExecutorFactory): XExecutorFactory {
-  return factory;
-}
-
-/**
  * Helper to create a simple executor with name, description, and execute function
  * The execute function will receive context, xService, and runtime
  */
-export function createSimpleXExecutor(
+export function xExecutorFactory(
   name: string,
   description: string,
   execute: (
@@ -26,10 +17,13 @@ export function createSimpleXExecutor(
     runtime: Runtime
   ) => Promise<PluginResult>
 ): XExecutorFactory {
-  return (service: XService, runtime: Runtime): Executor => ({
+  return (service: XService, getRuntime: () => Runtime): Executor => ({
     name,
     description,
-    fn: (context: AgentContext) => execute(context, service, runtime)
+    fn: (context: AgentContext) => {
+      const runtime = getRuntime();
+      return execute(context, service, runtime);
+    }
   });
 }
 
@@ -37,64 +31,48 @@ export function createSimpleXExecutor(
  * Default executor for creating a new post on X (Twitter)
  * This executor extracts text from the user input and creates a new post
  */
-export const createPostExecutor = createXExecutor(
-  (xService: XService, runtime: Runtime): Executor => {
-    return {
-      name: "post_tweet",
-      description: "Post a tweet on X (Twitter)",
-      fn: async (context: AgentContext): Promise<PluginResult> => {
-        try {
-          const tweetTemplate = generateTweetTemplate(context.contextChain);
-          const params = await runtime.operations.getObject(
-            PostTweetSchema,
-            tweetTemplate
-          );
+export const createPostExecutor = xExecutorFactory(
+  "post_tweet",
+  "Post a tweet on X (Twitter)",
+  async (
+    context: AgentContext,
+    xService: XService,
+    runtime: Runtime
+  ): Promise<PluginResult> => {
+    try {
+      const tweetTemplate = generateTweetTemplate(context.contextChain);
+      const params = await runtime.operations.getObject(
+        PostTweetSchema,
+        tweetTemplate
+      );
+      const message = params.tweetText;
+      // Post the tweet
+      const options: TweetOptions = {
+        text: message
+      };
 
-          const message = params.tweetText;
-          // Post the tweet
-          const options: TweetOptions = {
-            text: message
-          };
+      const result = await xService.postTweet(options);
 
-          const result = await xService.postTweet(options);
-
-          if (!result) {
-            return {
-              success: false,
-              error: "Failed to post tweet"
-            };
-          }
-
-          return {
-            success: true,
-            data: {
-              tweet_id: result.id,
-              tweet_url: `https://x.com/i/status/${result.id}`,
-              text: result.text
-            }
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error: String(error)
-          };
-        }
+      if (!result) {
+        return {
+          success: false,
+          error: "Failed to post tweet"
+        };
       }
-    };
+
+      return {
+        success: true,
+        data: {
+          tweet_id: result.id,
+          tweet_url: `https://x.com/i/status/${result.id}`,
+          text: result.text
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: String(error)
+      };
+    }
   }
 );
-
-/**
- * Default set of executors for the X plugin
- */
-export const DEFAULT_X_EXECUTORS: XExecutorFactory[] = [createPostExecutor];
-
-/**
- * Creates all custom executors with the service bound to them
- */
-export function createAllCustomExecutors(
-  xService: XService,
-  runtime: Runtime
-): Executor[] {
-  return DEFAULT_X_EXECUTORS.map((factory) => factory(xService, runtime));
-}

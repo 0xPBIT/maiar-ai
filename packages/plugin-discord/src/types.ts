@@ -87,21 +87,33 @@ export const MessageIntentSchema = z.object({
 export type MessageIntent = z.infer<typeof MessageIntentSchema>;
 
 /**
- * Function that receives XService and returns an Executor
- * This allows for dependency injection of the XService
+ * Function that receives DiscordService and returns an Executor
+ * This allows for dependency injection of the DiscordService
  */
 export type DiscordExecutorFactory = (
+  /**
+   * The underlying Discord service
+   */
   service: DiscordService,
-  runtime: Runtime
+  /**
+   * Function that returns the plugins runtime
+   */
+  getRuntime: () => Runtime
 ) => Executor;
 
 /**
- * Function that receives XService and config and returns a Trigger
- * This allows for dependency injection of the XService
+ * Function that receives DiscordService and config and returns a Trigger
+ * This allows for dependency injection of the DiscordService
  */
 export type DiscordTriggerFactory = (
+  /**
+   * The underlying Discord service
+   */
   service: DiscordService,
-  runtime: Runtime,
+  /**
+   * Function that returns the plugins runtime
+   */
+  getRuntime: () => Runtime,
   config?: {
     commandPrefix: string;
   }

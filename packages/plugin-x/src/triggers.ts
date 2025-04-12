@@ -28,7 +28,11 @@ export function createXTrigger(factory: XTriggerFactory): XTriggerFactory {
  * This trigger creates a new context chain with instructions for the agent to create a post
  */
 export const periodicPostTrigger = createXTrigger(
-  (xService: XService, runtime: Runtime, config?: TriggerConfig): Trigger => {
+  (
+    xService: XService,
+    getRuntime: () => Runtime,
+    config?: TriggerConfig
+  ): Trigger => {
     // Hardcoded values for posting every 6 hours with 3 hours of randomization
     const baseIntervalMinutes = 360; // 6 hours
     const randomizationMinutes = 180; // 3 hours
@@ -51,6 +55,7 @@ export const periodicPostTrigger = createXTrigger(
 
         const scheduleNextPost = async () => {
           try {
+            const runtime = getRuntime();
             // Calculate random interval
             const randomIntervalMinutes =
               baseIntervalMinutes + Math.random() * randomizationMinutes;
@@ -151,25 +156,3 @@ export const periodicPostTrigger = createXTrigger(
     };
   }
 );
-
-/**
- * Default set of triggers for the X plugin
- */
-export const DEFAULT_X_TRIGGERS: XTriggerFactory[] = [periodicPostTrigger];
-
-/**
- * Creates all custom triggers with the service bound to them
- */
-export function createAllCustomTriggers(
-  xService: XService,
-  runtime: Runtime,
-  config?: TriggerConfig
-): Trigger[] {
-  logger.info("creating all custom triggers", {
-    type: "plugin-x.triggers.creating",
-    config: JSON.stringify(config || {})
-  });
-  return DEFAULT_X_TRIGGERS.map((factory) =>
-    factory(xService, runtime, config)
-  );
-}

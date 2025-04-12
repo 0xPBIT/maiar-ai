@@ -35,10 +35,13 @@ export function discordExecutorFactory(
     scope: `plugin-discord`
   });
 
-  return (service: DiscordService, runtime: Runtime): Executor => ({
+  return (service: DiscordService, getRuntime: () => Runtime): Executor => ({
     name,
     description,
-    fn: (context: AgentContext) => execute(context, service, runtime, logger)
+    fn: (context: AgentContext) => {
+      const runtime = getRuntime();
+      return execute(context, service, runtime, logger);
+    }
   });
 }
 

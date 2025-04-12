@@ -1,22 +1,17 @@
 import * as path from "path";
 
-import { Executor, Plugin, Trigger } from "@maiar-ai/core";
+import { Plugin } from "@maiar-ai/core";
 
-import { createAllCustomExecutors } from "./executors";
 import { runAuthFlow } from "./scripts/auth-flow";
 import { TokenStorage, XService } from "./services";
-import { createAllCustomTriggers } from "./triggers";
-import {
-  TriggerConfig,
-  XExecutorFactory,
-  XPluginConfig,
-  XTriggerFactory
-} from "./types";
+import { XExecutorFactory, XPluginConfig, XTriggerFactory } from "./types";
 
 export class XPlugin extends Plugin {
   private xService: XService;
   private tokenStorage: TokenStorage;
   private isAuthenticated = false;
+  private executorFactories: XExecutorFactory[];
+  private triggerFactories: XTriggerFactory[];
 
   constructor(private config: XPluginConfig) {
     super({
@@ -30,6 +25,9 @@ export class XPlugin extends Plugin {
     const dataFolder = path.resolve(process.cwd(), "data");
     this.tokenStorage = new TokenStorage(dataFolder);
 
+    this.executorFactories = config.executorFactories || [];
+    this.triggerFactories = config.triggerFactories || [];
+
     // Initialize X service
     this.xService = new XService({
       client_id: this.config.client_id,
@@ -39,8 +37,6 @@ export class XPlugin extends Plugin {
       getStoredToken: async () => this.tokenStorage.getToken(),
       storeToken: async (token) => this.tokenStorage.storeToken(token)
     });
-
-    // Executors and triggers will be registered in the init method, after runtime is available
   }
 
   /**
@@ -50,24 +46,6 @@ export class XPlugin extends Plugin {
   public async init(): Promise<void> {
     // This log confirms that we're being initialized with a valid runtime
     this.logger.info("plugin x initializing...", { type: "plugin-x" });
-
-    // Validate required configuration
-    if (!this.config.client_id || !this.config.callback_url) {
-      this.logger.error("❌ x plugin error: missing required configuration", {
-        type: "plugin-x"
-      });
-      this.logger.error(
-        "the x plugin requires at minimum:\n- client_id: Your X API OAuth 2.0 client ID\n- callback_url: Your OAuth callback URL",
-        {
-          type: "plugin-x"
-        }
-      );
-
-      // Throw a fatal error instead of just warning
-      throw new Error(
-        "X Plugin initialization failed: Missing required configuration. Please set the required environment variables and restart the application."
-      );
-    }
 
     // Try to authenticate with stored tokens first
     this.isAuthenticated = await this.xService.authenticate();
@@ -139,8 +117,9 @@ export class XPlugin extends Plugin {
       });
     }
 
-    // Register executors and triggers now that we have a runtime
-    this.registerExecutorsAndTriggers();
+    // Register executors and triggers
+    this.registerExecutors();
+    this.registerTriggers();
 
     this.logger.info("x plugin initialized.", {
       type: "plugin-x"
@@ -149,80 +128,16 @@ export class XPlugin extends Plugin {
 
   public async shutdown(): Promise<void> {}
 
-  /**
-   * Register both executors and triggers
-   * This is separated from init for clarity and is only called after runtime is available
-   */
-  private registerExecutorsAndTriggers(): void {
-    this.logger.info("registering x plugin executors and triggers", {
-      type: "plugin-x"
-    });
-
-    // Register executors
-    if (this.config.customExecutors) {
-      // If customExecutors are provided as factories, instantiate them with xService
-      const customExecutors = this.config.customExecutors as (
-        | Executor
-        | XExecutorFactory
-      )[];
-
-      for (const executorOrFactory of customExecutors) {
-        if (typeof executorOrFactory === "function") {
-          // It's a factory function, call it with xService and runtime
-          this.executors.push(executorOrFactory(this.xService, this.runtime));
-        } else {
-          // It's a plain ExecutorImplementation, add it directly
-          this.executors.push(executorOrFactory);
-        }
-      }
-    } else {
-      // Register all default custom executors with xService injected
-      for (const executor of createAllCustomExecutors(
-        this.xService,
-        this.runtime
-      )) {
-        this.executors.push(executor);
-      }
+  private registerExecutors(): void {
+    for (const executorFactory of this.executorFactories) {
+      this.executors.push(executorFactory(this.xService, () => this.runtime));
     }
+  }
 
-    // Register triggers
-    if (this.config.customTriggers) {
-      // If customTriggers are provided as factories, instantiate them with xService
-      const customTriggers = this.config.customTriggers as (
-        | Trigger
-        | XTriggerFactory
-      )[];
-
-      for (const triggerOrFactory of customTriggers) {
-        if (typeof triggerOrFactory === "function") {
-          // It's a factory function, call it with xService and runtime
-          const triggerConfig: TriggerConfig = {};
-          this.triggers.push(
-            triggerOrFactory(this.xService, this.runtime, triggerConfig)
-          );
-        } else {
-          // It's a plain Trigger, add it directly
-          this.triggers.push(triggerOrFactory);
-        }
-      }
-    } else {
-      // Register all default custom triggers with xService injected
-      const triggerConfig: TriggerConfig = {};
-      for (const trigger of createAllCustomTriggers(
-        this.xService,
-        this.runtime,
-        triggerConfig
-      )) {
-        this.triggers.push(trigger);
-      }
+  private registerTriggers(): void {
+    for (const triggerFactory of this.triggerFactories) {
+      this.triggers.push(triggerFactory(this.xService, () => this.runtime));
     }
-
-    this.logger.info(
-      `registered ${this.executors.length} executors and ${this.triggers.length} triggers`,
-      {
-        type: "plugin-x"
-      }
-    );
   }
 
   /**

@@ -79,15 +79,15 @@ async function main() {
       callback_url: process.env.X_CALLBACK_URL as string,
       // You can customize which executors and triggers to use
       // If not specified, all default ones will be used automatically
-      customExecutors: [createPostExecutor],
-      customTriggers: [periodicPostTrigger]
+      executorFactories: [createPostExecutor],
+      triggerFactories: [periodicPostTrigger]
     }),
     new DiscordPlugin({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,
       commandPrefix: "!",
-      customExecutors: [sendMessageExecutor, replyMessageExecutor],
-      customTriggers: [postListenerTrigger]
+      executorFactories: [sendMessageExecutor, replyMessageExecutor],
+      triggerFactories: [postListenerTrigger]
     })
   ];
 

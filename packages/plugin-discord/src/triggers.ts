@@ -21,13 +21,14 @@ import {
  */
 export const postListenerTrigger: DiscordTriggerFactory = (
   discordService: DiscordService,
-  runtime: Runtime
+  getRuntime: () => Runtime
 ) => {
   const logger = maiarLogger.default.child({
     scope: `plugin-discord`
   });
 
   async function handleMessage(message: Message): Promise<void> {
+    const runtime = getRuntime();
     // Skip bot messages
     if (message.author.bot) return;
 

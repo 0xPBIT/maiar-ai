@@ -18,8 +18,8 @@ export class DiscordPlugin extends Plugin {
     clientId: string;
     commandPrefix?: string;
     guildId?: string;
-    customExecutors?: DiscordExecutorFactory[];
-    customTriggers?: DiscordTriggerFactory[];
+    executorFactories?: DiscordExecutorFactory[];
+    triggerFactories?: DiscordTriggerFactory[];
   }) {
     super({
       id: "plugin-discord",
@@ -34,8 +34,8 @@ export class DiscordPlugin extends Plugin {
     this.guildId = config.guildId;
     this.commandPrefix = config.commandPrefix || "!";
 
-    this.triggerFactories = config.customTriggers || [];
-    this.executorFactories = config.customExecutors || [];
+    this.triggerFactories = config.triggerFactories || [];
+    this.executorFactories = config.executorFactories || [];
 
     // initialize the discord service
     this.discordService = new DiscordService({
@@ -67,14 +67,16 @@ export class DiscordPlugin extends Plugin {
 
   private registerExecutors(): void {
     for (const executorFactory of this.executorFactories) {
-      this.executors.push(executorFactory(this.discordService, this.runtime));
+      this.executors.push(
+        executorFactory(this.discordService, () => this.runtime)
+      );
     }
   }
 
   private registerTriggers(): void {
     for (const triggerFactory of this.triggerFactories) {
       this.triggers.push(
-        triggerFactory(this.discordService, this.runtime, {
+        triggerFactory(this.discordService, () => this.runtime, {
           commandPrefix: this.commandPrefix
         })
       );

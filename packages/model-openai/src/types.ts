@@ -21,7 +21,10 @@ declare module "@maiar-ai/core" {
 export enum OpenAITextGenerationModel {
   GPT4O = "gpt-4o",
   GPT4O_MINI = "gpt-4o-mini",
-  GPT35_TURBO = "gpt-3.5-turbo"
+  GPT35_TURBO = "gpt-3.5-turbo",
+  GPT41 = "gpt-4.1",
+  GPT41_MINI = "gpt-4.1-mini",
+  GPT41_NANO = "gpt-4.1-nano"
 }
 
 export enum OpenAIImageGenerationModel {

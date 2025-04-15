@@ -542,7 +542,8 @@ export class Runtime {
         if (trigger.route) {
           this.serverManager.registerRoute(
             trigger.route.path,
-            trigger.route.handler
+            trigger.route.handler,
+            trigger.route.middleware
           );
         }
 

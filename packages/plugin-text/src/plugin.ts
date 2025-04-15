@@ -1,3 +1,5 @@
+import express from "express";
+
 import {
   AgentContext,
   BaseContextItem,
@@ -46,7 +48,8 @@ export class TextGenerationPlugin extends Plugin {
         name: "server_chat",
         route: {
           path: "/chat",
-          handler: this.handleChat.bind(this)
+          handler: this.handleChat.bind(this),
+          middleware: [express.json()]
         }
       }
     ];

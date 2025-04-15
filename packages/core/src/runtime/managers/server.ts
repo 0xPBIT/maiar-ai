@@ -1,5 +1,11 @@
 import cors from "cors";
-import express, { Express, Request, Response } from "express";
+import express, {
+  Express,
+  Request,
+  RequestHandler,
+  Response,
+  Router
+} from "express";
 import { Server } from "http";
 
 export interface ServerManagerConfig {
@@ -9,11 +15,14 @@ export interface ServerManagerConfig {
 
 export class ServerManager {
   private app: Express;
+  private router: Router;
   private _server: Server | undefined;
   private port: number;
   private cors: cors.CorsOptions;
+
   constructor({ port, cors }: ServerManagerConfig) {
     this.app = express();
+    this.router = express.Router();
     this.port = port;
     this.cors = cors;
   }
@@ -25,10 +34,36 @@ export class ServerManager {
 
   public registerRoute(
     path: string,
-    handler: (req: Request, res: Response) => Promise<void> | void
+    handler: (req: Request, res: Response) => Promise<void> | void,
+    middleware?: RequestHandler | RequestHandler[]
   ): void {
-    this.app.post(path, async (req: Request, res: Response) => {
-      await handler(req, res);
+    const routeMiddleware = middleware
+      ? Array.isArray(middleware)
+        ? middleware
+        : [middleware]
+      : [express.raw({ type: "*/*" })];
+
+    // Register route with the router
+    this.router.post(
+      path,
+      ...routeMiddleware,
+      async (req: Request, res: Response) => {
+        await handler(req, res);
+      }
+    );
+  }
+
+  /**
+   * Register a default route handler for the root path
+   * This is useful for health checks and platform deployments
+   */
+  private setupRootRoute(): void {
+    this.app.get("/", (_req: Request, res: Response) => {
+      res.status(200).json({
+        status: "ok",
+        message: "MAIAR AI server is running",
+        timestamp: new Date().toISOString()
+      });
     });
   }
 
@@ -54,10 +89,26 @@ export class ServerManager {
   }
 
   public async start(): Promise<void> {
-    this.app.use(express.json());
+    // Global middleware
     this.app.use(cors(this.cors));
+    this.app.use(express.json());
 
+    // Root route for health checks
+    this.setupRootRoute();
+
+    // Introspection route
     this.mountIntrospectionRoute();
+
+    // Mount all plugin routes - this allows Express to handle all routing
+    this.app.use("/", this.router);
+
+    // Default 404 handler
+    this.app.use((_req: Request, res: Response) => {
+      res.status(404).json({
+        status: "error",
+        message: "Route not found"
+      });
+    });
 
     this._server = this.app.listen(this.port);
   }

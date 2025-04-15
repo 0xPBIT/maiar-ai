@@ -30,7 +30,17 @@ export class WebSocketTransport extends Transport {
   public attachToServer(server: Server): void {
     if (this.wss) return; // Already attached
 
-    this.wss = new WebSocketServer({ server, path: this.path });
+    // Create WebSocketServer with noServer: true to manually handle upgrade
+    this.wss = new WebSocketServer({ noServer: true });
+
+    // Handle upgrade events manually
+    server.on("upgrade", (request, socket, head) => {
+      if (request.url === this.path) {
+        this.wss!.handleUpgrade(request, socket, head, (ws) => {
+          this.wss!.emit("connection", ws, request);
+        });
+      }
+    });
 
     this.wss.on("connection", (ws) => {
       this.clients.add(ws);
@@ -69,7 +79,6 @@ export class WebSocketTransport extends Transport {
 /**
  * Creates a new WebSocketTransport and starts a WebSocket server on the given port and path
  * @param {Object} options - The options to configure the WebSocket server
- * @param {number} options.port - The port to listen on
  * @param {string} options.path - The path to listen on
  * @returns {WebSocketTransport} The new WebSocketTransport
  */

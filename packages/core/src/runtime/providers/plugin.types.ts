@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 
 import { AgentContext } from "../pipeline/agent";
 
@@ -58,6 +58,12 @@ export interface TriggerRoute {
      * The handler for the route.
      */
     handler: (req: Request, res: Response) => Promise<void> | void;
+
+    /**
+     * Optional middleware to apply before the handler.
+     * Defaults to express.raw if not provided.
+     */
+    middleware?: RequestHandler | RequestHandler[];
   };
 
   /**

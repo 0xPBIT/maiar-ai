@@ -108,7 +108,7 @@ async function main() {
         transports: [stdout, websocket({ path: "/monitor" })]
       },
       server: {
-        port: 3000
+        port: 8080
       }
     }
   });

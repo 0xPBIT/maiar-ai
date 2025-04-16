@@ -22,7 +22,7 @@ export class ServerManager {
 
   constructor({ port, cors }: ServerManagerConfig) {
     this.app = express();
-    this.router = express.Router();
+    this.router = Router();
     this.port = port;
     this.cors = cors;
   }
@@ -91,7 +91,6 @@ export class ServerManager {
   public async start(): Promise<void> {
     // Global middleware
     this.app.use(cors(this.cors));
-    this.app.use(express.json());
 
     // Root route for health checks
     this.setupRootRoute();
@@ -101,14 +100,6 @@ export class ServerManager {
 
     // Mount all plugin routes - this allows Express to handle all routing
     this.app.use("/", this.router);
-
-    // Default 404 handler
-    this.app.use((_req: Request, res: Response) => {
-      res.status(404).json({
-        status: "error",
-        message: "Route not found"
-      });
-    });
 
     this._server = this.app.listen(this.port);
   }

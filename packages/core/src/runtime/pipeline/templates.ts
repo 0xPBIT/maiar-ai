@@ -223,7 +223,8 @@ export function generatePipelineTemplate(
 }
 
 export function generatePipelineModificationTemplate(
-  context: PipelineModificationContext
+  context: PipelineModificationContext,
+  availablePlugins: string
 ): string {
   return `Analyze the current context chain and determine if the pipeline needs modification.
 The context chain contains all executed steps and their results, including any errors.
@@ -244,7 +245,7 @@ Full Pipeline:
 ${JSON.stringify(context.pipeline, null, 2)}
 
 Available Plugins:
-${formatPluginDescriptions({ availablePlugins: context.availablePlugins })}
+${availablePlugins}
 
 Your task is to:
 1. First, identify all actions that have already been executed by examining the context chain

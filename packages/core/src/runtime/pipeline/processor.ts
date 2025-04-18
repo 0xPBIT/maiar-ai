@@ -5,6 +5,7 @@ import { z } from "zod";
 import { MemoryManager } from "../managers/memory";
 import { ICapabilities } from "../managers/model/capability/types";
 import { PluginRegistry } from "../managers/plugin";
+import { PluginResult } from "../providers";
 import { Plugin } from "../providers/plugin";
 import {
   AgentTask,
@@ -334,10 +335,107 @@ export class PipelineProcessor {
     }
   }
 
+  private async executePipeline(
+    pipeline: PipelineStep[],
+    task: AgentTask
+  ): Promise<void> {
+    try {
+      let currentPipeline = [...pipeline];
+      let currentStepIndex = 0;
+
+      // Log initial pipeline state
+      this.logger.debug("pipeline state updated", {
+        type: "runtime.pipeline.state",
+        currentPipeline,
+        currentStepIndex,
+        pipelineLength: currentPipeline.length,
+        contextChain: task.contextChain
+      });
+
+      while (currentStepIndex < currentPipeline.length) {
+        const currentStep = currentPipeline[currentStepIndex];
+        if (!currentStep) {
+          currentStepIndex++;
+          continue;
+        }
+
+        const result = await this.executePipelineStep(currentStep, task);
+
+        if (!result.success) {
+          // Add error to context chain for failed execution
+          await this.pushErrorToContextChain(result, currentStep, task);
+
+          // Update monitoring state after error context changes
+          await this.updateMonitoringState(task);
+        } else if (result.data) {
+          // Add successful result to context chain
+          task.contextChain.push({
+            id: `${currentStep.pluginId}-${Date.now()}`,
+            pluginId: currentStep.pluginId,
+            type: currentStep.action,
+            action: currentStep.action,
+            content: JSON.stringify(result.data),
+            timestamp: Date.now(),
+            ...result.data
+          });
+
+          // Update monitoring state after context changes
+          await this.updateMonitoringState(task);
+        }
+
+        // Evaluate pipeline modification with updated context
+        const { pipeline: updatedPipeline, modification } =
+          await this.modifyPipeline(
+            {
+              contextChain: task.contextChain,
+              currentStep,
+              pipeline: currentPipeline
+            },
+            currentStepIndex,
+            currentPipeline
+          );
+
+        // Log modification result if needed
+        if (modification.shouldModify) {
+          this.logger.info("pipeline modified", {
+            type: "runtime.pipeline.modified",
+            explanation: modification.explanation
+          });
+        }
+
+        currentPipeline = updatedPipeline;
+
+        currentStepIndex++;
+      }
+    } finally {
+      await this.updateMonitoringState(task);
+    }
+  }
+
   private async modifyPipeline(
-    context: PipelineModificationContext
-  ): Promise<PipelineModification> {
-    const template = generatePipelineModificationTemplate(context);
+    context: PipelineModificationContext,
+    currentStepIndex: number,
+    currentPipeline: PipelineStep[]
+  ): Promise<{
+    pipeline: PipelineStep[];
+    modification: PipelineModification;
+  }> {
+    const availablePlugins = this.pluginRegistry.plugins.map((plugin) => ({
+      id: plugin.id,
+      name: plugin.name,
+      description: plugin.description,
+      executors: plugin.executors.map((e) => ({
+        name: e.name,
+        description: e.description
+      }))
+    }));
+
+    const availablePluginsString = JSON.stringify(availablePlugins);
+
+    const template = generatePipelineModificationTemplate(
+      context,
+      availablePluginsString
+    );
     this.logger.debug("evaluating pipeline modification", {
       type: "runtime.pipeline.modification.evaluating",
       context,
@@ -360,225 +458,94 @@ export class PipelineProcessor {
         modifiedSteps: modification.modifiedSteps
       });
 
-      return modification;
+      let updatedPipeline = [...currentPipeline];
+
+      // Apply the modification if needed
+      if (modification.shouldModify && modification.modifiedSteps) {
+        // Apply the modification
+        updatedPipeline = [
+          ...currentPipeline.slice(0, currentStepIndex + 1),
+          ...modification.modifiedSteps
+        ];
+
+        // Log modification
+        this.logger.debug("pipeline modification applied", {
+          type: "runtime.pipeline.modification.applied",
+          updatedPipeline,
+          currentStepIndex,
+          pipelineLength: updatedPipeline.length,
+          modification,
+          contextChain: context.contextChain
+        });
+
+        // Emit pipeline modification event
+        this.logger.debug("pipeline modification applied", {
+          type: "runtime.pipeline.modification.applied",
+          currentStep: context.currentStep,
+          modifiedSteps: modification.modifiedSteps,
+          pipeline: updatedPipeline
+        });
+      }
+
+      return {
+        pipeline: updatedPipeline,
+        modification
+      };
     } catch (error) {
       this.logger.error("pipeline modification evaluation failed", {
         type: "runtime.pipeline.modification.error",
         error: error instanceof Error ? error : new Error(String(error))
       });
       return {
-        shouldModify: false,
-        explanation: "Error evaluating pipeline modification",
-        modifiedSteps: null
+        pipeline: currentPipeline,
+        modification: {
+          shouldModify: false,
+          explanation: "Error evaluating pipeline modification",
+          modifiedSteps: null
+        }
       };
     }
   }
 
-  private async executePipeline(
-    pipeline: PipelineStep[],
+  private async executePipelineStep(
+    step: PipelineStep,
     task: AgentTask
-  ): Promise<void> {
-    try {
-      let currentPipeline = [...pipeline];
-      let currentStepIndex = 0;
+  ): Promise<PluginResult> {
+    const plugin = this.pluginRegistry.plugins.find(
+      (p) => p.id === step.pluginId
+    );
 
-      // Log initial pipeline state
-      this.logger.debug("pipeline state updated", {
-        type: "runtime.pipeline.state",
-        currentPipeline,
-        currentStepIndex,
-        pipelineLength: currentPipeline.length,
-        contextChain: task.contextChain
-      });
-
-      while (currentStepIndex < currentPipeline.length) {
-        const currentStep = currentPipeline[currentStepIndex];
-        if (!currentStep) {
-          // Add error to context chain for invalid step
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: "runtime",
-            type: "error",
-            action: "invalid_step",
-            content: "Invalid step encountered in pipeline",
-            timestamp: Date.now(),
-            error: "Invalid step encountered in pipeline"
-          };
-          task.contextChain.push(errorContext);
-          currentStepIndex++;
-          continue;
-        }
-
-        const plugin = this.pluginRegistry.plugins.find(
-          (p) => p.id === currentStep.pluginId
-        );
-
-        if (!plugin) {
-          // Add error to context chain for missing plugin
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: currentStep.pluginId,
-            type: "error",
-            action: "plugin_not_found",
-            content: `Plugin ${currentStep.pluginId} not found`,
-            timestamp: Date.now(),
-            error: `Plugin ${currentStep.pluginId} not found`,
-            failedStep: currentStep
-          };
-          task.contextChain.push(errorContext);
-          currentStepIndex++;
-          continue;
-        }
-
-        try {
-          const executor = await plugin.executors.find(
-            (e) => e.name === currentStep.action
-          );
-
-          if (!executor) {
-            // Add error to context chain for missing executor
-            const errorContext: ErrorContextItem = {
-              id: `error-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: "error",
-              action: "executor_not_found",
-              content: `Executor ${currentStep.action} not found`,
-              timestamp: Date.now(),
-              error: `Executor ${currentStep.action} not found`,
-              failedStep: currentStep
-            };
-            task.contextChain.push(errorContext);
-            currentStepIndex++;
-            continue;
-          }
-
-          const result = await executor.fn(task);
-
-          // Log step execution
-          this.logger.debug("step execution completed", {
-            type: "runtime.pipeline.step.executed",
-            pipeline: currentPipeline,
-            currentStep,
-            pipelineLength: currentPipeline.length,
-            executedStep: {
-              step: currentStep,
-              result
-            },
-            contextChain: task.contextChain
-          });
-
-          if (!result.success) {
-            // Add error to context chain for failed execution
-            const errorContext: ErrorContextItem = {
-              id: `error-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: "error",
-              action: currentStep.action,
-              content: result.error || "Unknown error",
-              timestamp: Date.now(),
-              error: result.error || "Unknown error",
-              failedStep: currentStep
-            };
-            task.contextChain.push(errorContext);
-
-            // Update monitoring state after error context changes
-            await this.updateMonitoringState(task);
-          } else if (result.data) {
-            // Add successful result to context chain
-            task.contextChain.push({
-              id: `${currentStep.pluginId}-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: currentStep.action,
-              action: currentStep.action,
-              content: JSON.stringify(result.data),
-              timestamp: Date.now(),
-              ...result.data
-            });
-
-            // Update monitoring state after context changes
-            await this.updateMonitoringState(task);
-          }
-
-          // Evaluate pipeline modification with updated context
-          const modification = await this.modifyPipeline({
-            contextChain: task.contextChain,
-            currentStep,
-            pipeline: currentPipeline,
-            availablePlugins: this.pluginRegistry.plugins.map((plugin) => ({
-              id: plugin.id,
-              name: plugin.name,
-              description: plugin.description,
-              executors: plugin.executors.map((e) => ({
-                name: e.name,
-                description: e.description
-              }))
-            }))
-          });
-
-          if (modification.shouldModify && modification.modifiedSteps) {
-            // Apply the modification
-            currentPipeline = [
-              ...currentPipeline.slice(0, currentStepIndex + 1),
-              ...modification.modifiedSteps
-            ];
-
-            // Log modification
-            this.logger.debug("pipeline modification applied", {
-              type: "runtime.pipeline.modification.applied",
-              currentPipeline,
-              currentStepIndex,
-              pipelineLength: currentPipeline.length,
-              modification,
-              contextChain: task.contextChain
-            });
-
-            // Emit pipeline modification event
-            this.logger.debug("pipeline modification applied", {
-              type: "runtime.pipeline.modification.applied",
-              currentStep,
-              modifiedSteps: modification.modifiedSteps,
-              pipeline: currentPipeline
-            });
-          }
-        } catch (error) {
-          // Add error to context chain for unexpected errors
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: currentStep.pluginId,
-            type: "error",
-            action: currentStep.action,
-            content: error instanceof Error ? error.message : String(error),
-            timestamp: Date.now(),
-            error: error instanceof Error ? error.message : String(error),
-            failedStep: currentStep
-          };
-          task.contextChain.push(errorContext);
-
-          // Update monitoring state after error context changes
-          await this.updateMonitoringState(task);
-
-          // Log failed step
-          this.logger.error("step execution failed", {
-            type: "runtime.pipeline.step.failed",
-            currentPipeline,
-            currentStepIndex,
-            pipelineLength: currentPipeline.length,
-            executedStep: {
-              step: currentStep,
-              result: {
-                success: false,
-                error: error instanceof Error ? error.message : String(error)
-              }
-            },
-            contextChain: task.contextChain
-          });
-        }
-
-        currentStepIndex++;
-      }
-    } finally {
-      await this.updateMonitoringState(task);
+    if (!plugin) {
+      throw new Error(`Plugin ${step.pluginId} not found`);
     }
+
+    const executor = await plugin.executors.find((e) => e.name === step.action);
+
+    if (!executor) {
+      throw new Error(`Executor ${step.action} not found`);
+    }
+
+    const result = await executor.fn(task);
+
+    return result;
+  }
+
+  private async pushErrorToContextChain(
+    result: PluginResult,
+    step: PipelineStep,
+    task: AgentTask
+  ) {
+    const errorContext: ErrorContextItem = {
+      id: `error-${Date.now()}`,
+      pluginId: step.pluginId,
+      type: "error",
+      action: step.action,
+      content: result.error || "Unknown error",
+      timestamp: Date.now(),
+      error: result.error || "Unknown error",
+      failedStep: step
+    };
+    task.contextChain.push(errorContext);
   }
 
   private async updateMonitoringState(task: AgentTask) {

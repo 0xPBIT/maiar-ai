@@ -396,12 +396,7 @@ export class Runtime {
           );
         }
 
-        if (trigger.start) {
-          // Handle process-type triggers
-          trigger.start({
-            contextChain: []
-          });
-        }
+        if (trigger.start) trigger.start();
       }
     }
   }

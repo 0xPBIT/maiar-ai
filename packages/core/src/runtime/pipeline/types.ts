@@ -72,7 +72,6 @@ export interface ErrorContextItem extends BaseContextItem {
 export interface PipelineModificationContext {
   contextChain: BaseContextItem[];
   currentStep: PipelineStep;
-  availablePlugins: AvailablePlugin[];
   pipeline: PipelineStep[];
 }
 

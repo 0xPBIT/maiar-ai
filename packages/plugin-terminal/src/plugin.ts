@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as net from "net";
 
 import {
-  AgentContext,
+  AgentTask,
   Plugin,
   PluginResult,
   UserInputContext
@@ -53,8 +53,8 @@ export class TerminalPlugin extends Plugin {
     ];
   }
 
-  private async sendResponse(context: AgentContext): Promise<PluginResult> {
-    const platformContext = context?.platformContext as TerminalPlatformContext;
+  private async sendResponse(task: AgentTask): Promise<PluginResult> {
+    const platformContext = task.platformContext as TerminalPlatformContext;
     if (!platformContext?.responseHandler) {
       this.logger.error("no response handler available");
       return {
@@ -67,7 +67,7 @@ export class TerminalPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.operations.getObject(
         TerminalResponseSchema,
-        generateResponseTemplate(context.contextChain),
+        generateResponseTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 

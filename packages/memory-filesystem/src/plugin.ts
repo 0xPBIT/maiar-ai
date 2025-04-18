@@ -1,7 +1,7 @@
 import fsPromises from "fs/promises";
 import path from "path";
 
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import {
   generateQueryTemplate,
@@ -53,18 +53,18 @@ export class FileSystemMemoryPlugin extends Plugin {
 
   public async shutdown(): Promise<void> {}
 
-  private async addDocument(context: AgentContext): Promise<PluginResult> {
+  private async addDocument(task: AgentTask): Promise<PluginResult> {
     const timestamp = Date.now();
     const documentId = `doc_${timestamp}_${Math.random().toString(36).slice(9)}`;
 
     // Get data to store in database from context chain
     const formattedResponse = await this.runtime.operations.getObject(
       FileSystemMemoryUploadSchema,
-      generateUploadDocumentTemplate(context.contextChain),
+      generateUploadDocumentTemplate(task.contextChain),
       { temperature: 0.2 }
     );
 
-    const conversationId = context.conversationId;
+    const conversationId = task.conversationId;
     if (!conversationId) {
       return {
         success: false,
@@ -124,7 +124,7 @@ export class FileSystemMemoryPlugin extends Plugin {
     }
   }
 
-  private async removeDocument(context: AgentContext): Promise<PluginResult> {
+  private async removeDocument(task: AgentTask): Promise<PluginResult> {
     try {
       const fileContent = await fsPromises.readFile(this.sandboxPath, "utf-8");
       const sandboxData = JSON.parse(fileContent);
@@ -133,7 +133,7 @@ export class FileSystemMemoryPlugin extends Plugin {
       // Get query criteria from context chain
       const queryFormattedResponse = await this.runtime.operations.getObject(
         FileSystemQuerySchema,
-        generateQueryTemplate(context.contextChain),
+        generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 
@@ -173,7 +173,7 @@ export class FileSystemMemoryPlugin extends Plugin {
     }
   }
 
-  private async query(context: AgentContext): Promise<PluginResult> {
+  private async query(task: AgentTask): Promise<PluginResult> {
     try {
       const fileContent = await fsPromises.readFile(this.sandboxPath, "utf-8");
       const sandboxData = JSON.parse(fileContent);
@@ -182,7 +182,7 @@ export class FileSystemMemoryPlugin extends Plugin {
       // Get query criteria from context chain
       const queryFormattedResponse = await this.runtime.operations.getObject(
         FileSystemQuerySchema,
-        generateQueryTemplate(context.contextChain),
+        generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 

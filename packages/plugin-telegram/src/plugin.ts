@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { generateResponseTemplate } from "./templates";
 import {
@@ -35,10 +35,8 @@ export class TelegramPlugin extends Plugin {
     ];
   }
 
-  private async handleSendMessage(
-    context: AgentContext
-  ): Promise<PluginResult> {
-    if (!context.platformContext?.responseHandler) {
+  private async handleSendMessage(task: AgentTask): Promise<PluginResult> {
+    if (!task.platformContext?.responseHandler) {
       return {
         success: false,
         error: "No response handler found in platform context"
@@ -49,11 +47,11 @@ export class TelegramPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.operations.getObject(
         TelegramResponseSchema,
-        generateResponseTemplate(context.contextChain),
+        generateResponseTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 
-      context.platformContext.responseHandler(formattedResponse.message);
+      task.platformContext.responseHandler(formattedResponse.message);
       return {
         success: true,
         data: {

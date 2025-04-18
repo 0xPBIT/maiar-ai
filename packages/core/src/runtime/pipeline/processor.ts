@@ -7,7 +7,7 @@ import { ICapabilities } from "../managers/model/capability/types";
 import { PluginRegistry } from "../managers/plugin";
 import { Plugin } from "../providers/plugin";
 import {
-  AgentContext,
+  AgentTask,
   BaseContextItem,
   getUserInput,
   UserInputContext
@@ -50,7 +50,7 @@ export class PipelineProcessor {
   private readonly memoryManager: MemoryManager;
   private readonly logger: Logger;
 
-  private eventQueue: AgentContext[];
+  private eventQueue: AgentTask[];
   private isProcessing: boolean = false;
 
   constructor(
@@ -67,13 +67,9 @@ export class PipelineProcessor {
     this.eventQueue = [];
   }
 
-  private pushToQueue(context: Omit<AgentContext, "eventQueue">): void {
-    const completeContext: AgentContext = {
-      ...context
-    };
-
-    this.eventQueue.push(completeContext);
-    this.logger.debug("Pushed context to queue", {
+  private pushToQueue(task: AgentTask): void {
+    this.eventQueue.push(task);
+    this.logger.debug("Pushed task to queue", {
       type: "processor.queue.push",
       queueLength: this.eventQueue.length
     });
@@ -82,7 +78,7 @@ export class PipelineProcessor {
     this.triggerProcessing();
   }
 
-  private shiftFromQueue(): AgentContext | null {
+  private shiftFromQueue(): AgentTask | null {
     return this.eventQueue.shift() || null;
   }
 
@@ -121,39 +117,39 @@ export class PipelineProcessor {
   }
 
   private async processQueue(): Promise<void> {
-    let context = this.shiftFromQueue();
-    while (context) {
+    let task = this.shiftFromQueue();
+    while (task) {
       try {
-        await this.processContext(context);
+        await this.processTask(task);
       } catch (error) {
-        this.logger.error("Error processing context", {
+        this.logger.error("Error processing task", {
           type: "processor.queue.processing.error",
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
         });
       }
 
-      context = this.shiftFromQueue();
+      task = this.shiftFromQueue();
     }
 
     // Queue is now empty
   }
 
-  private async processContext(context: AgentContext): Promise<void> {
-    this.logger.debug("Processing context", {
-      type: "processor.context.processing",
-      context
+  private async processTask(task: AgentTask): Promise<void> {
+    this.logger.debug("Processing task", {
+      type: "processor.task.processing",
+      task
     });
 
-    const pipeline = await this.createPipeline(context);
+    const pipeline = await this.createPipeline(task);
 
-    this.executePipeline(pipeline, context);
+    this.executePipeline(pipeline, task);
 
-    const userInput = getUserInput(context);
+    const userInput = getUserInput(task);
 
     if (userInput) {
-      const lastContext = context.contextChain[
-        context.contextChain.length - 1
+      const lastContext = task.contextChain[
+        task.contextChain.length - 1
       ] as BaseContextItem & { message: string };
       this.logger.info("storing assistant response in memory", {
         type: "runtime.assistant.response.storing",
@@ -166,7 +162,7 @@ export class PipelineProcessor {
         userInput.user,
         userInput.pluginId,
         lastContext.message,
-        context.contextChain
+        task.contextChain
       );
     }
 
@@ -174,12 +170,12 @@ export class PipelineProcessor {
       type: "runtime.pipeline.execution.complete"
     });
 
-    this.updateMonitoringState(context);
+    this.updateMonitoringState(task);
   }
 
   public async createEvent(
     initialContext: UserInputContext,
-    platformContext?: AgentContext["platformContext"]
+    platformContext?: AgentTask["platformContext"]
   ): Promise<void> {
     // Get conversationId from memory manager
     const conversationId = await this.memoryManager.getOrCreateConversation(
@@ -188,30 +184,26 @@ export class PipelineProcessor {
     );
 
     // Add conversationId to platform context metadata
-    const context: AgentContext = {
+    const task: AgentTask = {
       contextChain: [initialContext],
       conversationId,
       platformContext
     };
     try {
-      await this.pushToQueue(context);
+      await this.pushToQueue(task);
     } catch (error) {
       this.logger.error("error pushing event to queue", {
         type: "runtime.event.queue.push.failed",
         error: error instanceof Error ? error.message : String(error),
-        context: {
-          platform: initialContext.pluginId,
-          message: initialContext.rawMessage,
-          user: initialContext.user
-        }
+        task
       });
       throw error; // Re-throw to allow caller to handle
     }
   }
 
-  private async createPipeline(context: AgentContext): Promise<Pipeline> {
+  private async createPipeline(task: AgentTask): Promise<Pipeline> {
     // Store the context in history if it's user input
-    const userInput = getUserInput(context);
+    const userInput = getUserInput(task);
 
     // Get all available executors from plugins
     const availablePlugins = this.pluginRegistry.plugins.map(
@@ -246,7 +238,7 @@ export class PipelineProcessor {
 
     // Create the generation context
     const pipelineContext: PipelineGenerationContext = {
-      contextChain: context.contextChain,
+      contextChain: task.contextChain,
       availablePlugins,
       currentContext: {
         platform,
@@ -271,7 +263,7 @@ export class PipelineProcessor {
         type: "runtime.pipeline.generating",
         context: pipelineContext,
         template,
-        contextChain: context.contextChain
+        contextChain: task.contextChain
       });
 
       const pipeline = await this.operations.getObject(
@@ -334,7 +326,7 @@ export class PipelineProcessor {
             : error,
         platform: userInput?.pluginId || "unknown",
         message: userInput?.rawMessage || "",
-        contextChain: context.contextChain,
+        contextChain: task.contextChain,
         generationContext: pipelineContext,
         template: generatePipelineTemplate(pipelineContext)
       });
@@ -384,7 +376,7 @@ export class PipelineProcessor {
 
   private async executePipeline(
     pipeline: PipelineStep[],
-    context: AgentContext
+    task: AgentTask
   ): Promise<void> {
     try {
       let currentPipeline = [...pipeline];
@@ -396,7 +388,7 @@ export class PipelineProcessor {
         currentPipeline,
         currentStepIndex,
         pipelineLength: currentPipeline.length,
-        contextChain: context.contextChain
+        contextChain: task.contextChain
       });
 
       while (currentStepIndex < currentPipeline.length) {
@@ -412,7 +404,7 @@ export class PipelineProcessor {
             timestamp: Date.now(),
             error: "Invalid step encountered in pipeline"
           };
-          context.contextChain.push(errorContext);
+          task.contextChain.push(errorContext);
           currentStepIndex++;
           continue;
         }
@@ -433,7 +425,7 @@ export class PipelineProcessor {
             error: `Plugin ${currentStep.pluginId} not found`,
             failedStep: currentStep
           };
-          context.contextChain.push(errorContext);
+          task.contextChain.push(errorContext);
           currentStepIndex++;
           continue;
         }
@@ -455,12 +447,12 @@ export class PipelineProcessor {
               error: `Executor ${currentStep.action} not found`,
               failedStep: currentStep
             };
-            context.contextChain.push(errorContext);
+            task.contextChain.push(errorContext);
             currentStepIndex++;
             continue;
           }
 
-          const result = await executor.fn(context);
+          const result = await executor.fn(task);
 
           // Log step execution
           this.logger.debug("step execution completed", {
@@ -472,7 +464,7 @@ export class PipelineProcessor {
               step: currentStep,
               result
             },
-            contextChain: context.contextChain
+            contextChain: task.contextChain
           });
 
           if (!result.success) {
@@ -487,13 +479,13 @@ export class PipelineProcessor {
               error: result.error || "Unknown error",
               failedStep: currentStep
             };
-            context.contextChain.push(errorContext);
+            task.contextChain.push(errorContext);
 
             // Update monitoring state after error context changes
-            await this.updateMonitoringState(context);
+            await this.updateMonitoringState(task);
           } else if (result.data) {
             // Add successful result to context chain
-            context.contextChain.push({
+            task.contextChain.push({
               id: `${currentStep.pluginId}-${Date.now()}`,
               pluginId: currentStep.pluginId,
               type: currentStep.action,
@@ -504,12 +496,12 @@ export class PipelineProcessor {
             });
 
             // Update monitoring state after context changes
-            await this.updateMonitoringState(context);
+            await this.updateMonitoringState(task);
           }
 
           // Evaluate pipeline modification with updated context
           const modification = await this.modifyPipeline({
-            contextChain: context.contextChain,
+            contextChain: task.contextChain,
             currentStep,
             pipeline: currentPipeline,
             availablePlugins: this.pluginRegistry.plugins.map((plugin) => ({
@@ -537,7 +529,7 @@ export class PipelineProcessor {
               currentStepIndex,
               pipelineLength: currentPipeline.length,
               modification,
-              contextChain: context.contextChain
+              contextChain: task.contextChain
             });
 
             // Emit pipeline modification event
@@ -560,10 +552,10 @@ export class PipelineProcessor {
             error: error instanceof Error ? error.message : String(error),
             failedStep: currentStep
           };
-          context.contextChain.push(errorContext);
+          task.contextChain.push(errorContext);
 
           // Update monitoring state after error context changes
-          await this.updateMonitoringState(context);
+          await this.updateMonitoringState(task);
 
           // Log failed step
           this.logger.error("step execution failed", {
@@ -578,22 +570,22 @@ export class PipelineProcessor {
                 error: error instanceof Error ? error.message : String(error)
               }
             },
-            contextChain: context.contextChain
+            contextChain: task.contextChain
           });
         }
 
         currentStepIndex++;
       }
     } finally {
-      await this.updateMonitoringState(context);
+      await this.updateMonitoringState(task);
     }
   }
 
-  private async updateMonitoringState(context: AgentContext) {
+  private async updateMonitoringState(task: AgentTask) {
     this.logger.debug("agent state update", {
       type: "runtime.state.update",
       state: {
-        currentContext: context,
+        currentContext: task,
         queueLength: this.eventQueue.length,
         isProcessing: this.isProcessing,
         lastUpdate: Date.now()

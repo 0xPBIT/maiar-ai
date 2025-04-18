@@ -1,4 +1,4 @@
-import { AgentContext, Executor, PluginResult, Runtime } from "@maiar-ai/core";
+import { AgentTask, Executor, PluginResult, Runtime } from "@maiar-ai/core";
 
 import { XService } from "./services";
 import { generateTweetTemplate } from "./templates";
@@ -12,7 +12,7 @@ export function xExecutorFactory(
   name: string,
   description: string,
   execute: (
-    context: AgentContext,
+    task: AgentTask,
     service: XService,
     runtime: Runtime
   ) => Promise<PluginResult>
@@ -20,9 +20,9 @@ export function xExecutorFactory(
   return (service: XService, getRuntime: () => Runtime): Executor => ({
     name,
     description,
-    fn: (context: AgentContext) => {
+    fn: (task: AgentTask) => {
       const runtime = getRuntime();
-      return execute(context, service, runtime);
+      return execute(task, service, runtime);
     }
   });
 }
@@ -35,12 +35,12 @@ export const createPostExecutor = xExecutorFactory(
   "post_tweet",
   "Post a tweet on X (Twitter)",
   async (
-    context: AgentContext,
+    task: AgentTask,
     xService: XService,
     runtime: Runtime
   ): Promise<PluginResult> => {
     try {
-      const tweetTemplate = generateTweetTemplate(context.contextChain);
+      const tweetTemplate = generateTweetTemplate(task.contextChain);
       const params = await runtime.operations.getObject(
         PostTweetSchema,
         tweetTemplate

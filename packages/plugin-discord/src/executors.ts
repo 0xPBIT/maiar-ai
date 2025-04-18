@@ -1,6 +1,6 @@
 import { BaseGuildTextChannel } from "discord.js";
 
-import { AgentContext, Executor, PluginResult, Runtime } from "@maiar-ai/core";
+import { AgentTask, Executor, PluginResult, Runtime } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { DiscordService } from "./services";
@@ -25,7 +25,7 @@ export function discordExecutorFactory(
   name: string,
   description: string,
   execute: (
-    context: AgentContext,
+    task: AgentTask,
     service: DiscordService,
     runtime: Runtime,
     logger: maiarLogger.Logger
@@ -38,9 +38,9 @@ export function discordExecutorFactory(
   return (service: DiscordService, getRuntime: () => Runtime): Executor => ({
     name,
     description,
-    fn: (context: AgentContext) => {
+    fn: (task: AgentTask) => {
       const runtime = getRuntime();
-      return execute(context, service, runtime, logger);
+      return execute(task, service, runtime, logger);
     }
   });
 }
@@ -52,7 +52,7 @@ export const sendMessageExecutor = discordExecutorFactory(
   "send_message",
   "Send a message to a Discord channel",
   async (
-    context: AgentContext,
+    task: AgentTask,
     service: DiscordService,
     runtime: Runtime,
     logger: maiarLogger.Logger
@@ -60,7 +60,7 @@ export const sendMessageExecutor = discordExecutorFactory(
     try {
       const response = await runtime.operations.getObject(
         DiscordSendSchema,
-        generateResponseTemplate(context.contextChain)
+        generateResponseTemplate(task.contextChain)
       );
 
       // Get all available text channels
@@ -141,7 +141,7 @@ export const sendMessageExecutor = discordExecutorFactory(
 
       await selectedChannel.send(response.message);
 
-      const user = (context.platformContext as DiscordPlatformContext).metadata
+      const user = (task.platformContext as DiscordPlatformContext).metadata
         ?.userId;
 
       if (user) {
@@ -149,7 +149,7 @@ export const sendMessageExecutor = discordExecutorFactory(
           user,
           service.pluginId,
           response.message,
-          context.contextChain
+          task.contextChain
         );
       }
 
@@ -183,14 +183,14 @@ export const replyMessageExecutor = discordExecutorFactory(
   "reply_message",
   "Reply to a message in a Discord channel",
   async (
-    context: AgentContext,
+    task: AgentTask,
     service: DiscordService,
     runtime: Runtime,
     logger: maiarLogger.Logger
   ): Promise<PluginResult> => {
     if (
-      !context.platformContext?.metadata?.channelId ||
-      !context.platformContext?.metadata?.messageId
+      !task.platformContext?.metadata?.channelId ||
+      !task.platformContext?.metadata?.messageId
     ) {
       return {
         success: false,
@@ -198,13 +198,13 @@ export const replyMessageExecutor = discordExecutorFactory(
       };
     }
 
-    const messageId = context.platformContext.metadata.messageId as string;
-    const channelId = context.platformContext.metadata.channelId as string;
+    const messageId = task.platformContext.metadata.messageId as string;
+    const channelId = task.platformContext.metadata.channelId as string;
 
     try {
       const response = await runtime.operations.getObject(
         DiscordReplySchema,
-        generateResponseTemplate(context.contextChain)
+        generateResponseTemplate(task.contextChain)
       );
 
       const channel = await service.client.channels.fetch(channelId);
@@ -232,7 +232,7 @@ export const replyMessageExecutor = discordExecutorFactory(
         channelId
       });
 
-      const user = (context.platformContext as DiscordPlatformContext).metadata
+      const user = (task.platformContext as DiscordPlatformContext).metadata
         ?.userId;
 
       if (user) {
@@ -240,7 +240,7 @@ export const replyMessageExecutor = discordExecutorFactory(
           user,
           service.pluginId,
           response.message,
-          context.contextChain
+          task.contextChain
         );
       }
 

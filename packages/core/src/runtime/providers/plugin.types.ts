@@ -1,6 +1,6 @@
 import { Request, RequestHandler, Response } from "express";
 
-import { AgentContext } from "../pipeline/agent";
+import { AgentTask } from "../pipeline/agent";
 
 /**
  * Result of a plugin execution
@@ -27,12 +27,12 @@ export interface Executor {
   description: string;
 
   /**
-   * Executes the plugin logic with the given agent context.
+   * Executes the plugin logic with the given agent task.
    *
-   * @param {AgentContext} context - The execution context for the agent.
+   * @param {AgentTask} task - The execution task for the agent.
    * @returns {Promise<PluginResult>} A promise resolving to the result of execution.
    */
-  fn: (context: AgentContext) => Promise<PluginResult> | PluginResult;
+  fn: (task: AgentTask) => Promise<PluginResult> | PluginResult;
 }
 
 /**

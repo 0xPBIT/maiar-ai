@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { AgentContext, Executor, Runtime, Trigger } from "@maiar-ai/core";
+import { AgentTask, Executor, Runtime, Trigger } from "@maiar-ai/core";
 
 import { DiscordService } from "./services";
 
 export interface DiscordPlatformContext
-  extends NonNullable<AgentContext["platformContext"]> {
+  extends NonNullable<AgentTask["platformContext"]> {
   platform: string;
   responseHandler: (response: unknown) => Promise<void>;
   metadata?: {

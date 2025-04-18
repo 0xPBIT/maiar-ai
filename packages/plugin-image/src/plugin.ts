@@ -1,4 +1,4 @@
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { generatePromptTemplate } from "./templates";
 import { IMAGE_GENERATION_CAPABILITY_ID, PromptResponseSchema } from "./types";
@@ -21,11 +21,11 @@ export class ImageGenerationPlugin extends Plugin {
     ];
   }
 
-  private async generateImage(context: AgentContext): Promise<PluginResult> {
+  private async generateImage(task: AgentTask): Promise<PluginResult> {
     try {
       const promptResponse = await this.runtime.operations.getObject(
         PromptResponseSchema,
-        generatePromptTemplate(context.contextChain),
+        generatePromptTemplate(task.contextChain),
         { temperature: 0.7 }
       );
 

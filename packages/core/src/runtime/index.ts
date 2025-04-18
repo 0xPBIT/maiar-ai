@@ -12,34 +12,15 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
-import {
-  AgentContext,
-  BaseContextItem,
-  EventQueue,
-  getUserInput,
-  UserInputContext
-} from "./pipeline/agent";
+import { AgentContext, PipelineProcessor, UserInputContext } from "./pipeline";
 import { formatZodSchema, OperationConfig } from "./pipeline/operations";
 import {
   cleanJsonString,
   extractJson,
   generateObjectTemplate,
-  generatePipelineModificationTemplate,
-  generatePipelineTemplate,
   generateRetryTemplate
 } from "./pipeline/templates";
-import {
-  ContextItemWithHistory,
-  ErrorContextItem,
-  GetObjectConfig,
-  Pipeline,
-  PipelineGenerationContext,
-  PipelineModification,
-  PipelineModificationContext,
-  PipelineModificationSchema,
-  PipelineSchema,
-  PipelineStep
-} from "./pipeline/types";
+import { GetObjectConfig } from "./pipeline/types";
 import { MemoryProvider } from "./providers/memory";
 import { ModelProvider, ModelRequestConfig } from "./providers/model";
 import { Plugin } from "./providers/plugin";
@@ -129,10 +110,7 @@ export class Runtime {
   private memoryManager: MemoryManager;
   private pluginRegistry: PluginRegistry;
 
-  private isRunning: boolean;
-  private eventQueue: AgentContext[];
-  private queueInterface: EventQueue;
-  private currentContext: AgentContext | undefined;
+  private pipelineProcessor: PipelineProcessor;
 
   /**
    * Returns a logger instance for the runtime scoped to the initialization
@@ -189,127 +167,13 @@ export class Runtime {
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
     this.serverManager = serverManager;
-    this.isRunning = false;
-    this.eventQueue = [];
-    this.queueInterface = {
-      push: async (context: Omit<AgentContext, "eventQueue">) => {
-        const userInput = getUserInput(context);
 
-        // Pre-event logging and store user message
-        this.logger.info("pre-event context chain state", {
-          type: "context.pre-event",
-          phase: "pre-event",
-          user: userInput?.user,
-          message: userInput?.rawMessage,
-          contextChain: context.contextChain
-        });
-
-        // Get conversation history if user input exists
-        let conversationHistory: {
-          role: string;
-          content: string;
-          timestamp: number;
-        }[] = [];
-        if (userInput) {
-          conversationHistory =
-            await this.memoryManager.getRecentConversationHistory(
-              userInput.user,
-              userInput.pluginId
-            );
-        }
-
-        // Add conversation history to the initial context item
-        if (context.contextChain.length > 0) {
-          context.contextChain[0] = {
-            ...context.contextChain[0],
-            messageHistory: conversationHistory
-          } as ContextItemWithHistory;
-        }
-
-        // Add event to queue with wrapped response handler
-        const fullContext: AgentContext = {
-          ...context,
-          eventQueue: this.queueInterface
-        };
-
-        try {
-          // Store user message in memory
-          if (userInput) {
-            this.logger.info("storing user message in memory", {
-              type: "runtime.memory.user_message.storing",
-              user: userInput.user,
-              platform: userInput.pluginId,
-              message: userInput.rawMessage,
-              messageId: userInput.id
-            });
-            await this.memoryManager.storeUserInteraction(
-              userInput.user,
-              userInput.pluginId,
-              userInput.rawMessage,
-              userInput.timestamp,
-              userInput.id
-            );
-          }
-
-          // Wrap response handler if it exists
-          if (fullContext.platformContext?.responseHandler) {
-            const originalHandler = fullContext.platformContext.responseHandler;
-            fullContext.platformContext.responseHandler = async (response) => {
-              try {
-                // Pre-response logging
-                this.logger.info("pre-response context chain state", {
-                  type: "runtime.context.pre_response",
-                  phase: "pre-response",
-                  platform: userInput?.pluginId,
-                  user: userInput?.user,
-                  contextChain: this.context?.contextChain,
-                  response
-                });
-
-                // Original response handler
-                await originalHandler(response);
-
-                // Post-response logging
-                this.logger.info("post-response context chain state", {
-                  type: "runtime.context.post_response",
-                  phase: "post-response",
-                  platform: userInput?.pluginId,
-                  user: userInput?.user,
-                  contextChain: this.context?.contextChain,
-                  response
-                });
-              } catch (error) {
-                this.logger.error("error storing assistant response", {
-                  type: "runtime.response.storing.failed",
-                  error: error instanceof Error ? error.message : String(error),
-                  user: userInput?.user,
-                  platform: userInput?.pluginId
-                });
-                throw error;
-              }
-            };
-          }
-
-          this.eventQueue.push(fullContext);
-          this.logger.debug("queue updated", {
-            type: "runtime.queue.updated",
-            queueLength: this.eventQueue.length
-          });
-        } catch (error) {
-          this.logger.error("error storing user message", {
-            type: "runtime.message.storing.failed",
-            error: error instanceof Error ? error.message : String(error),
-            user: userInput?.user,
-            platform: userInput?.pluginId
-          });
-          throw error;
-        }
-      },
-      shift: async () => {
-        return this.eventQueue.shift();
-      }
-    };
-    this.currentContext = undefined;
+    this.pipelineProcessor = new PipelineProcessor(
+      this.operations,
+      this.pluginRegistry,
+      this.memoryManager,
+      this.logger
+    );
   }
 
   public static async init({
@@ -503,27 +367,14 @@ export class Runtime {
   }
 
   /**
-   * Access to the current context
-   */
-  public get context(): AgentContext | undefined {
-    return this.currentContext;
-  }
-
-  /**
    * Start the runtime
    */
   public async start(): Promise<void> {
-    if (this.isRunning) {
-      this.logger.warn("runtime already running!");
-      return;
-    }
-
-    this.isRunning = true;
-
     this.logger.info("ai agent (powered by $MAIAR) runtime started", {
       type: "runtime.started"
     });
 
+    // TODO: this is a bunch of runtime setup code that probably should be moved to the pipeline processor
     for (const plugin of this.pluginRegistry.plugins) {
       plugin.__setRuntime(this);
 
@@ -537,17 +388,6 @@ export class Runtime {
           }
         );
 
-        const initContext: UserInputContext = {
-          id: `${plugin.id}-trigger-${Date.now()}`,
-          pluginId: plugin.id,
-          action: "trigger_init",
-          type: "user_input",
-          content: "", // Empty content for system trigger
-          timestamp: Date.now(),
-          rawMessage: "",
-          user: "system"
-        };
-
         if (trigger.route) {
           this.serverManager.registerRoute(
             trigger.route.path,
@@ -559,17 +399,16 @@ export class Runtime {
         if (trigger.start) {
           // Handle process-type triggers
           trigger.start({
-            eventQueue: this.queueInterface,
-            contextChain: [initContext]
+            eventQueue: this.pipelineProcessor.queueInterface,
+            contextChain: []
           });
         }
       }
     }
 
     try {
-      await this.runEvaluationLoop();
+      await this.pipelineProcessor.start();
     } catch (err: unknown) {
-      this.isRunning = false;
       const error = err instanceof Error ? err : new Error(String(err));
       this.logger.error("error in evaluation loop:", { error: error.message });
       throw error;
@@ -580,7 +419,6 @@ export class Runtime {
    * Stop the runtime
    */
   public async stop(): Promise<void> {
-    this.isRunning = false;
     this.logger.info(
       "ai agent (powered by $MAIAR) runtime shutting down gracefully...",
       {
@@ -602,567 +440,13 @@ export class Runtime {
   }
 
   /**
-   * Push a new context to the event queue
+   * Create an event that will be processed by the pipeline processor
    */
-  public pushContext(context: AgentContext): void {
-    this.eventQueue.push(context);
-  }
-
-  /**
-   * Context management methods for plugins
-   */
-  public pushToContextChain(item: BaseContextItem): void {
-    if (this.context) {
-      // If there's an existing context item for this plugin+action, update it
-      const existingIndex = this.context.contextChain.findIndex(
-        (existing) =>
-          existing.pluginId === item.pluginId && existing.action === item.action
-      );
-
-      if (existingIndex !== -1) {
-        // Merge the new item with the existing one
-        this.context.contextChain[existingIndex] = {
-          ...this.context.contextChain[existingIndex],
-          ...item
-        };
-      } else {
-        // Add as new item if no existing one found
-        this.context.contextChain.push(item);
-      }
-    }
-  }
-
   public async createEvent(
     initialContext: UserInputContext,
     platformContext?: AgentContext["platformContext"]
   ): Promise<void> {
-    // Get conversationId from memory manager
-    const conversationId = await this.memoryManager.getOrCreateConversation(
-      initialContext.user,
-      initialContext.pluginId
-    );
-
-    // Add conversationId to platform context metadata
-    const context: AgentContext = {
-      contextChain: [initialContext],
-      conversationId,
-      platformContext,
-      eventQueue: this.queueInterface
-    };
-    try {
-      await this.queueInterface.push(context);
-    } catch (error) {
-      this.logger.error("error pushing event to queue", {
-        type: "runtime.event.queue.push.failed",
-        error: error instanceof Error ? error.message : String(error),
-        context: {
-          platform: initialContext.pluginId,
-          message: initialContext.rawMessage,
-          user: initialContext.user
-        }
-      });
-      throw error; // Re-throw to allow caller to handle
-    }
-  }
-
-  private async runEvaluationLoop(): Promise<void> {
-    this.logger.info("starting evaluation loop", {
-      type: "runtime.evaluation.loop.starting"
-    });
-
-    while (this.isRunning) {
-      const context = await this.eventQueue.shift();
-      if (!context) {
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Sleep to prevent busy loop
-        continue;
-      }
-
-      const userInput = getUserInput(context);
-      this.logger.debug("processing context from queue", {
-        type: "runtime.context.processing",
-        context: {
-          platform: userInput?.pluginId,
-          message: userInput?.rawMessage,
-          queueLength: this.eventQueue.length
-        }
-      });
-
-      try {
-        // Set current context before pipeline
-        this.currentContext = context;
-
-        this.logger.debug("evaluating pipeline for context", {
-          type: "runtime.pipeline.evaluating",
-          context: {
-            platform: userInput?.pluginId,
-            message: userInput?.rawMessage,
-            queueLength: this.eventQueue.length
-          }
-        });
-
-        const pipeline = await this.evaluatePipeline(context);
-        this.logger.info("generated pipeline", {
-          type: "runtime.pipeline.generated",
-          pipeline
-        });
-
-        this.logger.debug("executing pipeline", {
-          type: "runtime.pipeline.executing",
-          pipeline
-        });
-
-        await this.executePipeline(pipeline, context);
-
-        // Post-event logging
-        this.logger.info("post-event context chain state", {
-          type: "runtime.context.post_event",
-          phase: "post-event",
-          platform: userInput?.pluginId,
-          user: userInput?.user,
-          contextChain: context.contextChain
-        });
-
-        // Store agent message and context in memory with complete context chain
-        if (userInput) {
-          const lastContext = context.contextChain[
-            context.contextChain.length - 1
-          ] as BaseContextItem & { message: string };
-          this.logger.info("storing assistant response in memory", {
-            type: "runtime.assistant.response.storing",
-            user: userInput.user,
-            platform: userInput.pluginId,
-            response: lastContext.message
-          });
-
-          await this.memoryManager.storeAssistantInteraction(
-            userInput.user,
-            userInput.pluginId,
-            lastContext.message,
-            context.contextChain
-          );
-        }
-
-        this.logger.info("pipeline execution complete", {
-          type: "runtime.pipeline.execution.complete"
-        });
-      } catch (error) {
-        this.logger.error("error in evaluation loop", {
-          type: "runtime.evaluation.loop.error",
-          error: error instanceof Error ? error : new Error(String(error)),
-          context: {
-            message: userInput?.rawMessage,
-            platform: userInput?.pluginId,
-            user: userInput?.user
-          }
-        });
-
-        // Log the error
-        this.logger.error("runtime error occurred", {
-          type: "runtime_error",
-          error: error instanceof Error ? error.message : String(error)
-        });
-        throw error;
-      } finally {
-        // Clear current context after execution
-        this.currentContext = undefined;
-        await this.updateMonitoringState();
-      }
-    }
-  }
-
-  private async evaluatePipeline(context: AgentContext): Promise<Pipeline> {
-    // Store the context in history if it's user input
-    const userInput = getUserInput(context);
-
-    // Get all available executors from plugins
-    const availablePlugins = this.pluginRegistry.plugins.map(
-      (plugin: Plugin) => ({
-        id: plugin.id,
-        name: plugin.name,
-        description: plugin.description,
-        executors: plugin.executors.map((e) => ({
-          name: e.name,
-          description: e.description
-        }))
-      })
-    );
-
-    // Get platform and message from user input or use defaults
-    const platform = userInput?.pluginId || "unknown";
-    const message = userInput?.rawMessage || "";
-
-    // Get conversation history if user input exists
-    let conversationHistory: {
-      role: string;
-      content: string;
-      timestamp: number;
-    }[] = [];
-    if (userInput) {
-      conversationHistory =
-        await this.memoryManager.getRecentConversationHistory(
-          userInput.user,
-          platform
-        );
-    }
-
-    // Create the generation context
-    const pipelineContext: PipelineGenerationContext = {
-      contextChain: context.contextChain,
-      availablePlugins,
-      currentContext: {
-        platform,
-        message,
-        conversationHistory
-      }
-    };
-
-    try {
-      // Generate the pipeline using model
-      const template = generatePipelineTemplate(pipelineContext);
-
-      // Log pipeline generation start
-      this.logger.info("pipeline generation start", {
-        type: "pipeline.generation.start",
-        platform,
-        message,
-        template
-      });
-
-      this.logger.debug("generating pipeline", {
-        type: "runtime.pipeline.generating",
-        context: pipelineContext,
-        template,
-        contextChain: context.contextChain
-      });
-
-      const pipeline = await this.operations.getObject(
-        PipelineSchema,
-        template,
-        {
-          temperature: 0.2 // Lower temperature for more predictable outputs
-        }
-      );
-
-      // Add concise pipeline steps log
-      const steps = pipeline.map((step) => `${step.pluginId}:${step.action}`);
-      this.logger.info("pipeline steps", {
-        type: "runtime.pipeline.steps",
-        steps
-      });
-
-      // Log successful pipeline generation
-      this.logger.info("pipeline generation complete", {
-        type: "pipeline.generation.complete",
-        platform,
-        message,
-        template,
-        pipeline,
-        steps
-      });
-
-      this.logger.info("generated pipeline", {
-        type: "runtime.pipeline.generated",
-        pipeline
-      });
-
-      return pipeline;
-    } catch (error) {
-      // Log pipeline generation error
-      this.logger.error("pipeline generation failed", {
-        type: "pipeline.generation.error",
-        platform,
-        message,
-        error:
-          error instanceof Error
-            ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-              }
-            : error,
-        template: generatePipelineTemplate(pipelineContext)
-      });
-
-      this.logger.error("pipeline generation failed", {
-        type: "runtime.pipeline.generation.error",
-        error:
-          error instanceof Error
-            ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-              }
-            : error,
-        platform: userInput?.pluginId || "unknown",
-        message: userInput?.rawMessage || "",
-        contextChain: context.contextChain,
-        generationContext: pipelineContext,
-        template: generatePipelineTemplate(pipelineContext)
-      });
-      return []; // Return empty pipeline on error
-    }
-  }
-
-  private async evaluatePipelineModification(
-    context: PipelineModificationContext
-  ): Promise<PipelineModification> {
-    const template = generatePipelineModificationTemplate(context);
-    this.logger.debug("evaluating pipeline modification", {
-      type: "runtime.pipeline.modification.evaluating",
-      context,
-      template
-    });
-
-    try {
-      const modification = await this.operations.getObject(
-        PipelineModificationSchema,
-        template,
-        {
-          temperature: 0.2 // Lower temperature for more predictable outputs
-        }
-      );
-
-      this.logger.info("pipeline modification evaluation result", {
-        type: "runtime.pipeline.modification.result",
-        shouldModify: modification.shouldModify,
-        explanation: modification.explanation,
-        modifiedSteps: modification.modifiedSteps
-      });
-
-      return modification;
-    } catch (error) {
-      this.logger.error("pipeline modification evaluation failed", {
-        type: "runtime.pipeline.modification.error",
-        error: error instanceof Error ? error : new Error(String(error))
-      });
-      return {
-        shouldModify: false,
-        explanation: "Error evaluating pipeline modification",
-        modifiedSteps: null
-      };
-    }
-  }
-
-  private async executePipeline(
-    pipeline: PipelineStep[],
-    context: AgentContext
-  ): Promise<void> {
-    this.currentContext = context;
-
-    try {
-      let currentPipeline = [...pipeline];
-      let currentStepIndex = 0;
-
-      // Log initial pipeline state
-      this.logger.debug("pipeline state updated", {
-        type: "runtime.pipeline.state",
-        currentPipeline,
-        currentStepIndex,
-        pipelineLength: currentPipeline.length,
-        contextChain: context.contextChain
-      });
-
-      while (currentStepIndex < currentPipeline.length) {
-        const currentStep = currentPipeline[currentStepIndex];
-        if (!currentStep) {
-          // Add error to context chain for invalid step
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: "runtime",
-            type: "error",
-            action: "invalid_step",
-            content: "Invalid step encountered in pipeline",
-            timestamp: Date.now(),
-            error: "Invalid step encountered in pipeline"
-          };
-          context.contextChain.push(errorContext);
-          currentStepIndex++;
-          continue;
-        }
-
-        const plugin = this.pluginRegistry.plugins.find(
-          (p) => p.id === currentStep.pluginId
-        );
-
-        if (!plugin) {
-          // Add error to context chain for missing plugin
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: currentStep.pluginId,
-            type: "error",
-            action: "plugin_not_found",
-            content: `Plugin ${currentStep.pluginId} not found`,
-            timestamp: Date.now(),
-            error: `Plugin ${currentStep.pluginId} not found`,
-            failedStep: currentStep
-          };
-          context.contextChain.push(errorContext);
-          currentStepIndex++;
-          continue;
-        }
-
-        try {
-          const executor = await plugin.executors.find(
-            (e) => e.name === currentStep.action
-          );
-
-          if (!executor) {
-            // Add error to context chain for missing executor
-            const errorContext: ErrorContextItem = {
-              id: `error-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: "error",
-              action: "executor_not_found",
-              content: `Executor ${currentStep.action} not found`,
-              timestamp: Date.now(),
-              error: `Executor ${currentStep.action} not found`,
-              failedStep: currentStep
-            };
-            context.contextChain.push(errorContext);
-            currentStepIndex++;
-            continue;
-          }
-
-          const result = await executor.fn(context);
-
-          // Log step execution
-          this.logger.debug("step execution completed", {
-            type: "runtime.pipeline.step.executed",
-            pipeline: currentPipeline,
-            currentStep,
-            pipelineLength: currentPipeline.length,
-            executedStep: {
-              step: currentStep,
-              result
-            },
-            contextChain: context.contextChain
-          });
-
-          if (!result.success) {
-            // Add error to context chain for failed execution
-            const errorContext: ErrorContextItem = {
-              id: `error-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: "error",
-              action: currentStep.action,
-              content: result.error || "Unknown error",
-              timestamp: Date.now(),
-              error: result.error || "Unknown error",
-              failedStep: currentStep
-            };
-            context.contextChain.push(errorContext);
-
-            // Update monitoring state after error context changes
-            await this.updateMonitoringState();
-          } else if (result.data) {
-            // Add successful result to context chain
-            context.contextChain.push({
-              id: `${currentStep.pluginId}-${Date.now()}`,
-              pluginId: currentStep.pluginId,
-              type: currentStep.action,
-              action: currentStep.action,
-              content: JSON.stringify(result.data),
-              timestamp: Date.now(),
-              ...result.data
-            });
-
-            // Update monitoring state after context changes
-            await this.updateMonitoringState();
-          }
-
-          // Evaluate pipeline modification with updated context
-          const modification = await this.evaluatePipelineModification({
-            contextChain: context.contextChain,
-            currentStep,
-            pipeline: currentPipeline,
-            availablePlugins: this.pluginRegistry.plugins.map((plugin) => ({
-              id: plugin.id,
-              name: plugin.name,
-              description: plugin.description,
-              executors: plugin.executors.map((e) => ({
-                name: e.name,
-                description: e.description
-              }))
-            }))
-          });
-
-          if (modification.shouldModify && modification.modifiedSteps) {
-            // Apply the modification
-            currentPipeline = [
-              ...currentPipeline.slice(0, currentStepIndex + 1),
-              ...modification.modifiedSteps
-            ];
-
-            // Log modification
-            this.logger.debug("pipeline modification applied", {
-              type: "runtime.pipeline.modification.applied",
-              currentPipeline,
-              currentStepIndex,
-              pipelineLength: currentPipeline.length,
-              modification,
-              contextChain: context.contextChain
-            });
-
-            // Emit pipeline modification event
-            this.logger.debug("pipeline modification applied", {
-              type: "runtime.pipeline.modification.applied",
-              currentStep,
-              modifiedSteps: modification.modifiedSteps,
-              pipeline: currentPipeline
-            });
-          }
-        } catch (error) {
-          // Add error to context chain for unexpected errors
-          const errorContext: ErrorContextItem = {
-            id: `error-${Date.now()}`,
-            pluginId: currentStep.pluginId,
-            type: "error",
-            action: currentStep.action,
-            content: error instanceof Error ? error.message : String(error),
-            timestamp: Date.now(),
-            error: error instanceof Error ? error.message : String(error),
-            failedStep: currentStep
-          };
-          context.contextChain.push(errorContext);
-
-          // Update monitoring state after error context changes
-          await this.updateMonitoringState();
-
-          // Log failed step
-          this.logger.error("step execution failed", {
-            type: "runtime.pipeline.step.failed",
-            currentPipeline,
-            currentStepIndex,
-            pipelineLength: currentPipeline.length,
-            executedStep: {
-              step: currentStep,
-              result: {
-                success: false,
-                error: error instanceof Error ? error.message : String(error)
-              }
-            },
-            contextChain: context.contextChain
-          });
-        }
-
-        currentStepIndex++;
-      }
-    } finally {
-      this.currentContext = undefined;
-      await this.updateMonitoringState();
-    }
-  }
-
-  private async updateMonitoringState() {
-    this.logger.debug("agent state update", {
-      type: "runtime.state.update",
-      state: {
-        currentContext: this.currentContext,
-        queueLength: this.eventQueue.length,
-        isRunning: this.isRunning,
-        lastUpdate: Date.now()
-      }
-    });
+    return this.pipelineProcessor.createEvent(initialContext, platformContext);
   }
 
   /**

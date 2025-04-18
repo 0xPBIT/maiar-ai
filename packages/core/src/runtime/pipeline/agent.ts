@@ -31,17 +31,10 @@ export interface HistoryContextItem extends BaseContextItem {
   }>;
 }
 
-// Queue interface for managing agent contexts
-export interface EventQueue {
-  push: (context: Omit<AgentContext, "eventQueue">) => Promise<void>;
-  shift: () => Promise<AgentContext | undefined>;
-}
-
 // The full context chain container
 export interface AgentContext {
   contextChain: BaseContextItem[];
   conversationId?: string;
-  eventQueue?: EventQueue;
   platformContext?: {
     platform: string;
     responseHandler?: (response: unknown) => void;

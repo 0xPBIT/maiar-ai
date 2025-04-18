@@ -81,7 +81,7 @@ export interface TriggerStart {
   /**
    * The start function for the trigger.
    */
-  start: (context: AgentContext) => Promise<void> | void;
+  start: () => Promise<void> | void;
 
   /**
    * Route is of type never because it is not used in the TriggerStart type.

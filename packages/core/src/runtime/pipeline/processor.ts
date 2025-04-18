@@ -145,7 +145,7 @@ export class PipelineProcessor {
       context
     });
 
-    const pipeline = await this.evaluatePipeline(context);
+    const pipeline = await this.createPipeline(context);
 
     this.executePipeline(pipeline, context);
 
@@ -209,7 +209,7 @@ export class PipelineProcessor {
     }
   }
 
-  private async evaluatePipeline(context: AgentContext): Promise<Pipeline> {
+  private async createPipeline(context: AgentContext): Promise<Pipeline> {
     // Store the context in history if it's user input
     const userInput = getUserInput(context);
 
@@ -342,7 +342,7 @@ export class PipelineProcessor {
     }
   }
 
-  private async evaluatePipelineModification(
+  private async modifyPipeline(
     context: PipelineModificationContext
   ): Promise<PipelineModification> {
     const template = generatePipelineModificationTemplate(context);
@@ -508,7 +508,7 @@ export class PipelineProcessor {
           }
 
           // Evaluate pipeline modification with updated context
-          const modification = await this.evaluatePipelineModification({
+          const modification = await this.modifyPipeline({
             contextChain: context.contextChain,
             currentStep,
             pipeline: currentPipeline,

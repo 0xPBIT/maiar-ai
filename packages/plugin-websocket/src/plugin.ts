@@ -1,7 +1,7 @@
 import WebSocket, { WebSocketServer } from "ws";
 import { RawData } from "ws";
 
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 import { UserInputContext } from "@maiar-ai/core";
 
 interface WebSocketPlatformContext {
@@ -41,7 +41,7 @@ export class WebSocketPlugin extends Plugin {
     ];
   }
 
-  private async sendMessage(context: AgentContext): Promise<PluginResult> {
+  private async sendMessage(task: AgentTask): Promise<PluginResult> {
     if (!this.wss) {
       this.logger.error("websocket server not initialized");
       return {
@@ -51,12 +51,11 @@ export class WebSocketPlugin extends Plugin {
     }
 
     // Get the latest message from the context chain
-    const latestMessage = context?.contextChain
+    const latestMessage = task.contextChain
       .reverse()
       .find((item) => "message" in item)?.message;
 
-    const platformContext =
-      context?.platformContext as WebSocketPlatformContext;
+    const platformContext = task.platformContext as WebSocketPlatformContext;
     const ws = platformContext?.ws;
 
     if (!latestMessage || !ws) {

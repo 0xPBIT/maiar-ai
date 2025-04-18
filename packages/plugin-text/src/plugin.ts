@@ -1,7 +1,7 @@
 import express from "express";
 
 import {
-  AgentContext,
+  AgentTask,
   BaseContextItem,
   getUserInput,
   Plugin,
@@ -55,8 +55,8 @@ export class TextGenerationPlugin extends Plugin {
     ];
   }
 
-  private async generateText(context: AgentContext): Promise<PluginResult> {
-    const userInput = getUserInput(context);
+  private async generateText(task: AgentTask): Promise<PluginResult> {
+    const userInput = getUserInput(task);
     if (!userInput) {
       return {
         success: false,
@@ -66,7 +66,7 @@ export class TextGenerationPlugin extends Plugin {
 
     const generated = await this.runtime.executeCapability(
       TEXT_GENERATION_CAPABILITY_ID,
-      generateTextTemplate(userInput.rawMessage, context.contextChain),
+      generateTextTemplate(userInput.rawMessage, task.contextChain),
       {
         temperature: 0.7
       }
@@ -85,7 +85,7 @@ export class TextGenerationPlugin extends Plugin {
       text: generated
     };
 
-    context.contextChain.push(textContext);
+    task.contextChain.push(textContext);
     return { success: true };
   }
 
@@ -112,8 +112,8 @@ export class TextGenerationPlugin extends Plugin {
     await this.runtime.createEvent(initialContext, platformContext);
   }
 
-  private async sendChatResponse(context: AgentContext): Promise<PluginResult> {
-    if (!context?.platformContext?.responseHandler) {
+  private async sendChatResponse(task: AgentTask): Promise<PluginResult> {
+    if (!task.platformContext?.responseHandler) {
       this.logger.error("no response handler available");
       return {
         success: false,
@@ -125,11 +125,11 @@ export class TextGenerationPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.operations.getObject(
         ChatResponseSchema,
-        generateChatResponseTemplate(context.contextChain),
+        generateChatResponseTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 
-      await context.platformContext.responseHandler(formattedResponse.message);
+      await task.platformContext.responseHandler(formattedResponse.message);
       return {
         success: true,
         data: {

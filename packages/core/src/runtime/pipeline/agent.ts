@@ -32,7 +32,7 @@ export interface HistoryContextItem extends BaseContextItem {
 }
 
 // The full context chain container
-export interface AgentContext {
+export interface AgentTask {
   contextChain: BaseContextItem[];
   conversationId?: string;
   platformContext?: {
@@ -43,10 +43,8 @@ export interface AgentContext {
 }
 
 // Helper to get the initial user input
-export function getUserInput(
-  context: AgentContext
-): UserInputContext | undefined {
-  const firstItem = context.contextChain[0];
+export function getUserInput(task: AgentTask): UserInputContext | undefined {
+  const firstItem = task.contextChain[0];
   return firstItem?.type === "user_input"
     ? (firstItem as UserInputContext)
     : undefined;

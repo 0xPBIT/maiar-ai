@@ -1,9 +1,4 @@
-import {
-  AgentContext,
-  getUserInput,
-  Plugin,
-  PluginResult
-} from "@maiar-ai/core";
+import { AgentTask, getUserInput, Plugin, PluginResult } from "@maiar-ai/core";
 
 /**
  * Example plugin that demonstrates how to use dynamic pipeline modification
@@ -52,10 +47,8 @@ export class SearchPermissionPlugin extends Plugin {
     };
   }
 
-  private async checkSearchPermission(
-    context: AgentContext
-  ): Promise<PluginResult> {
-    const userInput = getUserInput(context);
+  private async checkSearchPermission(task: AgentTask): Promise<PluginResult> {
+    const userInput = getUserInput(task);
     if (!userInput) {
       return {
         success: false,

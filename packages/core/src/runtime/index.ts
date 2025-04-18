@@ -12,7 +12,7 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
-import { AgentContext, PipelineProcessor, UserInputContext } from "./pipeline";
+import { AgentTask, PipelineProcessor, UserInputContext } from "./pipeline";
 import { formatZodSchema, OperationConfig } from "./pipeline/operations";
 import {
   cleanJsonString,
@@ -430,7 +430,7 @@ export class Runtime {
    */
   public async createEvent(
     initialContext: UserInputContext,
-    platformContext?: AgentContext["platformContext"]
+    platformContext?: AgentTask["platformContext"]
   ): Promise<void> {
     return this.pipelineProcessor.createEvent(initialContext, platformContext);
   }

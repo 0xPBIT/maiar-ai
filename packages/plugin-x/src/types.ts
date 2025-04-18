@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { AgentContext } from "@maiar-ai/core";
+import { AgentTask } from "@maiar-ai/core";
 import { Executor, Trigger } from "@maiar-ai/core";
 import { Runtime } from "@maiar-ai/core";
 
@@ -66,7 +66,7 @@ export interface XOAuthToken {
 }
 
 export interface XPlatformContext
-  extends NonNullable<AgentContext["platformContext"]> {
+  extends NonNullable<AgentTask["platformContext"]> {
   platform: string;
   responseHandler: (result: unknown) => Promise<void>;
   metadata: {

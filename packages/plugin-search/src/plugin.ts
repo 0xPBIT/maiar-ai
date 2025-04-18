@@ -1,4 +1,4 @@
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { PerplexityService } from "./perplexity";
 import { generateQueryTemplate } from "./templates";
@@ -28,10 +28,10 @@ export class SearchPlugin extends Plugin {
     ];
   }
 
-  private async search(context: AgentContext): Promise<PluginResult> {
+  private async search(task: AgentTask): Promise<PluginResult> {
     const params = await this.runtime.operations.getObject(
       PerplexityQueryResponseSchema,
-      generateQueryTemplate(context.contextChain),
+      generateQueryTemplate(task.contextChain),
       { temperature: 0.7 }
     );
 

@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { PostgresDatabase } from "./database";
 import {
@@ -43,13 +43,13 @@ export class PostgresMemoryPlugin extends Plugin {
     ];
   }
 
-  private async removeDocument(context: AgentContext): Promise<PluginResult> {
+  private async removeDocument(task: AgentTask): Promise<PluginResult> {
     const client = await this.pool.connect();
     try {
       // Construct query for document ids
       const queryFormattedResponse = await this.runtime.operations.getObject(
         PostgresQuerySchema,
-        generateQueryTemplate(context.contextChain),
+        generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }
       );
 
@@ -91,20 +91,20 @@ export class PostgresMemoryPlugin extends Plugin {
     }
   }
 
-  private async addDocument(context: AgentContext): Promise<PluginResult> {
+  private async addDocument(task: AgentTask): Promise<PluginResult> {
     const timestamp = Date.now();
     const documentId = `doc_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get data to store in database from context chain
     const formattedResponse = await this.runtime.operations.getObject(
       PostgresMemoryUploadSchema,
-      generateUploadDocumentTemplate(context.contextChain),
+      generateUploadDocumentTemplate(task.contextChain),
       { temperature: 0.2 }
     );
 
     const client = await this.pool.connect();
     try {
-      const conversationId = context.conversationId;
+      const conversationId = task.conversationId;
       if (!conversationId) {
         return {
           success: false,
@@ -129,13 +129,13 @@ export class PostgresMemoryPlugin extends Plugin {
     };
   }
 
-  private async query(context: AgentContext): Promise<PluginResult> {
+  private async query(task: AgentTask): Promise<PluginResult> {
     const client = await this.pool.connect();
     try {
       // Construct query from context
       const queryFormattedResponse = await this.runtime.operations.getObject(
         PostgresQuerySchema,
-        generateQueryTemplate(context.contextChain, ["id", "content"]),
+        generateQueryTemplate(task.contextChain, ["id", "content"]),
         { temperature: 0.2 }
       );
 

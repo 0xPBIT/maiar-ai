@@ -369,15 +369,7 @@ export class PipelineProcessor {
           await this.updateMonitoringState(task);
         } else if (result.data) {
           // Add successful result to context chain
-          task.contextChain.push({
-            id: `${currentStep.pluginId}-${Date.now()}`,
-            pluginId: currentStep.pluginId,
-            type: currentStep.action,
-            action: currentStep.action,
-            content: JSON.stringify(result.data),
-            timestamp: Date.now(),
-            ...result.data
-          });
+          await this.pushResultToContextChain(result, currentStep, task);
 
           // Update monitoring state after context changes
           await this.updateMonitoringState(task);
@@ -528,6 +520,22 @@ export class PipelineProcessor {
     const result = await executor.fn(task);
 
     return result;
+  }
+
+  private async pushResultToContextChain(
+    result: PluginResult,
+    step: PipelineStep,
+    task: AgentTask
+  ) {
+    task.contextChain.push({
+      id: `${step.pluginId}-${Date.now()}`,
+      pluginId: step.pluginId,
+      type: step.action,
+      action: step.action,
+      content: JSON.stringify(result.data),
+      timestamp: Date.now(),
+      ...result.data
+    });
   }
 
   private async pushErrorToContextChain(

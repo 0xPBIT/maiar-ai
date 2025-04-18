@@ -96,7 +96,6 @@ export class PipelineProcessor {
       queueLength: this.eventQueue.length
     });
 
-    // Process async to not block caller
     setImmediate(() => {
       this.processQueue()
         .catch((error: unknown) => {
@@ -376,27 +375,17 @@ export class PipelineProcessor {
         }
 
         // Evaluate pipeline modification with updated context
-        const { pipeline: updatedPipeline, modification } =
-          await this.modifyPipeline(
-            {
-              contextChain: task.contextChain,
-              currentStep,
-              pipeline: currentPipeline
-            },
-            currentStepIndex,
-            currentPipeline
-          );
-
-        // Log modification result if needed
-        if (modification.shouldModify) {
-          this.logger.info("pipeline modified", {
-            type: "runtime.pipeline.modified",
-            explanation: modification.explanation
-          });
-        }
+        const { pipeline: updatedPipeline } = await this.modifyPipeline(
+          {
+            contextChain: task.contextChain,
+            currentStep,
+            pipeline: currentPipeline
+          },
+          currentStepIndex,
+          currentPipeline
+        );
 
         currentPipeline = updatedPipeline;
-
         currentStepIndex++;
       }
     } finally {
@@ -454,6 +443,13 @@ export class PipelineProcessor {
 
       // Apply the modification if needed
       if (modification.shouldModify && modification.modifiedSteps) {
+        // Log modification result if needed
+        if (modification.shouldModify) {
+          this.logger.info("pipeline modified", {
+            type: "runtime.pipeline.modified",
+            explanation: modification.explanation
+          });
+        }
         // Apply the modification
         updatedPipeline = [
           ...currentPipeline.slice(0, currentStepIndex + 1),

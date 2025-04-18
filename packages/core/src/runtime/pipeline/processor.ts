@@ -68,7 +68,7 @@ export class PipelineProcessor {
     this.eventQueue = [];
   }
 
-  private pushToQueue(task: AgentTask): void {
+  private enqueue(task: AgentTask): void {
     this.eventQueue.push(task);
     this.logger.debug("Pushed task to queue", {
       type: "processor.queue.push",
@@ -79,7 +79,7 @@ export class PipelineProcessor {
     this.triggerProcessing();
   }
 
-  private shiftFromQueue(): AgentTask | null {
+  private dequeue(): AgentTask | null {
     return this.eventQueue.shift() || null;
   }
 
@@ -118,7 +118,7 @@ export class PipelineProcessor {
   }
 
   private async processQueue(): Promise<void> {
-    let task = this.shiftFromQueue();
+    let task = this.dequeue();
     while (task) {
       try {
         await this.processTask(task);
@@ -130,7 +130,7 @@ export class PipelineProcessor {
         });
       }
 
-      task = this.shiftFromQueue();
+      task = this.dequeue();
     }
 
     // Queue is now empty
@@ -191,7 +191,7 @@ export class PipelineProcessor {
       platformContext
     };
     try {
-      await this.pushToQueue(task);
+      await this.enqueue(task);
     } catch (error) {
       this.logger.error("error pushing event to queue", {
         type: "runtime.event.queue.push.failed",

@@ -9,7 +9,6 @@ import { Plugin } from "../providers/plugin";
 import {
   AgentContext,
   BaseContextItem,
-  EventQueue,
   getUserInput,
   UserInputContext
 } from "./agent";
@@ -52,9 +51,7 @@ export class PipelineProcessor {
   private readonly logger: Logger;
 
   private eventQueue: AgentContext[];
-  public readonly queueInterface: EventQueue;
-  private currentContext: AgentContext | undefined;
-  private isRunning: boolean;
+  private isProcessing: boolean = false;
 
   constructor(
     operations: Operations,
@@ -68,65 +65,116 @@ export class PipelineProcessor {
     this.logger = parentLogger.child({ scope: "pipelineProcessor" });
 
     this.eventQueue = [];
-    this.queueInterface = {
-      push: async (context: Omit<AgentContext, "eventQueue">) => {
-        this.eventQueue.push({ ...context, eventQueue: this.queueInterface });
-        this.logger.debug("Raw push to queue", {
-          type: "processor.queue.raw_push",
-          queueLength: this.eventQueue.length
-        });
-      },
-      shift: async () => {
-        const context = this.eventQueue.shift();
-        this.logger.debug("Shifted from queue", {
-          type: "processor.queue.shift",
-          queueLength: this.eventQueue.length,
-          contextExists: !!context
-        });
-        return context;
-      }
-    };
-    this.currentContext = undefined;
-    this.isRunning = false;
   }
 
-  public async start(): Promise<void> {
-    if (this.isRunning) {
-      this.logger.warn("PipelineProcessor already running.");
+  private pushToQueue(context: Omit<AgentContext, "eventQueue">): void {
+    const completeContext: AgentContext = {
+      ...context
+    };
+
+    this.eventQueue.push(completeContext);
+    this.logger.debug("Pushed context to queue", {
+      type: "processor.queue.push",
+      queueLength: this.eventQueue.length
+    });
+
+    // Trigger processing
+    this.triggerProcessing();
+  }
+
+  private shiftFromQueue(): AgentContext | null {
+    return this.eventQueue.shift() || null;
+  }
+
+  private triggerProcessing(): void {
+    // If processing is already running, do nothing
+    if (this.isProcessing) {
       return;
     }
-    this.isRunning = true;
-    this.logger.info("Starting evaluation loop", {
-      type: "processor.evaluation.loop.starting"
+
+    // Set processing to true and start processing
+    this.isProcessing = true;
+    this.logger.debug("Starting queue processing", {
+      type: "processor.queue.processing.start",
+      queueLength: this.eventQueue.length
     });
+
+    // Process async to not block caller
     setImmediate(() => {
-      this.runEvaluationLoop().catch((error) => {
-        this.logger.error("Unhandled error in evaluation loop", {
-          type: "processor.evaluation.loop.unhandled_error",
+      this.processQueue()
+        .catch((error: unknown) => {
+          this.logger.error("Unhandled error in queue processing", {
+            type: "processor.queue.processing.unhandled_error",
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+          });
+        })
+        .finally(() => {
+          // Always reset processing state on completion
+          this.isProcessing = false;
+          this.logger.debug("Queue processing complete", {
+            type: "processor.queue.processing.complete",
+            queueLength: this.eventQueue.length
+          });
+        });
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    let context = this.shiftFromQueue();
+    while (context) {
+      try {
+        await this.processContext(context);
+      } catch (error) {
+        this.logger.error("Error processing context", {
+          type: "processor.queue.processing.error",
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
         });
-        this.isRunning = false;
-      });
-    });
-  }
+      }
 
-  public stop(): void {
-    if (!this.isRunning) {
-      this.logger.warn("PipelineProcessor is not running.");
-      return;
+      context = this.shiftFromQueue();
     }
-    this.isRunning = false;
-    this.logger.info("Stopping evaluation loop", {
-      type: "processor.evaluation.loop.stopping"
-    });
+
+    // Queue is now empty
   }
 
-  /**
-   * Push a new context to the event queue
-   */
-  public pushContext(context: AgentContext): void {
-    this.eventQueue.push(context);
+  private async processContext(context: AgentContext): Promise<void> {
+    this.logger.debug("Processing context", {
+      type: "processor.context.processing",
+      context
+    });
+
+    const pipeline = await this.evaluatePipeline(context);
+
+    this.executePipeline(pipeline, context);
+
+    const userInput = getUserInput(context);
+
+    if (userInput) {
+      const lastContext = context.contextChain[
+        context.contextChain.length - 1
+      ] as BaseContextItem & { message: string };
+      this.logger.info("storing assistant response in memory", {
+        type: "runtime.assistant.response.storing",
+        user: userInput.user,
+        platform: userInput.pluginId,
+        response: lastContext.message
+      });
+
+      await this.memoryManager.storeAssistantInteraction(
+        userInput.user,
+        userInput.pluginId,
+        lastContext.message,
+        context.contextChain
+      );
+    }
+
+    this.logger.info("pipeline execution complete", {
+      type: "runtime.pipeline.execution.complete"
+    });
+
+    this.updateMonitoringState(context);
   }
 
   public async createEvent(
@@ -143,11 +191,10 @@ export class PipelineProcessor {
     const context: AgentContext = {
       contextChain: [initialContext],
       conversationId,
-      platformContext,
-      eventQueue: this.queueInterface
+      platformContext
     };
     try {
-      await this.queueInterface.push(context);
+      await this.pushToQueue(context);
     } catch (error) {
       this.logger.error("error pushing event to queue", {
         type: "runtime.event.queue.push.failed",
@@ -159,111 +206,6 @@ export class PipelineProcessor {
         }
       });
       throw error; // Re-throw to allow caller to handle
-    }
-  }
-
-  private async runEvaluationLoop(): Promise<void> {
-    this.logger.info("starting evaluation loop", {
-      type: "runtime.evaluation.loop.starting"
-    });
-
-    while (this.isRunning) {
-      const context = await this.eventQueue.shift();
-      if (!context) {
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Sleep to prevent busy loop
-        continue;
-      }
-
-      const userInput = getUserInput(context);
-      this.logger.debug("processing context from queue", {
-        type: "runtime.context.processing",
-        context: {
-          platform: userInput?.pluginId,
-          message: userInput?.rawMessage,
-          queueLength: this.eventQueue.length
-        }
-      });
-
-      try {
-        // Set current context before pipeline
-        this.currentContext = context;
-
-        this.logger.debug("evaluating pipeline for context", {
-          type: "runtime.pipeline.evaluating",
-          context: {
-            platform: userInput?.pluginId,
-            message: userInput?.rawMessage,
-            queueLength: this.eventQueue.length
-          }
-        });
-
-        const pipeline = await this.evaluatePipeline(context);
-        this.logger.info("generated pipeline", {
-          type: "runtime.pipeline.generated",
-          pipeline
-        });
-
-        this.logger.debug("executing pipeline", {
-          type: "runtime.pipeline.executing",
-          pipeline
-        });
-
-        await this.executePipeline(pipeline, context);
-
-        // Post-event logging
-        this.logger.info("post-event context chain state", {
-          type: "runtime.context.post_event",
-          phase: "post-event",
-          platform: userInput?.pluginId,
-          user: userInput?.user,
-          contextChain: context.contextChain
-        });
-
-        // Store agent message and context in memory with complete context chain
-        if (userInput) {
-          const lastContext = context.contextChain[
-            context.contextChain.length - 1
-          ] as BaseContextItem & { message: string };
-          this.logger.info("storing assistant response in memory", {
-            type: "runtime.assistant.response.storing",
-            user: userInput.user,
-            platform: userInput.pluginId,
-            response: lastContext.message
-          });
-
-          await this.memoryManager.storeAssistantInteraction(
-            userInput.user,
-            userInput.pluginId,
-            lastContext.message,
-            context.contextChain
-          );
-        }
-
-        this.logger.info("pipeline execution complete", {
-          type: "runtime.pipeline.execution.complete"
-        });
-      } catch (error) {
-        this.logger.error("error in evaluation loop", {
-          type: "runtime.evaluation.loop.error",
-          error: error instanceof Error ? error : new Error(String(error)),
-          context: {
-            message: userInput?.rawMessage,
-            platform: userInput?.pluginId,
-            user: userInput?.user
-          }
-        });
-
-        // Log the error
-        this.logger.error("runtime error occurred", {
-          type: "runtime_error",
-          error: error instanceof Error ? error.message : String(error)
-        });
-        throw error;
-      } finally {
-        // Clear current context after execution
-        this.currentContext = undefined;
-        await this.updateMonitoringState();
-      }
     }
   }
 
@@ -444,8 +386,6 @@ export class PipelineProcessor {
     pipeline: PipelineStep[],
     context: AgentContext
   ): Promise<void> {
-    this.currentContext = context;
-
     try {
       let currentPipeline = [...pipeline];
       let currentStepIndex = 0;
@@ -550,7 +490,7 @@ export class PipelineProcessor {
             context.contextChain.push(errorContext);
 
             // Update monitoring state after error context changes
-            await this.updateMonitoringState();
+            await this.updateMonitoringState(context);
           } else if (result.data) {
             // Add successful result to context chain
             context.contextChain.push({
@@ -564,7 +504,7 @@ export class PipelineProcessor {
             });
 
             // Update monitoring state after context changes
-            await this.updateMonitoringState();
+            await this.updateMonitoringState(context);
           }
 
           // Evaluate pipeline modification with updated context
@@ -623,7 +563,7 @@ export class PipelineProcessor {
           context.contextChain.push(errorContext);
 
           // Update monitoring state after error context changes
-          await this.updateMonitoringState();
+          await this.updateMonitoringState(context);
 
           // Log failed step
           this.logger.error("step execution failed", {
@@ -645,18 +585,17 @@ export class PipelineProcessor {
         currentStepIndex++;
       }
     } finally {
-      this.currentContext = undefined;
-      await this.updateMonitoringState();
+      await this.updateMonitoringState(context);
     }
   }
 
-  private async updateMonitoringState() {
+  private async updateMonitoringState(context: AgentContext) {
     this.logger.debug("agent state update", {
       type: "runtime.state.update",
       state: {
-        currentContext: this.currentContext,
+        currentContext: context,
         queueLength: this.eventQueue.length,
-        isRunning: this.isRunning,
+        isProcessing: this.isProcessing,
         lastUpdate: Date.now()
       }
     });

@@ -399,19 +399,10 @@ export class Runtime {
         if (trigger.start) {
           // Handle process-type triggers
           trigger.start({
-            eventQueue: this.pipelineProcessor.queueInterface,
             contextChain: []
           });
         }
       }
-    }
-
-    try {
-      await this.pipelineProcessor.start();
-    } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      this.logger.error("error in evaluation loop:", { error: error.message });
-      throw error;
     }
   }
 

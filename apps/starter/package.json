@@ -21,6 +21,7 @@
     "@maiar-ai/plugin-character": "workspace:*",
     "@maiar-ai/plugin-discord": "workspace:*",
     "@maiar-ai/plugin-image": "workspace:*",
+    "@maiar-ai/plugin-mcp": "workspace:*",
     "@maiar-ai/plugin-search": "workspace:*",
     "@maiar-ai/plugin-telegram": "workspace:*",
     "@maiar-ai/plugin-terminal": "workspace:*",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@types/cors": "2.8.17",
     "@types/express": "5.0.0",
+    "@types/node": "22.13.1",
     "chokidar-cli": "3.0.0",
     "dotenv-cli": "8.0.0",
     "tsup": "8.3.6",

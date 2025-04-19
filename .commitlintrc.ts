@@ -54,6 +54,7 @@ const commitlintConfig: UserConfig = {
         "plugin-character", // plugin-character plugin
         "plugin-discord", // plugin-discord plugin
         "plugin-image", // plugin-image plugin
+        "plugin-mcp", // plugin-mcp plugin
         "plugin-search", // plugin-search plugin
         "plugin-telegram", // plugin-telegram plugin
         "plugin-terminal", // plugin-terminal plugin

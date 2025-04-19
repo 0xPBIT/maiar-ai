@@ -23,6 +23,7 @@ import {
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
 import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
+import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
@@ -69,6 +70,18 @@ async function main() {
     new TerminalPlugin({
       user: "ligma",
       agentName: "maiar-starter"
+    }),
+    new MCPPlugin({
+      command: process.env.PATH_TO_NPX,
+      args: ["-y", "@modelcontextprotocol/server-puppeteer"],
+      env: {
+        PATH: process.env.PATH_TO_NPX_DIR + ":" + (process.env.PATH ?? ""),
+        // Example: expose puppeteer in headed mode; customise as needed
+        PUPPETEER_LAUNCH_OPTIONS: JSON.stringify({ headless: false }),
+        ALLOW_DANGEROUS: "true"
+      },
+      clientName: "maiar-starter-puppeteer",
+      clientVersion: "1.0.0"
     }),
     new CharacterPlugin({
       character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")

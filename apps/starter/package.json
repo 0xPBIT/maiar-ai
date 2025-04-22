@@ -29,6 +29,7 @@
     "@maiar-ai/plugin-time": "workspace:*",
     "@maiar-ai/plugin-websocket": "workspace:*",
     "@maiar-ai/plugin-x": "workspace:*",
+    "@maiar-ai/plugin-codex": "workspace:*",
     "cors": "2.8.5",
     "dotenv": "16.4.7",
     "express": "4.21.2"

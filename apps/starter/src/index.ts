@@ -16,6 +16,7 @@ import {
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
 import { CharacterPlugin } from "@maiar-ai/plugin-character";
+import { CodexPlugin } from "@maiar-ai/plugin-codex";
 import {
   DiscordPlugin,
   postListenerTrigger,
@@ -60,6 +61,9 @@ async function main() {
   });
 
   const plugins: Plugin[] = [
+    new CodexPlugin({
+      apiKey: process.env.OPENAI_API_KEY as string
+    }),
     new ImageGenerationPlugin(),
     new TextGenerationPlugin(),
     new TimePlugin(),

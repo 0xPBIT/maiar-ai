@@ -52,6 +52,7 @@ const commitlintConfig: UserConfig = {
         "model-ollama", // model-ollama model provider
         "model-openai", // model-openai model provider
         "plugin-character", // plugin-character plugin
+        "plugin-codex", // plugin-codex plugin
         "plugin-discord", // plugin-discord plugin
         "plugin-image", // plugin-image plugin
         "plugin-mcp", // plugin-mcp plugin

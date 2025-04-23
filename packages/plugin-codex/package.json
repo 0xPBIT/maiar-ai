@@ -1,0 +1,38 @@
+{
+  "name": "@maiar-ai/plugin-codex",
+  "version": "0.1.0",
+  "description": "Codex CLI plugin for MAIAR AI agent",
+  "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup --config ../../tsup.config.base.ts --watch",
+    "lint": "tsc --project tsconfig.json",
+    "lint:emit": "tsc --project tsconfig.json --noEmit false",
+    "build": "tsup --config ../../tsup.config.base.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@maiar-ai/core": "workspace:*",
+    "@openai/codex": "0.1.2504211509",
+    "execa": "9.3.1",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.9.1",
+    "typescript": "^5.5.3",
+    "vitest": "^2.1.1"
+  },
+  "author": "MAIAR AI Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maiar-ai/maiar-ai.git",
+    "directory": "packages/plugin-codex"
+  },
+  "bugs": {
+    "url": "https://github.com/maiar-ai/maiar-ai/issues"
+  },
+  "homepage": "https://github.com/maiar-ai/maiar-ai/tree/main/packages/plugin-codex#readme"
+}

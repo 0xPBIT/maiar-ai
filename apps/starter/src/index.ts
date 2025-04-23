@@ -48,7 +48,7 @@ async function main() {
   const modelProviders: ModelProvider[] = [
     new OpenAIModelProvider({
       models: [
-        OpenAITextGenerationModel.GPT4O,
+        OpenAITextGenerationModel.GPT_41,
         OpenAIImageGenerationModel.DALLE3
       ],
       apiKey: process.env.OPENAI_API_KEY as string

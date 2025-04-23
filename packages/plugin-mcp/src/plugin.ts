@@ -17,7 +17,12 @@ interface Tool {
   inputSchema: unknown;
 }
 
-interface MCPPluginConfig {
+// ---------------------------------------------------------------------------
+// NEW TYPES
+// ---------------------------------------------------------------------------
+export type MCPPluginConfig = SingleServerConfig | SingleServerConfig[];
+
+export interface SingleServerConfig {
   /** Absolute or relative path to a .js or .py file. Ignored if `command` is provided. */
   serverScriptPath?: string;
   /** If supplied, the executable to run (e.g. "docker", "npx", "node") */
@@ -27,27 +32,28 @@ interface MCPPluginConfig {
   /** Extra environment variables for the spawned process. */
   env?: Record<string, string>;
 
-  /** Optional name passed to the underlying MCP client */
-  clientName?: string;
+  /** Required name passed to the underlying MCP client */
+  clientName: string;
   /** Optional version passed to the underlying MCP client */
   clientVersion?: string;
 }
 
 export class MCPPlugin extends Plugin {
-  private readonly config: MCPPluginConfig;
-  private mcp: MCPClient | null = null;
-  private transport: StdioClientTransport | null = null;
+  private readonly configs: SingleServerConfig[];
+  private transports: StdioClientTransport[] = [];
+  private mcps: MCPClient[] = [];
 
   constructor(config: MCPPluginConfig) {
     super({
       id: "plugin-mcp",
       name: "MCP",
       description:
-        "Connects to an MCP server and exposes its tools as executors",
+        "Connects to MCP servers and exposes their tools as executors",
       requiredCapabilities: []
     });
 
-    this.config = config;
+    // Accept both single object and array → normalise to array
+    this.configs = Array.isArray(config) ? config : [config];
   }
 
   /* -------------------------------------------------------------------------- */
@@ -55,75 +61,68 @@ export class MCPPlugin extends Plugin {
   /* -------------------------------------------------------------------------- */
 
   public async init(): Promise<void> {
-    const {
-      serverScriptPath,
-      command: explicitCommand,
-      args: explicitArgs,
-      env,
-      clientName = "maiar-mcp-plugin",
-      clientVersion = "1.0.0"
-    } = this.config;
+    for (const cfg of this.configs) {
+      const {
+        command: explicitCommand,
+        args: explicitArgs,
+        serverScriptPath,
+        env,
+        clientName,
+        clientVersion = "1.0.0"
+      } = cfg;
 
-    let command: string;
-    let args: string[];
+      // ---------------- command / args resolution ----------------
+      let command: string;
+      let args: string[];
 
-    if (explicitCommand) {
-      // Desktop‑style configuration (command + args provided directly)
-      command = explicitCommand;
-      args = explicitArgs ?? [];
-    } else if (serverScriptPath) {
-      // Legacy single‑file configuration
-      const isPython = serverScriptPath.endsWith(".py");
-      const isNode = serverScriptPath.endsWith(".js");
-
-      if (!isPython && !isNode) {
+      if (explicitCommand) {
+        command = explicitCommand;
+        args = explicitArgs ?? [];
+      } else if (serverScriptPath) {
+        const isPython = serverScriptPath.endsWith(".py");
+        command = isPython
+          ? process.platform === "win32"
+            ? "python"
+            : "python3"
+          : process.execPath;
+        args = [serverScriptPath];
+      } else {
         throw new Error(
-          "Provide either { command, args } or a .py/.js serverScriptPath to MCPPlugin"
+          "MCP config needs either {command,args} or serverScriptPath"
         );
       }
 
-      command = isPython
-        ? process.platform === "win32"
-          ? "python"
-          : "python3"
-        : process.execPath;
-      args = [serverScriptPath];
-    } else {
-      throw new Error(
-        "MCPPlugin requires either command+args or serverScriptPath"
-      );
+      // ---------------- create client / transport ----------------
+      const transport = new StdioClientTransport({ command, args, env });
+      const client = new MCPClient({
+        name: clientName,
+        version: clientVersion
+      });
+      client.connect(transport);
+
+      // ---------------- register executors ----------------
+      const tools = (await client.listTools())?.tools ?? [];
+      tools.forEach((tool) => this.registerToolAsExecutor(tool, clientName));
+
+      // ---------------- bookkeeping ----------------
+      this.transports.push(transport);
+      this.mcps.push(client);
+
+      this.logger.info("connected to MCP server", {
+        type: "plugin-mcp.init",
+        clientName,
+        tools: tools.map((t) => t.name)
+      });
     }
-
-    // Initialise MCP client & transport (env is optional)
-    this.transport = new StdioClientTransport({ command, args, env });
-    this.mcp = new MCPClient({ name: clientName, version: clientVersion });
-    this.mcp.connect(this.transport);
-
-    // Fetch tools from the server
-    const toolsResult = await this.mcp.listTools();
-    const tools = toolsResult?.tools ?? [];
-
-    // Register every tool as an executor
-    tools.forEach((tool) => this.registerToolAsExecutor(tool));
-
-    this.logger.info("connected to MCP server and registered executors", {
-      type: "plugin-mcp.init",
-      command,
-      args,
-      tools: tools.map((t) => t.name)
-    });
   }
 
   public async shutdown(): Promise<void> {
-    try {
-      await this.mcp?.close();
+    for (const client of this.mcps) {
+      await client.close().catch(() => {});
+    }
+    for (const t of this.transports) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.transport as any)?.close?.();
-    } catch (err) {
-      this.logger.warn("error shutting down MCP client", {
-        type: "plugin-mcp.shutdown.error",
-        error: err instanceof Error ? err.message : String(err)
-      });
+      (t as any)?.close?.();
     }
   }
 
@@ -131,8 +130,8 @@ export class MCPPlugin extends Plugin {
   /*                              Helper methods                                */
   /* -------------------------------------------------------------------------- */
 
-  private registerToolAsExecutor(tool: Tool): void {
-    const executorName = tool.name;
+  private registerToolAsExecutor(tool: Tool, prefix: string): void {
+    const executorName = `${prefix}_${tool.name}`;
 
     const zodSchema = jsonSchemaToZod(tool.inputSchema);
 
@@ -147,8 +146,17 @@ export class MCPPlugin extends Plugin {
           contextChain
         });
 
-        if (!this.mcp) {
-          return { success: false, error: "MCP client not initialised" };
+        // Find the correct MCP client based on the prefix by matching with clientName in configs
+        const clientConfig = this.configs.find((c) => c.clientName === prefix);
+        const clientIndex = clientConfig
+          ? this.configs.indexOf(clientConfig)
+          : -1;
+        const client = clientIndex >= 0 ? this.mcps[clientIndex] : null;
+        if (!client) {
+          return {
+            success: false,
+            error: "MCP client not found for prefix: " + prefix
+          };
         }
 
         try {
@@ -159,8 +167,8 @@ export class MCPPlugin extends Plugin {
             { temperature: 0.2 }
           )) as Record<string, unknown>;
 
-          const result = await this.mcp.callTool({
-            name: executorName,
+          const result = await client.callTool({
+            name: tool.name,
             arguments: args
           });
 

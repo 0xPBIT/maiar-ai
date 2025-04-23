@@ -48,7 +48,7 @@ async function main() {
   const modelProviders: ModelProvider[] = [
     new OpenAIModelProvider({
       models: [
-        OpenAITextGenerationModel.GPT_41,
+        OpenAITextGenerationModel.GPT4O,
         OpenAIImageGenerationModel.DALLE3
       ],
       apiKey: process.env.OPENAI_API_KEY as string
@@ -71,18 +71,25 @@ async function main() {
       user: "ligma",
       agentName: "maiar-starter"
     }),
-    new MCPPlugin({
-      command: process.env.PATH_TO_NPX,
-      args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-      env: {
-        PATH: process.env.PATH_TO_NPX_DIR + ":" + (process.env.PATH ?? ""),
-        // Example: expose puppeteer in headed mode; customise as needed
-        PUPPETEER_LAUNCH_OPTIONS: JSON.stringify({ headless: false }),
-        ALLOW_DANGEROUS: "true"
+    new MCPPlugin([
+      {
+        // ----- server #1 (existing puppeteer) -----
+        command: process.env.PATH_TO_NPX,
+        args: ["-y", "@modelcontextprotocol/server-puppeteer"],
+        env: {
+          PATH: process.env.PATH_TO_NPX_DIR + ":" + (process.env.PATH ?? ""),
+          PUPPETEER_LAUNCH_OPTIONS: JSON.stringify({ headless: false }),
+          ALLOW_DANGEROUS: "true"
+        },
+        clientName: "puppeteer"
       },
-      clientName: "maiar-starter-puppeteer",
-      clientVersion: "1.0.0"
-    }),
+      {
+        // ----- server #2 (example markdown tools) -----
+        command: process.env.PATH_TO_NPX,
+        args: ["-y", "@modelcontextprotocol/server-everything"],
+        clientName: "everything"
+      }
+    ]),
     new CharacterPlugin({
       character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     }),

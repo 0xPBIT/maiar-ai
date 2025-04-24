@@ -7,7 +7,11 @@ import { generateCodexCommandTemplate } from "./templates";
 import { CodexCommandSchema } from "./types";
 
 export class CodexPlugin extends Plugin {
-  constructor(config: { apiKey?: string } = {}) {
+  constructor(config: {
+    apiKey: string;
+    timeout?: number;
+    maxBuffer?: number;
+  }) {
     super({
       id: "plugin-codex",
       name: "Codex CLI",
@@ -57,7 +61,7 @@ export class CodexPlugin extends Plugin {
             // Set environment variables, including OPENAI_API_KEY if provided
             const env = {
               ...process.env,
-              ...(config.apiKey ? { OPENAI_API_KEY: config.apiKey } : {}),
+              OPENAI_API_KEY: config.apiKey,
               PATH: `${process.env.PATH}:node_modules/.bin`
             };
 
@@ -68,8 +72,8 @@ export class CodexPlugin extends Plugin {
               {
                 cwd: pluginRoot,
                 env,
-                timeout: 600000, // 600 seconds timeout to prevent hanging
-                maxBuffer: 1024 * 1024 * 10 // 10MB buffer for output
+                timeout: config.timeout || 600000, // 600 seconds timeout to prevent hanging
+                maxBuffer: config.maxBuffer || 1024 * 1024 * 10 // 10MB buffer for output
               }
             );
 

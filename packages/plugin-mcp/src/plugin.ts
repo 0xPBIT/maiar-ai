@@ -17,12 +17,7 @@ interface Tool {
   inputSchema: unknown;
 }
 
-// ---------------------------------------------------------------------------
-// NEW TYPES
-// ---------------------------------------------------------------------------
-export type MCPPluginConfig = SingleServerConfig | SingleServerConfig[];
-
-export interface SingleServerConfig {
+export interface ServerConfig {
   /** Absolute or relative path to a .js or .py file. Ignored if `command` is provided. */
   serverScriptPath?: string;
   /** If supplied, the executable to run (e.g. "docker", "npx", "node") */
@@ -39,26 +34,24 @@ export interface SingleServerConfig {
 }
 
 export class MCPPlugin extends Plugin {
-  private readonly configs: SingleServerConfig[];
-  private transports: StdioClientTransport[] = [];
-  private mcps: MCPClient[] = [];
+  private readonly configs: ServerConfig[];
+  private transports: StdioClientTransport[];
+  private mcps: MCPClient[];
 
-  constructor(config: MCPPluginConfig) {
+  constructor(config: ServerConfig | ServerConfig[]) {
     super({
       id: "plugin-mcp",
       name: "MCP",
       description:
-        "Connects to MCP servers and exposes their tools as executors",
+        "Collection of executors that perform various functions, actions, and tasks, prefixed by their application name, followed by the tool name.",
       requiredCapabilities: []
     });
 
     // Accept both single object and array → normalise to array
     this.configs = Array.isArray(config) ? config : [config];
+    this.transports = [];
+    this.mcps = [];
   }
-
-  /* -------------------------------------------------------------------------- */
-  /*                                Lifecycle                                   */
-  /* -------------------------------------------------------------------------- */
 
   public async init(): Promise<void> {
     for (const cfg of this.configs) {
@@ -71,7 +64,7 @@ export class MCPPlugin extends Plugin {
         clientVersion = "1.0.0"
       } = cfg;
 
-      // ---------------- command / args resolution ----------------
+      // command and args resolution
       let command: string;
       let args: string[];
 
@@ -92,19 +85,30 @@ export class MCPPlugin extends Plugin {
         );
       }
 
-      // ---------------- create client / transport ----------------
-      const transport = new StdioClientTransport({ command, args, env });
+      // create client and transport
+      const transport = new StdioClientTransport({
+        command,
+        args,
+        env: {
+          ...Object.fromEntries(
+            Object.entries(process.env).filter(([, v]) => v !== undefined) as [
+              string,
+              string
+            ][]
+          ),
+          ...(env || {})
+        }
+      });
       const client = new MCPClient({
         name: clientName,
         version: clientVersion
       });
-      client.connect(transport);
+      await client.connect(transport);
 
-      // ---------------- register executors ----------------
+      // register executors
       const tools = (await client.listTools())?.tools ?? [];
       tools.forEach((tool) => this.registerToolAsExecutor(tool, clientName));
 
-      // ---------------- bookkeeping ----------------
       this.transports.push(transport);
       this.mcps.push(client);
 
@@ -118,17 +122,13 @@ export class MCPPlugin extends Plugin {
 
   public async shutdown(): Promise<void> {
     for (const client of this.mcps) {
-      await client.close().catch(() => {});
+      await client.close().catch(() => void 0);
     }
     for (const t of this.transports) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (t as any)?.close?.();
     }
   }
-
-  /* -------------------------------------------------------------------------- */
-  /*                              Helper methods                                */
-  /* -------------------------------------------------------------------------- */
 
   private registerToolAsExecutor(tool: Tool, prefix: string): void {
     const executorName = `${prefix}_${tool.name}`;

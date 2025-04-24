@@ -73,19 +73,18 @@ async function main() {
     }),
     new MCPPlugin([
       {
-        // ----- server #1 (existing puppeteer) -----
-        command: process.env.PATH_TO_NPX,
+        // ----- server #1 (puppeteer) -----
+        command: "npx",
         args: ["-y", "@modelcontextprotocol/server-puppeteer"],
         env: {
-          PATH: process.env.PATH_TO_NPX_DIR + ":" + (process.env.PATH ?? ""),
           PUPPETEER_LAUNCH_OPTIONS: JSON.stringify({ headless: false }),
           ALLOW_DANGEROUS: "true"
         },
         clientName: "puppeteer"
       },
       {
-        // ----- server #2 (example markdown tools) -----
-        command: process.env.PATH_TO_NPX,
+        // ----- server #2 (example tools) -----
+        command: "npx",
         args: ["-y", "@modelcontextprotocol/server-everything"],
         clientName: "everything"
       }

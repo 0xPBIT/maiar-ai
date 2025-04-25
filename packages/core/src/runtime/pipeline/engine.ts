@@ -4,7 +4,7 @@ import { MemoryManager } from "../managers/memory";
 import { PluginRegistry } from "../managers/plugin";
 import { PluginResult } from "../providers";
 import { Plugin } from "../providers/plugin";
-import { getUserInput } from "./agent";
+import { BaseContextItem, getUserInput } from "./agent";
 import { AgentTask } from "./agent";
 import {
   generatePipelineModificationTemplate,
@@ -40,9 +40,10 @@ export class Engine {
     this.logger = parentLogger.child({ scope: "processor" });
   }
 
-  public async startEngine(task: AgentTask): Promise<void> {
+  public async startEngine(task: AgentTask): Promise<BaseContextItem[]> {
     const pipeline = await this.createPipeline(task);
     await this.executePipeline(pipeline, task);
+    return task.contextChain;
   }
   /**
    * Generates a tool-based workflow with the available action executors

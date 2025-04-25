@@ -111,25 +111,30 @@ export class Processor {
       task
     });
 
-    await this.engine.startEngine(task);
+    const completedTaskChain = await this.engine.startEngine(task);
     const userInput = getUserInput(task);
 
     if (userInput) {
-      const lastContext = task.contextChain[
-        task.contextChain.length - 1
+      const lastContext = completedTaskChain[
+        completedTaskChain.length - 1
       ] as BaseContextItem & { message: string };
       this.logger.info("storing assistant response in memory", {
         type: "runtime.assistant.response.storing",
         user: userInput.user,
         platform: userInput.pluginId,
-        response: lastContext.message
+        response: lastContext.message || lastContext.content
+      });
+
+      this.logger.info("completed task chain", {
+        type: "runtime.pipeline.execution.complete",
+        taskChain: completedTaskChain
       });
 
       await this.memoryManager.storeAssistantInteraction(
         userInput.user,
         userInput.pluginId,
-        lastContext.message,
-        task.contextChain
+        lastContext.message || lastContext.content,
+        completedTaskChain
       );
     }
 

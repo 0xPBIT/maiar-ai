@@ -111,9 +111,19 @@ export class Processor {
       task
     });
 
-    const completedTaskChain = await this.engine.startEngine(task);
     const userInput = getUserInput(task);
 
+    if (userInput) {
+      await this.memoryManager.storeUserInteraction(
+        userInput.user,
+        userInput.pluginId,
+        userInput.rawMessage,
+        userInput.timestamp,
+        userInput.id
+      );
+    }
+
+    const completedTaskChain = await this.engine.startEngine(task);
     if (userInput) {
       const lastContext = completedTaskChain[
         completedTaskChain.length - 1

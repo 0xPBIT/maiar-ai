@@ -8,8 +8,8 @@ import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
 import { stdout, websocket } from "@maiar-ai/core/dist/logger";
 
 import {
-  OpenAIImageGenerationModel,
   OpenAIModelProvider,
+  OpenAIMultiModalImageGenerationModel,
   OpenAITextGenerationModel
 } from "@maiar-ai/model-openai";
 
@@ -49,7 +49,8 @@ async function main() {
     new OpenAIModelProvider({
       models: [
         OpenAITextGenerationModel.GPT_41,
-        OpenAIImageGenerationModel.DALLE3
+        //OpenAIImageGenerationModel.DALLE3,
+        OpenAIMultiModalImageGenerationModel.IMAGE_GEN_1
       ],
       apiKey: process.env.OPENAI_API_KEY as string
     })

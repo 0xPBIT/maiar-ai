@@ -1,14 +1,21 @@
+import fs from "fs";
 import OpenAI from "openai";
+import { toFile } from "openai";
+import os from "os";
+import path from "path";
 import { z } from "zod";
 
 import { ModelProvider, ModelRequestConfig } from "@maiar-ai/core";
 
 import {
   imageGenerationSchema,
+  MULTI_MODAL_IMAGE_GENERATION_CAPABILITY_ID,
+  multiModalImageGenerationSchema,
   OpenAIConfig,
   OpenAIImageGenerationModel,
   OpenAIModel,
   OpenAIModelRequestConfig,
+  OpenAIMultiModalImageGenerationModel,
   OpenAITextGenerationModel,
   textGenerationSchema
 } from "./types";
@@ -31,6 +38,14 @@ const isImageGenerationModel = (
 ): model is OpenAIImageGenerationModel => {
   return Object.values(OpenAIImageGenerationModel).includes(
     model as OpenAIImageGenerationModel
+  );
+};
+
+const isMultiModalImageGenerationModel = (
+  model: OpenAIModel
+): model is OpenAIMultiModalImageGenerationModel => {
+  return Object.values(OpenAIMultiModalImageGenerationModel).includes(
+    model as OpenAIMultiModalImageGenerationModel
   );
 };
 
@@ -87,6 +102,25 @@ export class OpenAIModelProvider extends ModelProvider {
         capability: "image-generation",
         inputSchema: imageGenerationSchema.input,
         outputSchema: imageGenerationSchema.output
+      });
+    }
+
+    if (this.models.some(isMultiModalImageGenerationModel)) {
+      this.addCapability({
+        id: MULTI_MODAL_IMAGE_GENERATION_CAPABILITY_ID,
+        name: "Multi-modal image generation capability",
+        description: "Generate images from prompts and text",
+        input: multiModalImageGenerationSchema.input,
+        output: multiModalImageGenerationSchema.output,
+        execute: this.generateMultiModalImage.bind(this)
+      });
+
+      this.logger.info("add multi-modal image generation capability", {
+        type: "openai.model.capability.registration",
+        model: this.id,
+        capability: "multi-modal-image-generation",
+        inputSchema: multiModalImageGenerationSchema.input,
+        outputSchema: multiModalImageGenerationSchema.output
       });
     }
   }
@@ -185,5 +219,181 @@ export class OpenAIModelProvider extends ModelProvider {
 
       throw error;
     }
+  }
+
+  public async generateMultiModalImage(
+    input: z.infer<typeof multiModalImageGenerationSchema.input>
+  ): Promise<z.infer<typeof multiModalImageGenerationSchema.output>> {
+    // If no images are provided, call the create method
+    if (input.images.length === 0) {
+      const response = await this.client.images.generate({
+        prompt: input.text,
+        n: 1,
+        size: "1024x1024",
+        model: OpenAIMultiModalImageGenerationModel.IMAGE_GEN_1
+      });
+
+      const filePaths: string[] = [];
+      for (let i = 0; i < response.data.length; i++) {
+        const image = response.data[i];
+        if (image) {
+          if (image.url) {
+            const tempFilePath = await this.saveImageFromUrl(
+              image.url,
+              `generated_image_${Date.now()}_${i}`
+            );
+            filePaths.push(tempFilePath);
+          } else if (image.b64_json) {
+            const tempFilePath = await this.saveImageFromBase64(
+              image.b64_json,
+              `generated_image_${Date.now()}_${i}`
+            );
+            filePaths.push(tempFilePath);
+          }
+        }
+      }
+
+      if (filePaths.length === 0) {
+        throw new Error("No valid image data to save");
+      }
+
+      return filePaths;
+    }
+
+    // If images are provided, call the edit method
+    if (input.images.length > 0) {
+      const results: string[] = [];
+      for (const image of input.images) {
+        try {
+          let imageData;
+          let fileName = `image-${results.length}`;
+          let mimeType = "image/png";
+          if (image.startsWith("http://") || image.startsWith("https://")) {
+            // Handle URL
+            const response = await fetch(image);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image from ${image}: ${response.status} ${response.statusText}`
+              );
+            }
+            const blob = await response.blob();
+            imageData = blob;
+            // Try to infer file extension from URL if possible
+            const urlParts = image.split(".");
+            const extension =
+              urlParts[urlParts.length - 1]?.toLowerCase() || "";
+            if (["png", "jpg", "jpeg", "webp"].includes(extension)) {
+              fileName += `.${extension}`;
+              mimeType =
+                extension === "png"
+                  ? "image/png"
+                  : extension === "webp"
+                    ? "image/webp"
+                    : "image/jpeg";
+            }
+          } else {
+            // Handle local file path
+            if (!fs.existsSync(image)) {
+              throw new Error(`File does not exist at path: ${image}`);
+            }
+            const fileExtension = image.split(".").pop()?.toLowerCase() || "";
+            if (!["png", "jpg", "jpeg", "webp"].includes(fileExtension)) {
+              throw new Error(
+                `Unsupported file format for ${image}. Only PNG, JPEG, and WebP are supported for image editing.`
+              );
+            }
+            fileName += fileExtension ? `.${fileExtension}` : ".png";
+            mimeType =
+              fileExtension === "png"
+                ? "image/png"
+                : fileExtension === "webp"
+                  ? "image/webp"
+                  : fileExtension === "jpg" || fileExtension === "jpeg"
+                    ? "image/jpeg"
+                    : "image/png";
+            imageData = fs.createReadStream(image);
+          }
+          const uploadableImage = await toFile(imageData, fileName, {
+            type: mimeType
+          });
+          const editResponse = await this.client.images
+            .edit({
+              prompt: input.text,
+              n: 1,
+              size: "1024x1024",
+              image: uploadableImage,
+              model: OpenAIMultiModalImageGenerationModel.IMAGE_GEN_1
+            })
+            .catch((err) => {
+              throw new Error(
+                `API error during image edit for ${image}: ${err.message || err}`
+              );
+            });
+
+          for (let i = 0; i < editResponse.data.length; i++) {
+            const editedImage = editResponse.data[i];
+            if (editedImage) {
+              if (editedImage.url) {
+                const tempFilePath = await this.saveImageFromUrl(
+                  editedImage.url,
+                  `edited_image_${Date.now()}_${results.length}_${i}`
+                );
+                results.push(tempFilePath);
+              } else if (editedImage.b64_json) {
+                const tempFilePath = await this.saveImageFromBase64(
+                  editedImage.b64_json,
+                  `edited_image_${Date.now()}_${results.length}_${i}`
+                );
+                results.push(tempFilePath);
+              }
+            }
+          }
+        } catch (error: unknown) {
+          console.error(`Error processing image ${image}:`, error);
+          throw new Error(
+            `Failed to process image ${image}: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
+      if (results.length === 0) {
+        throw new Error("No valid edited image data to save");
+      }
+
+      return results;
+    }
+
+    return [];
+  }
+
+  // Helper method to save image from URL to a temporary file
+  private async saveImageFromUrl(
+    url: string,
+    filename: string
+  ): Promise<string> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image from ${url}: ${response.status} ${response.statusText}`
+      );
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const tempDir = os.tmpdir();
+    const filePath = path.join(tempDir, `${filename}.png`);
+    fs.writeFileSync(filePath, buffer);
+    return filePath;
+  }
+
+  // Helper method to save image from base64 data to a temporary file
+  private async saveImageFromBase64(
+    base64Data: string,
+    filename: string
+  ): Promise<string> {
+    const buffer = Buffer.from(base64Data, "base64");
+    const tempDir = os.tmpdir();
+    const filePath = path.join(tempDir, `${filename}.png`);
+    fs.writeFileSync(filePath, buffer);
+    return filePath;
   }
 }

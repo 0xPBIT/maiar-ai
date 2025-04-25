@@ -4,6 +4,8 @@ import { ModelRequestConfig } from "@maiar-ai/core";
 
 export const TEXT_GENERATION_CAPABILITY_ID = "text-generation";
 export const IMAGE_GENERATION_CAPABILITY_ID = "image-generation";
+export const MULTI_MODAL_IMAGE_GENERATION_CAPABILITY_ID =
+  "multi-modal-image-generation";
 
 declare module "@maiar-ai/core" {
   interface ICapabilities {
@@ -14,6 +16,10 @@ declare module "@maiar-ai/core" {
     [IMAGE_GENERATION_CAPABILITY_ID]: {
       input: z.infer<typeof imageGenerationSchema.input>;
       output: z.infer<typeof imageGenerationSchema.output>;
+    };
+    [MULTI_MODAL_IMAGE_GENERATION_CAPABILITY_ID]: {
+      input: z.infer<typeof multiModalImageGenerationSchema.input>;
+      output: z.infer<typeof multiModalImageGenerationSchema.output>;
     };
   }
 }
@@ -29,12 +35,18 @@ export enum OpenAITextGenerationModel {
 
 export enum OpenAIImageGenerationModel {
   DALLE2 = "dall-e-2",
-  DALLE3 = "dall-e-3"
+  DALLE3 = "dall-e-3",
+  IMAGE_GEN_1 = "gpt-image-1"
+}
+
+export enum OpenAIMultiModalImageGenerationModel {
+  IMAGE_GEN_1 = "gpt-image-1"
 }
 
 export type OpenAIModel =
   | OpenAITextGenerationModel
-  | OpenAIImageGenerationModel;
+  | OpenAIImageGenerationModel
+  | OpenAIMultiModalImageGenerationModel;
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -54,5 +66,13 @@ export const textGenerationSchema = {
 
 export const imageGenerationSchema = {
   input: z.string(),
+  output: z.array(z.string())
+};
+
+export const multiModalImageGenerationSchema = {
+  input: z.object({
+    text: z.string(),
+    images: z.array(z.string())
+  }),
   output: z.array(z.string())
 };

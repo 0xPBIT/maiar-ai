@@ -12,7 +12,7 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
-import { AgentTask, PipelineProcessor, UserInputContext } from "./pipeline";
+import { AgentTask, Processor, UserInputContext } from "./pipeline";
 import { formatZodSchema, OperationConfig } from "./pipeline/operations";
 import {
   cleanJsonString,
@@ -110,7 +110,7 @@ export class Runtime {
   private memoryManager: MemoryManager;
   private pluginRegistry: PluginRegistry;
 
-  private pipelineProcessor: PipelineProcessor;
+  private pipelineProcessor: Processor;
 
   /**
    * Returns a logger instance for the runtime scoped to the initialization
@@ -168,7 +168,7 @@ export class Runtime {
     this.pluginRegistry = pluginRegistry;
     this.serverManager = serverManager;
 
-    this.pipelineProcessor = new PipelineProcessor(
+    this.pipelineProcessor = new Processor(
       this.operations,
       this.pluginRegistry,
       this.memoryManager,

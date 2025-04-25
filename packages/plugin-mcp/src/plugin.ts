@@ -3,7 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { z, ZodType } from "zod";
 
 import {
-  AgentContext,
+  AgentTask,
   BaseContextItem,
   Plugin,
   PluginResult
@@ -171,7 +171,7 @@ export class MCPPlugin extends Plugin {
     this.executors.push({
       name: executorName,
       description: tool.description ?? "",
-      fn: async (context: AgentContext): Promise<PluginResult> => {
+      fn: async (context: AgentTask): Promise<PluginResult> => {
         const contextChain = context.contextChain as BaseContextItem[];
         const prompt = generateArgumentTemplate({
           executorName,

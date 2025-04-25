@@ -17,27 +17,12 @@ import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
 import { CharacterPlugin } from "@maiar-ai/plugin-character";
 import { CodexPlugin } from "@maiar-ai/plugin-codex";
-import {
-  DiscordPlugin,
-  postListenerTrigger,
-  replyMessageExecutor,
-  sendMessageExecutor
-} from "@maiar-ai/plugin-discord";
 import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
-import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
-// import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
 
-// import {
-//   createPostExecutor,
-//   periodicPostTrigger,
-//   XPlugin
-// } from "@maiar-ai/plugin-x";
-
 import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
-import { TerminalPlugin } from "@maiar-ai/plugin-terminal";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -73,47 +58,9 @@ async function main() {
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
-    new TerminalPlugin({
-      user: "ligma",
-      agentName: "maiar-starter"
-    }),
-    new MCPPlugin([
-      {
-        // ----- server #1 (puppeteer) -----
-        command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-puppeteer"],
-        env: {
-          PUPPETEER_LAUNCH_OPTIONS: JSON.stringify({ headless: false }),
-          ALLOW_DANGEROUS: "true"
-        },
-        clientName: "puppeteer"
-      },
-      {
-        // ----- server #2 (example tools) -----
-        command: "npx",
-        args: ["-y", "@modelcontextprotocol/server-everything"],
-        clientName: "everything"
-      }
-    ]),
     new CharacterPlugin({
       character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     })
-    // new XPlugin({
-    //   client_id: process.env.X_CLIENT_ID as string,
-    //   client_secret: process.env.X_CLIENT_SECRET as string,
-    //   callback_url: process.env.X_CALLBACK_URL as string,
-    //   // You can customize which executors and triggers to use
-    //   // If not specified, all default ones will be used automatically
-    //   executorFactories: [createPostExecutor],
-    //   triggerFactories: [periodicPostTrigger]
-    // }),
-    // new DiscordPlugin({
-    //   token: process.env.DISCORD_BOT_TOKEN as string,
-    //   clientId: process.env.DISCORD_CLIENT_ID as string,
-    //   commandPrefix: "!",
-    //   executorFactories: [sendMessageExecutor, replyMessageExecutor],
-    //   triggerFactories: [postListenerTrigger]
-    // })
   ];
 
   const capabilityAliases: string[][] = [

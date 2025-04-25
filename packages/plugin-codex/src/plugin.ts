@@ -1,7 +1,7 @@
 import { execa } from "execa";
 import path from "path";
 
-import { AgentContext, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { generateCodexCommandTemplate } from "./templates";
 import { CodexCommandSchema } from "./types";
@@ -24,7 +24,7 @@ export class CodexPlugin extends Plugin {
         name: "run_codex_command",
         description:
           "this command will write code on request and behalf of the user. coding related requesets should invoke this command.",
-        fn: async (context: AgentContext): Promise<PluginResult> => {
+        fn: async (context: AgentTask): Promise<PluginResult> => {
           try {
             // Extract command details from context
             const commandDetails = await this.runtime.operations.getObject(

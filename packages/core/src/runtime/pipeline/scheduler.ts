@@ -18,7 +18,7 @@ export class Scheduler {
   private readonly pluginRegistry: PluginRegistry;
   private readonly processor: Processor;
 
-  private eventQueue: AgentTask[];
+  private taskQueue: AgentTask[];
   private isRunning: boolean = false;
 
   public get logger(): Logger {
@@ -40,7 +40,7 @@ export class Scheduler {
       this.pluginRegistry
     );
 
-    this.eventQueue = [];
+    this.taskQueue = [];
   }
 
   /**
@@ -48,14 +48,14 @@ export class Scheduler {
    * @param task - the task to add to the queue
    */
   private enqueue(task: AgentTask): void {
-    this.eventQueue.push(task);
+    this.taskQueue.push(task);
     this.logger.debug("Pushed task to queue", {
       type: "scheduler.queue.push",
-      queueLength: this.eventQueue.length
+      queueLength: this.taskQueue.length
     });
 
     // Start processing the queue, no-op if already started
-    this.start();
+    this.schedule();
   }
 
   /**
@@ -63,53 +63,38 @@ export class Scheduler {
    * @returns the first task from the queue or null if the queue is empty
    */
   private dequeue(): AgentTask | null {
-    return this.eventQueue.shift() || null;
+    return this.taskQueue.shift() || null;
   }
 
   /**
    * Starts the queue processing, this is run if an item is added to the queue and the queue is not already processing an item
    */
-  private start(): void {
+  private schedule(): void {
     // If processing is already running, do nothing
     if (this.isRunning) {
       return;
     }
 
-    // Set processing to true and start processing
-    this.isRunning = true;
-    this.logger.debug("Starting queue processing", {
-      type: "scheduler.queue.processing.start",
-      queueLength: this.eventQueue.length
-    });
-
     setImmediate(() => {
-      this.queueIterator()
-        .catch((error: unknown) => {
-          this.logger.error("Unhandled error in queue processing", {
-            type: "processor.queue.processing.unhandled_error",
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          });
-        })
-        .finally(() => {
-          // Always reset processing state on completion
-          this.isRunning = false;
-          this.logger.debug("Queue processing complete", {
-            type: "scheduler.queue.processing.complete",
-            queueLength: this.eventQueue.length
-          });
-        });
+      this.cycle();
     });
   }
 
   /**
    * Iterates over the queue and runs each task
    */
-  private async queueIterator(): Promise<void> {
+  private async cycle(): Promise<void> {
+    this.isRunning = true;
+    this.logger.debug("Starting queue processing", {
+      type: "scheduler.queue.processing.start",
+      queueLength: this.taskQueue.length
+    });
+
     let task = this.dequeue();
+
     while (task) {
       try {
-        await this.runTask(task);
+        await this.execute(task);
       } catch (error) {
         this.logger.error("Error processing task", {
           type: "scheduler.queue.processing.error",
@@ -117,18 +102,21 @@ export class Scheduler {
           stack: error instanceof Error ? error.stack : undefined
         });
       }
-
       task = this.dequeue();
     }
 
-    // Queue is now empty
+    this.isRunning = false;
+    this.logger.debug("Queue processing complete", {
+      type: "scheduler.queue.processing.complete",
+      queueLength: this.taskQueue.length
+    });
   }
 
   /**
    * Runs a task on the processor
    * @param task - the task to run
    */
-  private async runTask(task: AgentTask): Promise<void> {
+  private async execute(task: AgentTask): Promise<void> {
     this.logger.debug("Processing task", {
       type: "processor.task.processing",
       task

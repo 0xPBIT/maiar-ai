@@ -58,7 +58,7 @@ export const sendMessageExecutor = discordExecutorFactory(
     logger: maiarLogger.Logger
   ): Promise<PluginResult> => {
     try {
-      const response = await runtime.operations.getObject(
+      const response = await runtime.getObject(
         DiscordSendSchema,
         generateResponseTemplate(task.contextChain)
       );
@@ -120,7 +120,7 @@ export const sendMessageExecutor = discordExecutorFactory(
       });
 
       // Let the AI pick the most appropriate channel
-      const channelSelection = await runtime.operations.getObject(
+      const channelSelection = await runtime.getObject(
         DiscordChannelSelectionSchema,
         generateChannelSelectionTemplate(response.channelName, channelInfo)
       );
@@ -202,7 +202,7 @@ export const replyMessageExecutor = discordExecutorFactory(
     const channelId = task.platformContext.metadata.channelId as string;
 
     try {
-      const response = await runtime.operations.getObject(
+      const response = await runtime.getObject(
         DiscordReplySchema,
         generateResponseTemplate(task.contextChain)
       );

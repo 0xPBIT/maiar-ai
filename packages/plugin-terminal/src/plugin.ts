@@ -65,7 +65,7 @@ export class TerminalPlugin extends Plugin {
 
     try {
       // Format the response based on the context chain
-      const formattedResponse = await this.runtime.operations.getObject(
+      const formattedResponse = await this.runtime.getObject(
         TerminalResponseSchema,
         generateResponseTemplate(task.contextChain),
         { temperature: 0.2 }

@@ -58,7 +58,7 @@ export class FileSystemMemoryPlugin extends Plugin {
     const documentId = `doc_${timestamp}_${Math.random().toString(36).slice(9)}`;
 
     // Get data to store in database from context chain
-    const formattedResponse = await this.runtime.operations.getObject(
+    const formattedResponse = await this.runtime.getObject(
       FileSystemMemoryUploadSchema,
       generateUploadDocumentTemplate(task.contextChain),
       { temperature: 0.2 }
@@ -131,7 +131,7 @@ export class FileSystemMemoryPlugin extends Plugin {
       const documents: FileSystemMemoryDocument[] = sandboxData.documents || [];
 
       // Get query criteria from context chain
-      const queryFormattedResponse = await this.runtime.operations.getObject(
+      const queryFormattedResponse = await this.runtime.getObject(
         FileSystemQuerySchema,
         generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }
@@ -180,7 +180,7 @@ export class FileSystemMemoryPlugin extends Plugin {
       const documents: FileSystemMemoryDocument[] = sandboxData.documents || [];
 
       // Get query criteria from context chain
-      const queryFormattedResponse = await this.runtime.operations.getObject(
+      const queryFormattedResponse = await this.runtime.getObject(
         FileSystemQuerySchema,
         generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }

@@ -41,10 +41,7 @@ export const createPostExecutor = xExecutorFactory(
   ): Promise<PluginResult> => {
     try {
       const tweetTemplate = generateTweetTemplate(task.contextChain);
-      const params = await runtime.operations.getObject(
-        PostTweetSchema,
-        tweetTemplate
-      );
+      const params = await runtime.getObject(PostTweetSchema, tweetTemplate);
       const message = params.tweetText;
       // Post the tweet
       const options: TweetOptions = {

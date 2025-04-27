@@ -47,7 +47,7 @@ export class PostgresMemoryPlugin extends Plugin {
     const client = await this.pool.connect();
     try {
       // Construct query for document ids
-      const queryFormattedResponse = await this.runtime.operations.getObject(
+      const queryFormattedResponse = await this.runtime.getObject(
         PostgresQuerySchema,
         generateQueryTemplate(task.contextChain),
         { temperature: 0.2 }
@@ -96,7 +96,7 @@ export class PostgresMemoryPlugin extends Plugin {
     const documentId = `doc_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get data to store in database from context chain
-    const formattedResponse = await this.runtime.operations.getObject(
+    const formattedResponse = await this.runtime.getObject(
       PostgresMemoryUploadSchema,
       generateUploadDocumentTemplate(task.contextChain),
       { temperature: 0.2 }
@@ -133,7 +133,7 @@ export class PostgresMemoryPlugin extends Plugin {
     const client = await this.pool.connect();
     try {
       // Construct query from context
-      const queryFormattedResponse = await this.runtime.operations.getObject(
+      const queryFormattedResponse = await this.runtime.getObject(
         PostgresQuerySchema,
         generateQueryTemplate(task.contextChain, ["id", "content"]),
         { temperature: 0.2 }

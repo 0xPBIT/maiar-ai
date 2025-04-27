@@ -23,7 +23,7 @@ export class ImageGenerationPlugin extends Plugin {
 
   private async generateImage(task: AgentTask): Promise<PluginResult> {
     try {
-      const promptResponse = await this.runtime.operations.getObject(
+      const promptResponse = await this.runtime.getObject(
         PromptResponseSchema,
         generatePromptTemplate(task.contextChain),
         { temperature: 0.7 }

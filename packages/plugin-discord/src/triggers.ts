@@ -106,7 +106,7 @@ export const postListenerTrigger: DiscordTriggerFactory = (
         recentHistory
       );
 
-      const intent = await runtime.operations.getObject(
+      const intent = await runtime.getObject(
         MessageIntentSchema,
         intentTemplate
       );

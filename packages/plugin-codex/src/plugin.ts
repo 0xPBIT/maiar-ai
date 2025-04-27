@@ -27,7 +27,7 @@ export class CodexPlugin extends Plugin {
         fn: async (context: AgentTask): Promise<PluginResult> => {
           try {
             // Extract command details from context
-            const commandDetails = await this.runtime.operations.getObject(
+            const commandDetails = await this.runtime.getObject(
               CodexCommandSchema,
               generateCodexCommandTemplate(context.contextChain),
               { temperature: 0.2 }

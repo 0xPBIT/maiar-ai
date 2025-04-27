@@ -53,7 +53,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     const documentId = `doc_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get data to store in database from context chain
-    const formattedResponse = await this.runtime.operations.getObject(
+    const formattedResponse = await this.runtime.getObject(
       SQLiteMemoryUploadSchema,
       generateUploadDocumentTemplate(task.contextChain),
       { temperature: 0.2 }
@@ -78,7 +78,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async removeDocument(task: AgentTask): Promise<PluginResult> {
     // Construct query for document ids
-    const queryFormattedResponse = await this.runtime.operations.getObject(
+    const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
       generateQueryTemplate(task.contextChain),
       { temperature: 0.2 }
@@ -117,7 +117,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async query(task: AgentTask): Promise<PluginResult> {
     // Construct query from context
-    const queryFormattedResponse = await this.runtime.operations.getObject(
+    const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
       generateQueryTemplate(task.contextChain, ["id", "content"]),
       { temperature: 0.2 }

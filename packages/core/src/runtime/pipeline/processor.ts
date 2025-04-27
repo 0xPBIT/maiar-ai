@@ -40,7 +40,7 @@ export class Processor {
   }
 
   /**
-   * Spawns the pipeline workflow, which creates a pipeline, executes pipeline steps, and modifies the pipeline as needed durin execution
+   * Spawns the pipeline workflow, which creates a pipeline, executes pipeline steps, and modifies the pipeline as needed during execution
    * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
    * @returns the context chain after the pipeline has been executed
    */

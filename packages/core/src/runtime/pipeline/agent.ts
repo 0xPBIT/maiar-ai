@@ -1,3 +1,5 @@
+// DEV NOTE: GET RID OF THIS ENTIRE FILE OR MOVE THE CONTENTS TO SOMEWHERE ELSE
+
 // Base context item that all items must include
 export interface BaseContextItem {
   id: string; // Unique identifier for this context item

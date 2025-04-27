@@ -12,8 +12,8 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
-import { AgentTask, Processor, UserInputContext } from "./pipeline";
-import { formatZodSchema, OperationConfig } from "./pipeline/operations";
+import { AgentTask, Scheduler, UserInputContext } from "./pipeline";
+import { formatZodSchema } from "./pipeline/operations";
 import {
   cleanJsonString,
   extractJson,
@@ -27,90 +27,16 @@ import { Plugin } from "./providers/plugin";
 
 const REQUIRED_CAPABILITIES = [TEXT_GENERATION_CAPABILITY];
 
-export async function getObject<T extends z.ZodType>(
-  modelManager: ModelManager,
-  schema: T,
-  prompt: string,
-  config?: GetObjectConfig
-): Promise<z.infer<T>> {
-  const maxRetries = config?.maxRetries ?? 3;
-  let lastError: Error | null = null;
-  let lastResponse: string | null = null;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      // Generate prompt using template
-      const fullPrompt: string =
-        attempt === 0
-          ? generateObjectTemplate({
-              schema: formatZodSchema(schema),
-              prompt
-            })
-          : generateRetryTemplate({
-              schema: formatZodSchema(schema),
-              prompt,
-              lastResponse: lastResponse!,
-              error: lastError!.message
-            });
-      const response = await modelManager.executeCapability(
-        "text-generation",
-        fullPrompt,
-        config
-      );
-      lastResponse = response;
-
-      // Extract JSON from the response, handling code blocks and extra text
-      const jsonString = cleanJsonString(extractJson(response));
-
-      try {
-        const parsed = JSON.parse(jsonString);
-        const result = schema.parse(parsed);
-        if (attempt > 0) {
-          logger.info("successfully parsed JSON after retries", {
-            type: "runtime.getObject.success.retry",
-            attempts: attempt + 1
-          });
-        }
-        return result;
-      } catch (parseError) {
-        lastError = parseError as Error;
-        logger.warn(`attempt ${attempt + 1}/${maxRetries} failed`, {
-          type: "runtime.getObject.parse.failed",
-          error: parseError,
-          response: jsonString
-        });
-        if (attempt === maxRetries - 1) throw parseError;
-      }
-    } catch (error) {
-      lastError = error as Error;
-      logger.error(`attempt ${attempt + 1}/${maxRetries} failed`, {
-        type: "runtime.getObject.execution.failed",
-        error,
-        prompt,
-        schema: schema.description,
-        config,
-        lastResponse
-      });
-      if (attempt === maxRetries - 1) throw error;
-    }
-  }
-
-  // This should never happen due to the throw in the loop
-  throw new Error("Failed to get valid response after retries");
-}
-
 /**
  * Runtime class that manages the execution of plugins and agent state
  */
 export class Runtime {
-  public readonly operations; // operations that can be used by plugins
-
   private serverManager: ServerManager;
   private modelManager: ModelManager;
   private memoryManager: MemoryManager;
   private pluginRegistry: PluginRegistry;
 
-  private pipelineProcessor: Processor;
+  private scheduler: Scheduler;
 
   /**
    * Returns a logger instance for the runtime scoped to the initialization
@@ -149,31 +75,12 @@ export class Runtime {
     pluginRegistry: PluginRegistry,
     serverManager: ServerManager
   ) {
-    this.operations = {
-      getObject: <T extends z.ZodType<unknown>>(
-        schema: T,
-        prompt: string,
-        config?: OperationConfig
-      ) => getObject(modelManager, schema, prompt, config),
-      executeCapability: <K extends keyof ICapabilities>(
-        capabilityId: K,
-        input: ICapabilities[K]["input"],
-        config?: OperationConfig,
-        modelId?: string
-      ) => modelManager.executeCapability(capabilityId, input, config, modelId)
-    };
-
     this.modelManager = modelManager;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
     this.serverManager = serverManager;
 
-    this.pipelineProcessor = new Processor(
-      this.operations,
-      this.pluginRegistry,
-      this.memoryManager,
-      this.logger
-    );
+    this.scheduler = new Scheduler(this, memoryManager, pluginRegistry);
   }
 
   public static async init({
@@ -432,7 +339,7 @@ export class Runtime {
     initialContext: UserInputContext,
     platformContext?: AgentTask["platformContext"]
   ): Promise<void> {
-    return this.pipelineProcessor.createEvent(initialContext, platformContext);
+    return this.scheduler.queueTask(initialContext, platformContext);
   }
 
   /**
@@ -444,6 +351,77 @@ export class Runtime {
     config?: ModelRequestConfig
   ): Promise<ICapabilities[K]["output"]> {
     return this.modelManager.executeCapability(capabilityId, input, config);
+  }
+
+  public async getObject<T extends z.ZodType>(
+    schema: T,
+    prompt: string,
+    config?: GetObjectConfig
+  ): Promise<z.infer<T>> {
+    const maxRetries = config?.maxRetries ?? 3;
+    let lastError: Error | null = null;
+    let lastResponse: string | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Generate prompt using template
+        const fullPrompt: string =
+          attempt === 0
+            ? generateObjectTemplate({
+                schema: formatZodSchema(schema),
+                prompt
+              })
+            : generateRetryTemplate({
+                schema: formatZodSchema(schema),
+                prompt,
+                lastResponse: lastResponse!,
+                error: lastError!.message
+              });
+        const response = await this.modelManager.executeCapability(
+          "text-generation",
+          fullPrompt,
+          config
+        );
+        lastResponse = response;
+
+        // Extract JSON from the response, handling code blocks and extra text
+        const jsonString = cleanJsonString(extractJson(response));
+
+        try {
+          const parsed = JSON.parse(jsonString);
+          const result = schema.parse(parsed);
+          if (attempt > 0) {
+            logger.info("successfully parsed JSON after retries", {
+              type: "runtime.getObject.success.retry",
+              attempts: attempt + 1
+            });
+          }
+          return result;
+        } catch (parseError) {
+          lastError = parseError as Error;
+          logger.warn(`attempt ${attempt + 1}/${maxRetries} failed`, {
+            type: "runtime.getObject.parse.failed",
+            error: parseError,
+            response: jsonString
+          });
+          if (attempt === maxRetries - 1) throw parseError;
+        }
+      } catch (error) {
+        lastError = error as Error;
+        logger.error(`attempt ${attempt + 1}/${maxRetries} failed`, {
+          type: "runtime.getObject.execution.failed",
+          error,
+          prompt,
+          schema: schema.description,
+          config,
+          lastResponse
+        });
+        if (attempt === maxRetries - 1) throw error;
+      }
+    }
+
+    // This should never happen due to the throw in the loop
+    throw new Error("Failed to get valid response after retries");
   }
 
   private static banner() {

@@ -1,183 +1,414 @@
 import { Logger } from "winston";
 
-import { MemoryManager } from "../managers/memory";
-import { PluginRegistry } from "../managers/plugin";
+import { MemoryManager, PluginRegistry, Runtime } from "../..";
+import { PluginResult } from "../providers";
+import { Plugin } from "../providers/plugin";
+import { BaseContextItem, getUserInput } from "./agent";
+import { AgentTask } from "./agent";
 import {
-  AgentTask,
-  BaseContextItem,
-  getUserInput,
-  UserInputContext
-} from "./agent";
-import { Engine } from "./engine";
-import { Operations } from "./types";
+  generatePipelineModificationTemplate,
+  generatePipelineTemplate
+} from "./templates";
+import {
+  ErrorContextItem,
+  Pipeline,
+  PipelineGenerationContext,
+  PipelineModification,
+  PipelineModificationContext,
+  PipelineModificationSchema,
+  PipelineSchema,
+  PipelineStep
+} from "./types";
 
 export class Processor {
+  private readonly runtime: Runtime;
   private readonly memoryManager: MemoryManager;
-  private readonly logger: Logger;
-  private readonly engine: Engine;
+  private readonly pluginRegistry: PluginRegistry;
 
-  private eventQueue: AgentTask[];
-  private isProcessing: boolean = false;
+  public get logger(): Logger {
+    return this.runtime.logger.child({ scope: "processor" });
+  }
 
   constructor(
-    operations: Operations,
-    pluginRegistry: PluginRegistry,
+    runtime: Runtime,
     memoryManager: MemoryManager,
-    parentLogger: Logger
+    pluginRegistry: PluginRegistry
   ) {
+    this.runtime = runtime;
     this.memoryManager = memoryManager;
-    this.logger = parentLogger.child({ scope: "processor" });
+    this.pluginRegistry = pluginRegistry;
+  }
 
-    this.engine = new Engine(
-      operations,
-      pluginRegistry,
-      memoryManager,
-      this.logger
+  public async startProcessor(task: AgentTask): Promise<BaseContextItem[]> {
+    const pipeline = await this.createPipeline(task);
+    await this.executePipeline(pipeline, task);
+    return task.contextChain;
+  }
+  /**
+   * Generates a tool-based workflow with the available action executors
+   * @param task
+   * @returns
+   */
+
+  private async createPipeline(task: AgentTask): Promise<Pipeline> {
+    // Store the context in history if it's user input
+    const userInput = getUserInput(task);
+
+    // Get all available executors from plugins
+    const availablePlugins = this.pluginRegistry.plugins.map(
+      (plugin: Plugin) => ({
+        id: plugin.id,
+        name: plugin.name,
+        description: plugin.description,
+        executors: plugin.executors.map((e) => ({
+          name: e.name,
+          description: e.description
+        }))
+      })
     );
 
-    this.eventQueue = [];
-  }
+    // Get platform and message from user input or use defaults
+    const platform = userInput?.pluginId || "unknown";
+    const message = userInput?.rawMessage || "";
 
-  private enqueue(task: AgentTask): void {
-    this.eventQueue.push(task);
-    this.logger.debug("Pushed task to queue", {
-      type: "processor.queue.push",
-      queueLength: this.eventQueue.length
-    });
-
-    // Trigger processing
-    this.triggerProcessing();
-  }
-
-  private dequeue(): AgentTask | null {
-    return this.eventQueue.shift() || null;
-  }
-
-  private triggerProcessing(): void {
-    // If processing is already running, do nothing
-    if (this.isProcessing) {
-      return;
+    // Get conversation history if user input exists
+    let conversationHistory: {
+      role: string;
+      content: string;
+      timestamp: number;
+    }[] = [];
+    if (userInput) {
+      conversationHistory =
+        await this.memoryManager.getRecentConversationHistory(
+          userInput.user,
+          platform
+        );
     }
 
-    // Set processing to true and start processing
-    this.isProcessing = true;
-    this.logger.debug("Starting queue processing", {
-      type: "processor.queue.processing.start",
-      queueLength: this.eventQueue.length
-    });
+    // Create the generation context
+    const pipelineContext: PipelineGenerationContext = {
+      contextChain: task.contextChain,
+      availablePlugins,
+      currentContext: {
+        platform,
+        message,
+        conversationHistory
+      }
+    };
 
-    setImmediate(() => {
-      this.processQueue()
-        .catch((error: unknown) => {
-          this.logger.error("Unhandled error in queue processing", {
-            type: "processor.queue.processing.unhandled_error",
-            error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          });
-        })
-        .finally(() => {
-          // Always reset processing state on completion
-          this.isProcessing = false;
-          this.logger.debug("Queue processing complete", {
-            type: "processor.queue.processing.complete",
-            queueLength: this.eventQueue.length
-          });
-        });
-    });
+    try {
+      // Generate the pipeline using model
+      const template = generatePipelineTemplate(pipelineContext);
+
+      // Log pipeline generation start
+      this.logger.info("pipeline generation start", {
+        type: "pipeline.generation.start",
+        platform,
+        message,
+        template
+      });
+
+      this.logger.debug("generating pipeline", {
+        type: "runtime.pipeline.generating",
+        context: pipelineContext,
+        template,
+        contextChain: task.contextChain
+      });
+
+      const pipeline = await this.runtime.getObject(PipelineSchema, template, {
+        temperature: 0.2 // Lower temperature for more predictable outputs
+      });
+
+      // Add concise pipeline steps log
+      const steps = pipeline.map((step) => `${step.pluginId}:${step.action}`);
+      this.logger.info("pipeline steps", {
+        type: "runtime.pipeline.steps",
+        steps
+      });
+
+      // Log successful pipeline generation
+      this.logger.info("pipeline generation complete", {
+        type: "pipeline.generation.complete",
+        platform,
+        message,
+        template,
+        pipeline,
+        steps
+      });
+
+      this.logger.info("generated pipeline", {
+        type: "runtime.pipeline.generated",
+        pipeline
+      });
+
+      return pipeline;
+    } catch (error) {
+      // Log pipeline generation error
+      this.logger.error("pipeline generation failed", {
+        type: "pipeline.generation.error",
+        platform,
+        message,
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+              }
+            : error,
+        template: generatePipelineTemplate(pipelineContext)
+      });
+
+      this.logger.error("pipeline generation failed", {
+        type: "runtime.pipeline.generation.error",
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+              }
+            : error,
+        platform: userInput?.pluginId || "unknown",
+        message: userInput?.rawMessage || "",
+        contextChain: task.contextChain,
+        generationContext: pipelineContext,
+        template: generatePipelineTemplate(pipelineContext)
+      });
+      return []; // Return empty pipeline on error
+    }
   }
 
-  private async processQueue(): Promise<void> {
-    let task = this.dequeue();
-    while (task) {
-      try {
-        await this.processTask(task);
-      } catch (error) {
-        this.logger.error("Error processing task", {
-          type: "processor.queue.processing.error",
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
+  /**
+   * Consumes a generated list of pipeline steps and begins orchestrating the workflow to execute and modify tasks
+   * @param pipeline
+   * @param task
+   */
+  private async executePipeline(
+    pipeline: PipelineStep[],
+    task: AgentTask
+  ): Promise<void> {
+    try {
+      let currentPipeline = [...pipeline];
+      let currentStepIndex = 0;
+
+      // Log initial pipeline state
+      this.logger.debug("pipeline state updated", {
+        type: "runtime.pipeline.state",
+        currentPipeline,
+        currentStepIndex,
+        pipelineLength: currentPipeline.length,
+        contextChain: task.contextChain
+      });
+
+      while (currentStepIndex < currentPipeline.length) {
+        const currentStep = currentPipeline[currentStepIndex];
+        if (!currentStep) {
+          currentStepIndex++;
+          continue;
+        }
+
+        const result = await this.executePipelineStep(currentStep, task);
+
+        if (!result.success) {
+          // Add error to context chain for failed execution
+          this.pushErrorToContextChain(result, currentStep, task);
+
+          // Update monitoring state after error context changes
+          this.updateMonitoringState(task);
+        } else if (result.data) {
+          // Add successful result to context chain
+          this.pushResultToContextChain(result, currentStep, task);
+
+          // Update monitoring state after context changes
+          this.updateMonitoringState(task);
+        }
+
+        // Evaluate pipeline modification with updated context
+        const { pipeline: updatedPipeline } = await this.modifyPipeline(
+          {
+            contextChain: task.contextChain,
+            currentStep,
+            pipeline: currentPipeline
+          },
+          currentStepIndex,
+          currentPipeline
+        );
+
+        currentPipeline = updatedPipeline;
+        currentStepIndex++;
+      }
+    } finally {
+      this.updateMonitoringState(task);
+    }
+  }
+
+  private async modifyPipeline(
+    context: PipelineModificationContext,
+    currentStepIndex: number,
+    currentPipeline: PipelineStep[]
+  ): Promise<{
+    pipeline: PipelineStep[];
+    modification: PipelineModification;
+  }> {
+    const availablePlugins = this.pluginRegistry.plugins.map((plugin) => ({
+      id: plugin.id,
+      name: plugin.name,
+      description: plugin.description,
+      executors: plugin.executors.map((e) => ({
+        name: e.name,
+        description: e.description
+      }))
+    }));
+
+    const availablePluginsString = JSON.stringify(availablePlugins);
+
+    const template = generatePipelineModificationTemplate(
+      context,
+      availablePluginsString
+    );
+    this.logger.debug("evaluating pipeline modification", {
+      type: "runtime.pipeline.modification.evaluating",
+      context,
+      template
+    });
+
+    try {
+      const modification = await this.runtime.getObject(
+        PipelineModificationSchema,
+        template,
+        {
+          temperature: 0.2 // Lower temperature for more predictable outputs
+        }
+      );
+
+      this.logger.info("pipeline modification evaluation result", {
+        type: "runtime.pipeline.modification.result",
+        shouldModify: modification.shouldModify,
+        explanation: modification.explanation,
+        modifiedSteps: modification.modifiedSteps
+      });
+
+      let updatedPipeline = [...currentPipeline];
+
+      // Apply the modification if needed
+      if (modification.shouldModify && modification.modifiedSteps) {
+        // Log modification result if needed
+        if (modification.shouldModify) {
+          this.logger.info("pipeline modified", {
+            type: "runtime.pipeline.modified",
+            explanation: modification.explanation
+          });
+        }
+        // Apply the modification
+        updatedPipeline = [
+          ...currentPipeline.slice(0, currentStepIndex + 1),
+          ...modification.modifiedSteps
+        ];
+
+        // Log modification
+        this.logger.debug("pipeline modification applied", {
+          type: "runtime.pipeline.modification.applied",
+          updatedPipeline,
+          currentStepIndex,
+          pipelineLength: updatedPipeline.length,
+          modification,
+          contextChain: context.contextChain
+        });
+
+        // Emit pipeline modification event
+        this.logger.debug("pipeline modification applied", {
+          type: "runtime.pipeline.modification.applied",
+          currentStep: context.currentStep,
+          modifiedSteps: modification.modifiedSteps,
+          pipeline: updatedPipeline
         });
       }
 
-      task = this.dequeue();
+      return {
+        pipeline: updatedPipeline,
+        modification
+      };
+    } catch (error) {
+      this.logger.error("pipeline modification evaluation failed", {
+        type: "runtime.pipeline.modification.error",
+        error: error instanceof Error ? error : new Error(String(error))
+      });
+      return {
+        pipeline: currentPipeline,
+        modification: {
+          shouldModify: false,
+          explanation: "Error evaluating pipeline modification",
+          modifiedSteps: null
+        }
+      };
     }
-
-    // Queue is now empty
   }
 
-  private async processTask(task: AgentTask): Promise<void> {
-    this.logger.debug("Processing task", {
-      type: "processor.task.processing",
-      task
-    });
-
-    const userInput = getUserInput(task);
-
-    if (userInput) {
-      await this.memoryManager.storeUserInteraction(
-        userInput.user,
-        userInput.pluginId,
-        userInput.rawMessage,
-        userInput.timestamp,
-        userInput.id
-      );
-    }
-
-    const completedTaskChain = await this.engine.startEngine(task);
-    if (userInput) {
-      const lastContext = completedTaskChain[
-        completedTaskChain.length - 1
-      ] as BaseContextItem & { message: string };
-      this.logger.info("storing assistant response in memory", {
-        type: "runtime.assistant.response.storing",
-        user: userInput.user,
-        platform: userInput.pluginId,
-        response: lastContext.message || lastContext.content
-      });
-
-      this.logger.info("completed task chain", {
-        type: "runtime.pipeline.execution.complete",
-        taskChain: completedTaskChain
-      });
-
-      await this.memoryManager.storeAssistantInteraction(
-        userInput.user,
-        userInput.pluginId,
-        lastContext.message || lastContext.content,
-        completedTaskChain
-      );
-    }
-
-    this.logger.info("pipeline execution complete", {
-      type: "runtime.pipeline.execution.complete"
-    });
-  }
-
-  public async createEvent(
-    initialContext: UserInputContext,
-    platformContext?: AgentTask["platformContext"]
-  ): Promise<void> {
-    // Get conversationId from memory manager
-    const conversationId = await this.memoryManager.getOrCreateConversation(
-      initialContext.user,
-      initialContext.pluginId
+  private async executePipelineStep(
+    step: PipelineStep,
+    task: AgentTask
+  ): Promise<PluginResult> {
+    const plugin = this.pluginRegistry.plugins.find(
+      (p) => p.id === step.pluginId
     );
 
-    // Add conversationId to platform context metadata
-    const task: AgentTask = {
-      contextChain: [initialContext],
-      conversationId,
-      platformContext
-    };
-    try {
-      await this.enqueue(task);
-    } catch (error) {
-      this.logger.error("error pushing event to queue", {
-        type: "runtime.event.queue.push.failed",
-        error: error instanceof Error ? error.message : String(error),
-        task
-      });
-      throw error; // Re-throw to allow caller to handle
+    if (!plugin) {
+      throw new Error(`Plugin ${step.pluginId} not found`);
     }
+
+    const executor = plugin.executors.find((e) => e.name === step.action);
+
+    if (!executor) {
+      throw new Error(`Executor ${step.action} not found`);
+    }
+
+    const result = await executor.fn(task);
+
+    return result;
+  }
+
+  private pushResultToContextChain(
+    result: PluginResult,
+    step: PipelineStep,
+    task: AgentTask
+  ) {
+    task.contextChain.push({
+      id: `${step.pluginId}-${Date.now()}`,
+      pluginId: step.pluginId,
+      type: step.action,
+      action: step.action,
+      content: JSON.stringify(result.data),
+      timestamp: Date.now(),
+      ...result.data
+    });
+  }
+
+  private pushErrorToContextChain(
+    result: PluginResult,
+    step: PipelineStep,
+    task: AgentTask
+  ) {
+    const errorContext: ErrorContextItem = {
+      id: `error-${Date.now()}`,
+      pluginId: step.pluginId,
+      type: "error",
+      action: step.action,
+      content: result.error || "Unknown error",
+      timestamp: Date.now(),
+      error: result.error || "Unknown error",
+      failedStep: step
+    };
+    task.contextChain.push(errorContext);
+  }
+
+  private updateMonitoringState(task: AgentTask) {
+    this.logger.debug("agent state update", {
+      type: "runtime.state.update",
+      state: {
+        currentContext: task,
+        lastUpdate: Date.now()
+      }
+    });
   }
 }

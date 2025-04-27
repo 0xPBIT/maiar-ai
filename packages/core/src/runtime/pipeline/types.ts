@@ -1,23 +1,7 @@
 import { z } from "zod";
 
-import { ICapabilities } from "../managers/model/capability/types";
 import { BaseContextItem } from "./agent";
 import { OperationConfig } from "./operations";
-
-// Interface for the operations object passed to the processor
-export interface Operations {
-  getObject: <T extends z.ZodType<unknown>>(
-    schema: T,
-    prompt: string,
-    config?: GetObjectConfig // Use GetObjectConfig from ./types
-  ) => Promise<z.infer<T>>;
-  executeCapability: <K extends keyof ICapabilities>(
-    capabilityId: K,
-    input: ICapabilities[K]["input"],
-    config?: OperationConfig, // Use OperationConfig from ./operations
-    modelId?: string
-  ) => Promise<ICapabilities[K]["output"]>;
-}
 
 /**
  * A step in the execution pipeline

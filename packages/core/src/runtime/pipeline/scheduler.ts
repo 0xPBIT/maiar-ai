@@ -34,7 +34,6 @@ export class Scheduler {
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
 
-    // don't pass in any of these args processor just needs an instance of runtime
     this.processor = new Processor(
       this.runtime,
       this.memoryManager,
@@ -44,6 +43,10 @@ export class Scheduler {
     this.eventQueue = [];
   }
 
+  /**
+   * Adds a task to the event queue
+   * @param task - the task to add to the queue
+   */
   private enqueue(task: AgentTask): void {
     this.eventQueue.push(task);
     this.logger.debug("Pushed task to queue", {
@@ -51,15 +54,22 @@ export class Scheduler {
       queueLength: this.eventQueue.length
     });
 
-    // Trigger processing
-    this.run();
+    // Start processing the queue, no-op if already started
+    this.start();
   }
 
+  /**
+   * Removes and returns the first task from the event queue
+   * @returns the first task from the queue or null if the queue is empty
+   */
   private dequeue(): AgentTask | null {
     return this.eventQueue.shift() || null;
   }
 
-  private run(): void {
+  /**
+   * Starts the queue processing, this is run if an item is added to the queue and the queue is not already processing an item
+   */
+  private start(): void {
     // If processing is already running, do nothing
     if (this.isRunning) {
       return;
@@ -73,7 +83,7 @@ export class Scheduler {
     });
 
     setImmediate(() => {
-      this.processQueue()
+      this.queueIterator()
         .catch((error: unknown) => {
           this.logger.error("Unhandled error in queue processing", {
             type: "processor.queue.processing.unhandled_error",
@@ -92,7 +102,10 @@ export class Scheduler {
     });
   }
 
-  private async processQueue(): Promise<void> {
+  /**
+   * Iterates over the queue and runs each task
+   */
+  private async queueIterator(): Promise<void> {
     let task = this.dequeue();
     while (task) {
       try {
@@ -111,6 +124,10 @@ export class Scheduler {
     // Queue is now empty
   }
 
+  /**
+   * Runs a task on the processor
+   * @param task - the task to run
+   */
   private async runTask(task: AgentTask): Promise<void> {
     this.logger.debug("Processing task", {
       type: "processor.task.processing",
@@ -159,6 +176,11 @@ export class Scheduler {
     });
   }
 
+  /**
+   * Queues a task to be run, first stores the user interaction in memory, augments the task context with the conversationId, and then queues the task
+   * @param initialContext - the initial context of the task
+   * @param platformContext - the platform context of the task
+   */
   public async queueTask(
     initialContext: UserInputContext,
     platformContext?: AgentTask["platformContext"]
@@ -175,6 +197,7 @@ export class Scheduler {
       conversationId,
       platformContext
     };
+
     try {
       this.enqueue(task);
     } catch (error) {

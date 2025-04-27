@@ -39,17 +39,25 @@ export class Processor {
     this.pluginRegistry = pluginRegistry;
   }
 
+  /**
+   * Starts the processor, creating a pipeline and executing it
+   * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
+   * @returns the context chain after the pipeline has been executed
+   */
   public async startProcessor(task: AgentTask): Promise<BaseContextItem[]> {
     const pipeline = await this.createPipeline(task);
     await this.executePipeline(pipeline, task);
     return task.contextChain;
   }
+
   /**
-   * Generates a tool-based workflow with the available action executors
-   * @param task
+   * Generates a tool-based workflow called a pipeline with the available action executors.
+   * This pipeline is the main execution logic for the agent, forming the basis for how it
+   * plans, executes, and adapts to the task at hand.
+   *
+   * @param task - tasks originate from plugin triggers and define different kinds of metadata, as well as storing the context chain
    * @returns
    */
-
   private async createPipeline(task: AgentTask): Promise<Pipeline> {
     // Store the context in history if it's user input
     const userInput = getUserInput(task);
@@ -180,9 +188,9 @@ export class Processor {
   }
 
   /**
-   * Consumes a generated list of pipeline steps and begins orchestrating the workflow to execute and modify tasks
-   * @param pipeline
-   * @param task
+   * Consumes a list of pipeline steps and begins orchestrating the workflow to execute and modify tasks
+   * @param pipeline - the pipeline to execute, created by the createPipeline method
+   * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
    */
   private async executePipeline(
     pipeline: PipelineStep[],
@@ -243,6 +251,16 @@ export class Processor {
     }
   }
 
+  /**
+   * Evaluates the pipeline after each step and determines if a modification is necessary.
+   * Program failures, errors, data that updates the context or changes the frame of reference for the agent will invoke a modification.
+   * Modifications are done to change the future steps of the pipeline either by adding, removing, or reordering steps.
+   * Modifications can not be done to the past steps of the pipeline.
+   * @param context - the context of the pipeline modification
+   * @param currentStepIndex - the index of the current step in the pipeline
+   * @param currentPipeline - the current pipeline
+   * @returns the modified pipeline and the modification result
+   */
   private async modifyPipeline(
     context: PipelineModificationContext,
     currentStepIndex: number,
@@ -345,6 +363,12 @@ export class Processor {
     }
   }
 
+  /**
+   * Executes a single step of the pipeline
+   * @param step - the step to execute
+   * @param task - the current task, internally contains the context chain which is passed to plugins for use
+   * @returns the result of the step
+   */
   private async executePipelineStep(
     step: PipelineStep,
     task: AgentTask
@@ -368,6 +392,12 @@ export class Processor {
     return result;
   }
 
+  /**
+   * Pushes the result of a plugin execution to the context chain
+   * @param result - the result of the plugin execution
+   * @param step - the step that was executed
+   * @param task - the current task, internally contains the context chain which is modified as the pipeline is executed
+   */
   private pushResultToContextChain(
     result: PluginResult,
     step: PipelineStep,
@@ -384,6 +414,12 @@ export class Processor {
     });
   }
 
+  /**
+   * Pushes an error to the context chain
+   * @param result - the result of the plugin execution
+   * @param step - the step that was executed
+   * @param task - the current task, internally contains the context chain which is modified as the pipeline is executed
+   */
   private pushErrorToContextChain(
     result: PluginResult,
     step: PipelineStep,

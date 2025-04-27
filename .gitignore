@@ -6,6 +6,9 @@ tmp
 # apps/starter data directory
 **/data/
 
+# MAIAR package specific
+**/sandbox/
+
 # Project
 .build-complete
 

@@ -19,7 +19,7 @@ export class Scheduler {
   private readonly processor: Processor;
 
   private taskQueue: AgentTask[];
-  private isRunning: boolean = false;
+  private isRunning: boolean;
 
   public get logger(): Logger {
     return logger.child({ scope: "scheduler" });
@@ -41,15 +41,16 @@ export class Scheduler {
     );
 
     this.taskQueue = [];
+    this.isRunning = false;
   }
 
   /**
-   * Adds a task to the event queue
+   * Adds a task to the task queue
    * @param task - the task to add to the queue
    */
   private enqueue(task: AgentTask): void {
     this.taskQueue.push(task);
-    this.logger.debug("Pushed task to queue", {
+    this.logger.debug("pushed task to queue", {
       type: "scheduler.queue.push",
       queueLength: this.taskQueue.length
     });
@@ -59,7 +60,7 @@ export class Scheduler {
   }
 
   /**
-   * Removes and returns the first task from the event queue
+   * Removes and returns the first task from the task queue
    * @returns the first task from the queue or null if the queue is empty
    */
   private dequeue(): AgentTask | null {
@@ -71,13 +72,9 @@ export class Scheduler {
    */
   private schedule(): void {
     // If processing is already running, do nothing
-    if (this.isRunning) {
-      return;
-    }
+    if (this.isRunning) return;
 
-    setImmediate(() => {
-      this.cycle();
-    });
+    setImmediate(() => this.cycle());
   }
 
   /**
@@ -85,7 +82,7 @@ export class Scheduler {
    */
   private async cycle(): Promise<void> {
     this.isRunning = true;
-    this.logger.debug("Starting queue processing", {
+    this.logger.debug("starting queue processing", {
       type: "scheduler.queue.processing.start",
       queueLength: this.taskQueue.length
     });
@@ -96,7 +93,7 @@ export class Scheduler {
       try {
         await this.execute(task);
       } catch (error) {
-        this.logger.error("Error processing task", {
+        this.logger.error("error processing task", {
           type: "scheduler.queue.processing.error",
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
@@ -106,7 +103,7 @@ export class Scheduler {
     }
 
     this.isRunning = false;
-    this.logger.debug("Queue processing complete", {
+    this.logger.debug("queue processing complete", {
       type: "scheduler.queue.processing.complete",
       queueLength: this.taskQueue.length
     });
@@ -117,7 +114,7 @@ export class Scheduler {
    * @param task - the task to run
    */
   private async execute(task: AgentTask): Promise<void> {
-    this.logger.debug("Processing task", {
+    this.logger.debug("processing task", {
       type: "processor.task.processing",
       task
     });
@@ -134,7 +131,7 @@ export class Scheduler {
       );
     }
 
-    const completedTaskChain = await this.processor.startProcessor(task);
+    const completedTaskChain = await this.processor.spawn(task);
     if (userInput) {
       const lastContext = completedTaskChain[
         completedTaskChain.length - 1

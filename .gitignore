@@ -6,7 +6,7 @@ tmp
 # apps/starter data directory
 **/data/
 
-# MAIAR package specific
+# sandbox directory for CODEX plugin
 **/sandbox/
 
 # Project

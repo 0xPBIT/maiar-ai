@@ -281,7 +281,6 @@ export class Runtime {
       type: "runtime.started"
     });
 
-    // TODO: this is a bunch of runtime setup code that probably should be moved to the pipeline processor
     for (const plugin of this.pluginRegistry.plugins) {
       plugin.__setRuntime(this);
 
@@ -353,6 +352,13 @@ export class Runtime {
     return this.modelManager.executeCapability(capabilityId, input, config);
   }
 
+  /**
+   * Prompt the LLM to generate a JSON object from a prompt
+   * @param schema - The schema of the object to generate in zod format
+   * @param prompt - The prompt to generate the object from
+   * @param config - The configuration for the model request
+   * @returns The generated object
+   */
   public async getObject<T extends z.ZodType>(
     schema: T,
     prompt: string,

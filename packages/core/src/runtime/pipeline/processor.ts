@@ -40,11 +40,11 @@ export class Processor {
   }
 
   /**
-   * Starts the processor, creating a pipeline and executing it
+   * Spawns the pipeline workflow, which creates a pipeline, executes pipeline steps, and modifies the pipeline as needed durin execution
    * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
    * @returns the context chain after the pipeline has been executed
    */
-  public async startProcessor(task: AgentTask): Promise<BaseContextItem[]> {
+  public async spawn(task: AgentTask): Promise<BaseContextItem[]> {
     const pipeline = await this.createPipeline(task);
     await this.executePipeline(pipeline, task);
     return task.contextChain;

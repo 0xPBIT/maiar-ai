@@ -12,7 +12,7 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
-import { AgentTask, Scheduler, UserInputContext } from "./pipeline";
+import { AgentTask, Scheduler } from "./pipeline";
 import { formatZodSchema } from "./pipeline/operations";
 import {
   cleanJsonString,
@@ -206,7 +206,6 @@ export class Runtime {
       type: "runtime.init",
       modelProviders: modelProviders.map((p) => p.id),
       capabilities: modelManager.getAvailableCapabilities(),
-      memoryProvider: memoryProvider.id,
       plugins: plugins.map((p) => ({
         id: p.id,
         name: p.name,
@@ -335,10 +334,11 @@ export class Runtime {
    * Create an event that will be processed by the pipeline processor
    */
   public async createEvent(
-    initialContext: UserInputContext,
+    trigger: AgentTask["trigger"],
+    space: AgentTask["space"],
     platformContext?: AgentTask["platformContext"]
   ): Promise<void> {
-    return this.scheduler.queueTask(initialContext, platformContext);
+    return this.scheduler.queueTask(trigger, space, platformContext);
   }
 
   /**

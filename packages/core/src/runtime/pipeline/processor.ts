@@ -3,14 +3,12 @@ import { Logger } from "winston";
 import { MemoryManager, PluginRegistry, Runtime } from "../..";
 import { PluginResult } from "../providers";
 import { Plugin } from "../providers/plugin";
-import { BaseContextItem, getUserInput } from "./agent";
-import { AgentTask } from "./agent";
+import { AgentTask, Context } from "./agent";
 import {
   generatePipelineModificationTemplate,
   generatePipelineTemplate
 } from "./templates";
 import {
-  ErrorContextItem,
   Pipeline,
   PipelineGenerationContext,
   PipelineModification,
@@ -44,10 +42,10 @@ export class Processor {
    * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
    * @returns the context chain after the pipeline has been executed
    */
-  public async spawn(task: AgentTask): Promise<BaseContextItem[]> {
+  public async spawn(task: AgentTask): Promise<Context[]> {
     const pipeline = await this.createPipeline(task);
     await this.executePipeline(pipeline, task);
-    return task.contextChain;
+    return task.context;
   }
 
   /**
@@ -59,9 +57,6 @@ export class Processor {
    * @returns
    */
   private async createPipeline(task: AgentTask): Promise<Pipeline> {
-    // Store the context in history if it's user input
-    const userInput = getUserInput(task);
-
     // Get all available executors from plugins
     const availablePlugins = this.pluginRegistry.plugins.map(
       (plugin: Plugin) => ({
@@ -75,32 +70,17 @@ export class Processor {
       })
     );
 
-    // Get platform and message from user input or use defaults
-    const platform = userInput?.pluginId || "unknown";
-    const message = userInput?.rawMessage || "";
-
-    // Get conversation history if user input exists
-    let conversationHistory: {
-      role: string;
-      content: string;
-      timestamp: number;
-    }[] = [];
-    if (userInput) {
-      conversationHistory =
-        await this.memoryManager.getRecentConversationHistory(
-          userInput.user,
-          platform
-        );
-    }
+    // Get related memories from the space search
+    const relatedMemories = await this.memoryManager.queryMemory({
+      space: task.space
+    });
 
     // Create the generation context
     const pipelineContext: PipelineGenerationContext = {
-      contextChain: task.contextChain,
+      trigger: task.trigger,
       availablePlugins,
       currentContext: {
-        platform,
-        message,
-        conversationHistory
+        relatedMemories
       }
     };
 
@@ -111,16 +91,13 @@ export class Processor {
       // Log pipeline generation start
       this.logger.info("pipeline generation start", {
         type: "pipeline.generation.start",
-        platform,
-        message,
         template
       });
 
       this.logger.debug("generating pipeline", {
         type: "runtime.pipeline.generating",
-        context: pipelineContext,
-        template,
-        contextChain: task.contextChain
+        pipelineContext,
+        template
       });
 
       const pipeline = await this.runtime.getObject(PipelineSchema, template, {
@@ -137,8 +114,6 @@ export class Processor {
       // Log successful pipeline generation
       this.logger.info("pipeline generation complete", {
         type: "pipeline.generation.complete",
-        platform,
-        message,
         template,
         pipeline,
         steps
@@ -154,8 +129,6 @@ export class Processor {
       // Log pipeline generation error
       this.logger.error("pipeline generation failed", {
         type: "pipeline.generation.error",
-        platform,
-        message,
         error:
           error instanceof Error
             ? {
@@ -177,10 +150,7 @@ export class Processor {
                 stack: error.stack
               }
             : error,
-        platform: userInput?.pluginId || "unknown",
-        message: userInput?.rawMessage || "",
-        contextChain: task.contextChain,
-        generationContext: pipelineContext,
+        pipelineContext,
         template: generatePipelineTemplate(pipelineContext)
       });
       return []; // Return empty pipeline on error
@@ -206,7 +176,7 @@ export class Processor {
         currentPipeline,
         currentStepIndex,
         pipelineLength: currentPipeline.length,
-        contextChain: task.contextChain
+        context: task.context
       });
 
       while (currentStepIndex < currentPipeline.length) {
@@ -235,7 +205,7 @@ export class Processor {
         // Evaluate pipeline modification with updated context
         const { pipeline: updatedPipeline } = await this.modifyPipeline(
           {
-            contextChain: task.contextChain,
+            context: task.context,
             currentStep,
             pipeline: currentPipeline
           },
@@ -262,7 +232,7 @@ export class Processor {
    * @returns the modified pipeline and the modification result
    */
   private async modifyPipeline(
-    context: PipelineModificationContext,
+    modificationContext: PipelineModificationContext,
     currentStepIndex: number,
     currentPipeline: PipelineStep[]
   ): Promise<{
@@ -282,12 +252,12 @@ export class Processor {
     const availablePluginsString = JSON.stringify(availablePlugins);
 
     const template = generatePipelineModificationTemplate(
-      context,
+      modificationContext,
       availablePluginsString
     );
     this.logger.debug("evaluating pipeline modification", {
       type: "runtime.pipeline.modification.evaluating",
-      context,
+      modificationContext,
       template
     });
 
@@ -331,13 +301,13 @@ export class Processor {
           currentStepIndex,
           pipelineLength: updatedPipeline.length,
           modification,
-          contextChain: context.contextChain
+          context: modificationContext.context
         });
 
         // Emit pipeline modification event
         this.logger.debug("pipeline modification applied", {
           type: "runtime.pipeline.modification.applied",
-          currentStep: context.currentStep,
+          currentStep: modificationContext.currentStep,
           modifiedSteps: modification.modifiedSteps,
           pipeline: updatedPipeline
         });
@@ -403,7 +373,7 @@ export class Processor {
     step: PipelineStep,
     task: AgentTask
   ) {
-    task.contextChain.push({
+    task.context.push({
       id: `${step.pluginId}-${Date.now()}`,
       pluginId: step.pluginId,
       type: step.action,
@@ -425,17 +395,18 @@ export class Processor {
     step: PipelineStep,
     task: AgentTask
   ) {
-    const errorContext: ErrorContextItem = {
+    task.context.push({
       id: `error-${Date.now()}`,
       pluginId: step.pluginId,
       type: "error",
       action: step.action,
       content: result.error || "Unknown error",
       timestamp: Date.now(),
-      error: result.error || "Unknown error",
-      failedStep: step
-    };
-    task.contextChain.push(errorContext);
+      metadata: {
+        error: result.error || "Unknown error",
+        failedStep: step
+      }
+    });
   }
 
   private updateMonitoringState(task: AgentTask) {

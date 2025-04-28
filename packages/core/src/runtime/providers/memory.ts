@@ -3,63 +3,39 @@ import { Logger } from "winston";
 import logger from "../../lib/logger";
 import { Plugin } from "../providers/plugin";
 
-export interface Message {
-  id: string;
-  role: string;
-  content: string;
-  timestamp: number;
-  contextId?: string; // ID of the context that generated this message (for assistant messages)
-  user_message_id?: string;
+export interface Memory {
+  id: string; // unique identifier for the message
+  spaceId: string; // path identifier for the conversationspace
+  trigger: string; // trigger info for the incoming event
+  context?: string; // context chain built as a result of the trigger
+  createdAt: number; // timestamp for the trigger event
+  resultTs?: number; // timestamp for the result of the context chain processing
+  metadata?: Record<string, unknown>; // extra metadata for the message
 }
 
-export interface Context {
-  id: string;
-  type: string;
-  content: string; // Serialized content for model consumption
-  timestamp: number;
-  user_message_id?: string;
-  agent_message_id?: string;
+export interface Space {
+  id: string; // unique identifier for the space this message belongs to
+  prefix?: string; // prefix for the space to search for additional context
+  pattern?: string; // regex pattern for the space to search for additional context
 }
 
-export interface Conversation {
-  id: string;
-  messages: Message[];
-  contexts: Context[];
-  metadata?: Record<string, unknown>;
-}
-
-export interface MemoryQueryOptions {
-  limit?: number;
+export interface QueryMemoryOptions {
+  space?: Space;
   before?: number;
   after?: number;
-  conversationId?: string;
+  limit?: number;
+  offset?: number;
 }
 
 /**
  * Interface that all memory providers must implement
  */
 export abstract class MemoryProvider {
-  public readonly id: string;
-  public readonly name: string;
-  public readonly description: string;
-
   public get logger(): Logger {
     return logger.child({ scope: "memory.provider" });
   }
 
-  constructor({
-    id,
-    name,
-    description
-  }: {
-    id: string;
-    name: string;
-    description: string;
-  }) {
-    this.id = id;
-    this.name = name;
-    this.description = description;
-  }
+  constructor() {}
 
   /**
    * Initializes the memory provider. Must be implemented by subclasses.
@@ -82,35 +58,26 @@ export abstract class MemoryProvider {
   // Get memory plugin
   public abstract getPlugin(): Plugin;
 
-  // Store a new message
-  public abstract storeMessage(
-    message: Message,
-    conversationId: string
+  /**
+   * Store the incoming task event in the memory store
+   * @param {Task} task - The incoming task event
+   */
+  public abstract storeMemory(taskEvent: Omit<Memory, "id">): Promise<string>;
+
+  /**
+   * Update the memory item with new content
+   * @param {string} id - The id of the memory item to update
+   * @param {Partial<Memory>} patch - The update to apply to the memory item
+   */
+  public abstract updateMemory(
+    id: string,
+    patch: Partial<Memory>
   ): Promise<void>;
 
-  // Store context used in generating a response
-  public abstract storeContext(
-    context: Context,
-    conversationId: string
-  ): Promise<void>;
-
-  // Get recent messages
-  public abstract getMessages(options: MemoryQueryOptions): Promise<Message[]>;
-
-  // Get contexts for a conversation
-  public abstract getContexts(conversationId: string): Promise<Context[]>;
-
-  // Get full conversation history
-  public abstract getConversation(
-    conversationId: string
-  ): Promise<Conversation>;
-
-  // Create a new conversation
-  public abstract createConversation(options?: {
-    id?: string;
-    metadata?: Record<string, unknown>;
-  }): Promise<string>;
-
-  // Delete a conversation and all its messages/contexts
-  public abstract deleteConversation(conversationId: string): Promise<void>;
+  /**
+   * Search for related memories based on query and filter options
+   * @param {QueryMemoryOptions} options - The options for the search
+   * @returns {Promise<Memory[]>} A promise that resolves to the list of memories
+   */
+  public abstract queryMemory(options: QueryMemoryOptions): Promise<Memory[]>;
 }

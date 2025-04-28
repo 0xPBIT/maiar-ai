@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { BaseContextItem } from "./agent";
+import { Memory } from "../providers/memory";
+import { AgentTask } from "./agent";
 import { OperationConfig } from "./operations";
 
 /**
@@ -35,34 +36,14 @@ interface AvailablePlugin {
   executors: PluginExecutor[];
 }
 
-interface ConversationMessage {
-  role: string;
-  content: string;
-  timestamp: number;
-}
-
 /**
  * Context passed to the runtime for pipeline generation
  */
 export interface PipelineGenerationContext {
-  contextChain: BaseContextItem[];
+  trigger: AgentTask["trigger"];
   availablePlugins: AvailablePlugin[];
   currentContext: {
-    platform: string;
-    message: string;
-    conversationHistory: ConversationMessage[];
-  };
-}
-
-/**
- * Represents an error that occurred during pipeline execution
- */
-export interface ErrorContextItem extends BaseContextItem {
-  type: "error";
-  error: string;
-  failedStep?: {
-    pluginId: string;
-    action: string;
+    relatedMemories: Memory[];
   };
 }
 
@@ -70,7 +51,7 @@ export interface ErrorContextItem extends BaseContextItem {
  * Context passed to the runtime for pipeline modification evaluation
  */
 export interface PipelineModificationContext {
-  contextChain: BaseContextItem[];
+  context: AgentTask["context"];
   currentStep: PipelineStep;
   pipeline: PipelineStep[];
 }
@@ -94,10 +75,6 @@ export const PipelineModificationSchema = z
   .describe("Result of pipeline modification evaluation");
 
 export type PipelineModification = z.infer<typeof PipelineModificationSchema>;
-
-export type ContextItemWithHistory = BaseContextItem & {
-  messageHistory: { role: string; content: string; timestamp: number }[];
-};
 
 export interface GetObjectConfig extends OperationConfig {
   maxRetries?: number;

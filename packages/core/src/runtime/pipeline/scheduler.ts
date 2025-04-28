@@ -4,12 +4,7 @@ import { Runtime } from "../..";
 import logger from "../../lib/logger";
 import { MemoryManager } from "../managers/memory";
 import { PluginRegistry } from "../managers/plugin";
-import {
-  AgentTask,
-  BaseContextItem,
-  getUserInput,
-  UserInputContext
-} from "./agent";
+import { AgentTask } from "./agent";
 import { Processor } from "./processor";
 
 export class Scheduler {
@@ -119,42 +114,14 @@ export class Scheduler {
       task
     });
 
-    const userInput = getUserInput(task);
-
-    if (userInput) {
-      await this.memoryManager.storeUserInteraction(
-        userInput.user,
-        userInput.pluginId,
-        userInput.rawMessage,
-        userInput.timestamp,
-        userInput.id
-      );
-    }
+    // store the incoming task event in memory
+    const memoryId = await this.memoryManager.storeMemory(task);
 
     const completedTaskChain = await this.processor.spawn(task);
-    if (userInput) {
-      const lastContext = completedTaskChain[
-        completedTaskChain.length - 1
-      ] as BaseContextItem & { message: string };
-      this.logger.info("storing assistant response in memory", {
-        type: "runtime.assistant.response.storing",
-        user: userInput.user,
-        platform: userInput.pluginId,
-        response: lastContext.message || lastContext.content
-      });
 
-      this.logger.info("completed task chain", {
-        type: "runtime.pipeline.execution.complete",
-        taskChain: completedTaskChain
-      });
-
-      await this.memoryManager.storeAssistantInteraction(
-        userInput.user,
-        userInput.pluginId,
-        lastContext.message || lastContext.content,
-        completedTaskChain
-      );
-    }
+    await this.memoryManager.updateMemory(memoryId, {
+      context: JSON.stringify(completedTaskChain)
+    });
 
     this.logger.info("pipeline execution complete", {
       type: "runtime.pipeline.execution.complete"
@@ -163,23 +130,20 @@ export class Scheduler {
 
   /**
    * Queues a task to be run, first stores the user interaction in memory, augments the task context with the conversationId, and then queues the task
-   * @param initialContext - the initial context of the task
+   * @param task - the task to queue
    * @param platformContext - the platform context of the task
    */
   public async queueTask(
-    initialContext: UserInputContext,
+    trigger: AgentTask["trigger"],
+    space: AgentTask["space"],
     platformContext?: AgentTask["platformContext"]
   ): Promise<void> {
-    // Get conversationId from memory manager
-    const conversationId = await this.memoryManager.getOrCreateConversation(
-      initialContext.user,
-      initialContext.pluginId
-    );
-
     // Add conversationId to platform context metadata
     const task: AgentTask = {
-      contextChain: [initialContext],
-      conversationId,
+      trigger,
+      context: [],
+      space,
+      metadata: {},
       platformContext
     };
 

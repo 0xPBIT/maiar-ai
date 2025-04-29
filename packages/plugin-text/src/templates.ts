@@ -1,15 +1,11 @@
-import { BaseContextItem } from "@maiar-ai/core";
-
-export function generateTextTemplate(
-  prompt: string,
-  contextChain: BaseContextItem[]
-): string {
+export function generateTextTemplate(context: string): string {
   return `Generate text in response to the following prompt, using any relevant information from the context chain.
 
 Context Chain:
-${JSON.stringify(contextChain, null, 2)}
+${context}
 
-Prompt: ${prompt}
+Within that context chain represents the users initial message. Consider this your prompt and objective.
+Sometimes the user just wants to chat, so don't think you always have some objective to accomplish.
 
 Generate text that directly answers or responds to the prompt. If there is relevant information in the context chain (like current time, previous responses, etc), incorporate it naturally into the response.
 
@@ -18,9 +14,7 @@ Do NOT include any meta-commentary about how you generated the response or what 
 Respond as if you are directly answering the user's request.`;
 }
 
-export function generateChatResponseTemplate(
-  contextChain: BaseContextItem[]
-): string {
+export function generateChatResponseTemplate(context: string): string {
   return `Generate a response based on the context chain. Your response should be a JSON object with a single "message" field containing your response.
     The response should be related to the original message you received from the user. 
 
@@ -34,8 +28,8 @@ export function generateChatResponseTemplate(
     Look for the relevant information in the most recent context items (e.g. generated text, current time, etc).
 
     Here is the Context Chain of the users initial message, and your internal operations which generated useful data for your response:
-    ${JSON.stringify(contextChain, null, 2)}
 
+    ${context}
     Your job is to synthesize the context chain into a comprehensive and useful response to the user's intitial message.
 
     Return a JSON object with a single "message" field containing your response.

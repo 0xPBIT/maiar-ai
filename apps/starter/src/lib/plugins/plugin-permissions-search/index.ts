@@ -1,4 +1,4 @@
-import { AgentTask, getUserInput, Plugin, PluginResult } from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 /**
  * Example plugin that demonstrates how to use dynamic pipeline modification
@@ -48,15 +48,15 @@ export class SearchPermissionPlugin extends Plugin {
   }
 
   private async checkSearchPermission(task: AgentTask): Promise<PluginResult> {
-    const userInput = getUserInput(task);
-    if (!userInput) {
-      return {
-        success: false,
-        error: "No user input found in context chain"
-      };
-    }
+    // TODO USE GET OBJECT TO CHECK USER FROM TASK
+    const truthy = true;
 
-    const isWhitelisted = this.whitelistedUsers.includes(userInput.user);
+    const userInput = {
+      user: "test-user",
+      task
+    };
+
+    const isWhitelisted = truthy;
 
     return {
       success: true,

@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { config } from "dotenv";
-import { readFileSync } from "fs";
+// import { readFileSync } from "fs";
 import { join, resolve } from "path";
 
 import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
@@ -15,14 +15,15 @@ import {
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
-import { CharacterPlugin } from "@maiar-ai/plugin-character";
-import { CodexPlugin } from "@maiar-ai/plugin-codex";
-import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
-import { SearchPlugin } from "@maiar-ai/plugin-search";
+// import { CharacterPlugin } from "@maiar-ai/plugin-character";
+// import { CodexPlugin } from "@maiar-ai/plugin-codex";
+// import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
+// import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
-import { TimePlugin } from "@maiar-ai/plugin-time";
 
-import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
+// import { TimePlugin } from "@maiar-ai/plugin-time";
+
+// import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -48,19 +49,19 @@ async function main() {
   });
 
   const plugins: Plugin[] = [
-    new CodexPlugin({
-      apiKey: process.env.OPENAI_API_KEY as string
-    }),
-    new ImageGenerationPlugin(),
-    new TextGenerationPlugin(),
-    new TimePlugin(),
-    new SearchPermissionPlugin(["0xPBIT"]),
-    new SearchPlugin({
-      apiKey: process.env.PERPLEXITY_API_KEY as string
-    }),
-    new CharacterPlugin({
-      character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
-    })
+    // new CodexPlugin({
+    //   apiKey: process.env.OPENAI_API_KEY as string
+    // }),
+    // new ImageGenerationPlugin(),
+    new TextGenerationPlugin()
+    // new TimePlugin(),
+    // new SearchPermissionPlugin(["0xPBIT"]),
+    // new SearchPlugin({
+    //   apiKey: process.env.PERPLEXITY_API_KEY as string
+    // }),
+    // new CharacterPlugin({
+    //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
+    // })
   ];
 
   const capabilityAliases: string[][] = [

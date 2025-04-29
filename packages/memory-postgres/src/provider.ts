@@ -1,36 +1,22 @@
 import { Pool } from "pg";
 
 import {
-  Context,
-  Conversation,
+  Memory,
   MemoryProvider,
-  MemoryQueryOptions,
-  Message,
-  Plugin
+  Plugin,
+  QueryMemoryOptions
 } from "@maiar-ai/core";
 
 import { PostgresDatabase } from "./database";
 import { PostgresMemoryPlugin } from "./plugin";
 import { PostgresConfig } from "./types";
 
-type JSONValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JSONValue[]
-  | { [key: string]: JSONValue };
-
 export class PostgresMemoryProvider extends MemoryProvider {
   private pool: Pool;
   private plugin: PostgresMemoryPlugin;
 
   constructor(config: PostgresConfig) {
-    super({
-      id: "postgres",
-      name: "PostgreSQL Memory",
-      description: "Stores conversations in a PostgreSQL database"
-    });
+    super();
     const poolInstance = PostgresDatabase.getInstance();
     poolInstance.init(config);
     // Get the pool safely after initialization
@@ -87,34 +73,17 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const client = await this.pool.connect();
     try {
       await client.query(`
-        CREATE TABLE IF NOT EXISTS conversations (
-          id TEXT PRIMARY KEY,
-          user_id TEXT NOT NULL,
-          platform TEXT NOT NULL,
-          created_at BIGINT NOT NULL,
-          metadata JSONB
-        );
-
         CREATE TABLE IF NOT EXISTS messages (
           id TEXT PRIMARY KEY,
-          conversation_id TEXT NOT NULL,
-          role TEXT NOT NULL,
-          content TEXT NOT NULL,
+          space_id TEXT NOT NULL,
+          trigger TEXT NOT NULL,
+          context TEXT,
           timestamp BIGINT NOT NULL,
-          context_id TEXT,
-          user_message_id TEXT,
-          FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-          FOREIGN KEY (user_message_id) REFERENCES messages(id) ON DELETE SET NULL
+          result_ts BIGINT,
+          reply_to_id TEXT,
+          metadata JSONB
         );
-
-        CREATE TABLE IF NOT EXISTS contexts (
-          id TEXT PRIMARY KEY,
-          conversation_id TEXT NOT NULL,
-          type TEXT NOT NULL,
-          content TEXT NOT NULL,
-          timestamp BIGINT NOT NULL,
-          FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
-        );
+        CREATE INDEX IF NOT EXISTS idx_space_time ON messages(space_id, timestamp DESC);
       `);
     } finally {
       client.release();
@@ -125,211 +94,132 @@ export class PostgresMemoryProvider extends MemoryProvider {
     return this.plugin;
   }
 
-  async createConversation(options?: {
-    id?: string;
-    metadata?: Record<string, JSONValue>;
-  }): Promise<string> {
-    const id = options?.id || Math.random().toString(36).substring(2);
-    const [user, platform] = id.split("-");
-    const timestamp = Date.now();
-
-    this.logger.info("creating new conversation", {
-      type: "memory.postgres.conversation.creating",
-      conversationId: id
-    });
-
+  async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
+    const id = Math.random().toString(36).substring(2);
+    const client = await this.pool.connect();
     try {
-      const client = await this.pool.connect();
-      try {
-        await client.query(
-          "INSERT INTO conversations (id, user_id, platform, created_at, metadata) VALUES ($1, $2, $3, $4, $5)",
-          [
-            id,
-            user,
-            platform,
-            timestamp,
-            options?.metadata ? JSON.stringify(options.metadata) : null
-          ]
-        );
-        this.logger.info("created conversation successfully", {
-          type: "memory.postgres.conversation.created",
-          conversationId: id
-        });
-        return id;
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      this.logger.error("failed to create conversation", {
-        type: "memory.postgres.conversation.creation_failed",
-        conversationId: id,
-        error: error instanceof Error ? error.message : String(error)
+      await client.query(
+        `INSERT INTO messages (id, space_id, trigger, context, timestamp, result_ts, reply_to_id, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          id,
+          memory.spaceId,
+          memory.trigger,
+          memory.context || null,
+          memory.createdAt,
+          memory.resultTs || null,
+          null,
+          memory.metadata ? memory.metadata : null
+        ]
+      );
+      this.logger.info("stored memory successfully", {
+        type: "memory.postgres.store.success",
+        id
       });
-      throw error;
-    }
-  }
-
-  async storeMessage(message: Message, conversationId: string): Promise<void> {
-    const client = await this.pool.connect();
-    try {
-      await client.query(
-        `INSERT INTO messages (id, conversation_id, role, content, timestamp, context_id, user_message_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          message.id,
-          conversationId,
-          message.role,
-          message.content,
-          message.timestamp,
-          message.contextId,
-          message.user_message_id
-        ]
-      );
+      return id;
     } finally {
       client.release();
     }
   }
 
-  async storeContext(context: Context, conversationId: string): Promise<void> {
+  async updateMemory(id: string, patch: Partial<Memory>): Promise<void> {
+    const sets: string[] = [];
+    const params: (string | number | null)[] = [];
+    let paramIndex = 1;
+    if (patch.context !== undefined) {
+      sets.push(`context = $${paramIndex++}`);
+      params.push(patch.context);
+    }
+    if (patch.resultTs !== undefined) {
+      sets.push(`result_ts = $${paramIndex++}`);
+      params.push(patch.resultTs);
+    }
+    if (patch.metadata !== undefined) {
+      sets.push(`metadata = $${paramIndex++}`);
+      params.push(JSON.stringify(patch.metadata));
+    }
+    if (!sets.length) return;
+    params.push(id);
     const client = await this.pool.connect();
     try {
       await client.query(
-        `INSERT INTO contexts (id, conversation_id, type, content, timestamp)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          context.id,
-          conversationId,
-          context.type,
-          context.content,
-          context.timestamp
-        ]
+        `UPDATE messages SET ${sets.join(", ")} WHERE id = $${paramIndex}`,
+        params
       );
+      this.logger.info("updated memory successfully", {
+        type: "memory.postgres.update.success",
+        id
+      });
     } finally {
       client.release();
     }
   }
 
-  async getMessages(options: MemoryQueryOptions): Promise<Message[]> {
-    if (!options.conversationId) {
-      throw new Error(
-        "Conversation ID is required for PostgreSQL memory provider"
-      );
-    }
+  async queryMemory(options: QueryMemoryOptions): Promise<Memory[]> {
+    let query = "SELECT * FROM messages";
+    const params: (string | number)[] = [];
+    const conditions: string[] = [];
+    let paramIndex = 1;
 
-    let query = "SELECT * FROM messages WHERE conversation_id = $1";
-    const params: (string | number)[] = [options.conversationId];
-    let paramCount = 1;
+    if (options.space) {
+      if (options.space.id) {
+        conditions.push(`space_id = $${paramIndex++}`);
+        params.push(options.space.id);
+      } else if (options.space.prefix) {
+        conditions.push(`space_id LIKE $${paramIndex++}`);
+        params.push(options.space.prefix + "%");
+      } else if (options.space.pattern) {
+        conditions.push(`space_id ~ $${paramIndex++}`);
+        params.push(options.space.pattern);
+      }
+    }
 
     if (options.after) {
-      paramCount++;
-      query += ` AND timestamp > $${paramCount}`;
+      conditions.push(`timestamp > $${paramIndex++}`);
       params.push(options.after);
     }
 
     if (options.before) {
-      paramCount++;
-      query += ` AND timestamp < $${paramCount}`;
+      conditions.push(`timestamp < $${paramIndex++}`);
       params.push(options.before);
+    }
+
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
     }
 
     query += " ORDER BY timestamp DESC";
 
     if (options.limit) {
-      paramCount++;
-      query += ` LIMIT $${paramCount}`;
+      query += ` LIMIT $${paramIndex++}`;
       params.push(options.limit);
     }
 
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(query, params);
-      return result.rows as Message[];
-    } finally {
-      client.release();
+    if (options.offset) {
+      query += ` OFFSET $${paramIndex++}`;
+      params.push(options.offset);
     }
-  }
-
-  async getContexts(conversationId: string): Promise<Context[]> {
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(
-        "SELECT * FROM contexts WHERE conversation_id = $1",
-        [conversationId]
-      );
-      return result.rows as Context[];
-    } finally {
-      client.release();
-    }
-  }
-
-  async getConversation(conversationId: string): Promise<Conversation> {
-    this.logger.info("fetching conversation", {
-      type: "memory.postgres.conversation.fetching",
-      conversationId
-    });
 
     const client = await this.pool.connect();
     try {
-      const conversationResult = await client.query(
-        "SELECT * FROM conversations WHERE id = $1",
-        [conversationId]
-      );
-
-      if (conversationResult.rows.length === 0) {
-        this.logger.error("conversation not found", {
-          type: "memory.postgres.conversation.not_found",
-          conversationId
-        });
-        throw new Error(`Conversation not found: ${conversationId}`);
-      }
-
-      const conversation = conversationResult.rows[0];
-      const messages = await this.getMessages({ conversationId });
-      const contexts = await this.getContexts(conversationId);
-
-      this.logger.info("retrieved conversation", {
-        type: "memory.postgres.conversation.retrieved",
-        conversationId,
-        messageCount: messages.length,
-        contextCount: contexts.length
+      const res = await client.query(query, params);
+      this.logger.info("queried memory", {
+        type: "memory.postgres.query",
+        count: res.rows.length,
+        options
       });
-
-      return {
-        id: conversationId,
-        messages,
-        contexts,
-        metadata: conversation.metadata
-      };
+      return res.rows.map((row) => ({
+        id: row.id,
+        spaceId: row.space_id,
+        trigger: row.trigger,
+        context: row.context || undefined,
+        createdAt: row.timestamp,
+        resultTs: row.result_ts || undefined,
+        replyToId: undefined,
+        metadata: row.metadata || undefined
+      }));
     } finally {
       client.release();
     }
-  }
-
-  async deleteConversation(conversationId: string): Promise<void> {
-    const client = await this.pool.connect();
-    try {
-      await client.query("BEGIN");
-      try {
-        // Due to CASCADE constraints, we only need to delete the conversation
-        await client.query("DELETE FROM conversations WHERE id = $1", [
-          conversationId
-        ]);
-        await client.query("COMMIT");
-      } catch (error) {
-        await client.query("ROLLBACK");
-        this.logger.error("failed to delete conversation", {
-          type: "memory.postgres.conversation.deletion_failed",
-          conversationId,
-          error: error instanceof Error ? error.message : String(error)
-        });
-        throw error;
-      }
-    } finally {
-      client.release();
-    }
-  }
-
-  async close(): Promise<void> {
-    await this.pool.end();
   }
 }

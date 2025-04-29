@@ -55,29 +55,31 @@ ${formattedMessages}
 const formatCurrentContext = (context: Record<string, unknown>): string => {
   const contextOrder = {
     platform: 1,
-    conversation_history: 2,
+    relatedMemories: 2,
     current_message: 3
   };
 
   return Object.entries(context)
     .map(([key, value]) => {
-      if (key === "conversationHistory") {
+      if (key === "relatedMemories") {
         if (Array.isArray(value) && value.every(isConversationMessage)) {
           return formatConversationHistory(value);
         }
-        return "";
+        return `<relatedMemories>${JSON.stringify(value, null, 2)}</relatedMemories>`;
       }
       if (key === "platform") return `<platform>${String(value)}</platform>`;
       if (key === "message")
         return `<current_message>${String(value)}</current_message>`;
+      if (key === "trigger")
+        return `<current_message>${JSON.stringify(value, null, 2)}</current_message>`;
       return `${key}: ${value}`;
     })
     .filter(Boolean)
     .sort((a, b) => {
       const getOrder = (str: string) => {
         if (str.includes("<platform>")) return contextOrder.platform;
-        if (str.includes("<conversation_history>"))
-          return contextOrder.conversation_history;
+        if (str.includes("<relatedMemories>"))
+          return contextOrder.relatedMemories;
         if (str.includes("<current_message>"))
           return contextOrder.current_message;
         return 99;
@@ -210,8 +212,14 @@ IMPORTANT: Return ONLY the raw JSON array. Do NOT wrap it in code blocks or add 
 export function generatePipelineTemplate(
   context: PipelineGenerationContext
 ): string {
+  // Include the full trigger object in the context for the model
+  const mergedContext = {
+    ...context.currentContext,
+    trigger: context.trigger
+  };
+
   const pluginSection = `<plugins>\n${formatPluginDescriptions(context)}\n</plugins>`;
-  const contextSection = `<context>\n${formatCurrentContext(context.currentContext)}\n</context>`;
+  const contextSection = `<context>\n${formatCurrentContext(mergedContext)}\n</context>`;
 
   return [
     pluginSection,

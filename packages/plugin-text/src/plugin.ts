@@ -2,13 +2,12 @@ import express from "express";
 
 import {
   AgentTask,
-  BaseContextItem,
-  getUserInput,
+  Context,
   Plugin,
   PluginResult,
   Request,
   Response,
-  UserInputContext
+  Space
 } from "@maiar-ai/core";
 
 import {
@@ -56,24 +55,16 @@ export class TextGenerationPlugin extends Plugin {
   }
 
   private async generateText(task: AgentTask): Promise<PluginResult> {
-    const userInput = getUserInput(task);
-    if (!userInput) {
-      return {
-        success: false,
-        error: "No user input found in context chain"
-      };
-    }
-
     const generated = await this.runtime.executeCapability(
       TEXT_GENERATION_CAPABILITY_ID,
-      generateTextTemplate(userInput.rawMessage, task.contextChain),
+      generateTextTemplate(JSON.stringify(task.context)),
       {
         temperature: 0.7
       }
     );
 
     // Add the generated text as a new item in the context chain
-    const textContext: BaseContextItem & {
+    const textContext: Context & {
       text: string;
     } = {
       id: `${this.id}-${Date.now()}`,
@@ -85,23 +76,12 @@ export class TextGenerationPlugin extends Plugin {
       text: generated
     };
 
-    task.contextChain.push(textContext);
+    task.context.push(textContext);
     return { success: true };
   }
 
   private async handleChat(req: Request, res: Response): Promise<void> {
     const { message, user } = req.body;
-
-    const initialContext: UserInputContext = {
-      id: `${this.id}-${Date.now()}`,
-      pluginId: this.id,
-      type: "user_input",
-      action: "receive_message",
-      content: message,
-      timestamp: Date.now(),
-      rawMessage: message,
-      user: user || "anonymous"
-    };
 
     // Create event with initial context and response handler
     const platformContext: ChatPlatformContext = {
@@ -109,15 +89,59 @@ export class TextGenerationPlugin extends Plugin {
       responseHandler: (result: unknown) => res.json(result)
     };
 
-    await this.runtime.createEvent(initialContext, platformContext);
+    const initialContext: Context = {
+      id: `${this.id}-${Date.now()}`,
+      pluginId: this.id,
+      type: "user_input",
+      action: "receive_message",
+      content: message,
+      timestamp: Date.now(),
+      metadata: {
+        user,
+        platformContext
+      }
+    };
+
+    const space: Space = {
+      id: `${this.id}-${user}`
+    };
+
+    await this.runtime.createEvent(initialContext, space);
   }
 
   private async sendChatResponse(task: AgentTask): Promise<PluginResult> {
-    if (!task.platformContext?.responseHandler) {
-      this.logger.error("no response handler available");
+    // Check if task.trigger.metadata exists, then if platformContext exists, then if responseHandler exists
+    if (!task.trigger || !task.trigger.metadata) {
+      this.logger.error("no metadata available on task trigger", { task });
       return {
         success: false,
-        error: "No response handler available"
+        error: "No metadata available on task trigger"
+      };
+    }
+
+    if (!task.trigger.metadata.platformContext) {
+      this.logger.error("no platformContext in metadata");
+      return {
+        success: false,
+        error: "No platformContext available in metadata"
+      };
+    }
+
+    const platformContext = task.trigger.metadata.platformContext;
+
+    if (typeof platformContext !== "object" || platformContext === null) {
+      this.logger.error("platformContext is not an object");
+      return {
+        success: false,
+        error: "platformContext is not an object"
+      };
+    }
+
+    if (!("responseHandler" in platformContext)) {
+      this.logger.error("no responseHandler in platformContext");
+      return {
+        success: false,
+        error: "No response handler available in platformContext"
       };
     }
 
@@ -125,11 +149,16 @@ export class TextGenerationPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         ChatResponseSchema,
-        generateChatResponseTemplate(task.contextChain),
+        generateChatResponseTemplate(JSON.stringify(task.context)),
         { temperature: 0.2 }
       );
 
-      await task.platformContext.responseHandler(formattedResponse.message);
+      // Type assertion for responseHandler since TypeScript doesn't know its type
+      const responseHandler = platformContext.responseHandler as (
+        result: unknown
+      ) => void;
+      responseHandler(formattedResponse.message);
+
       return {
         success: true,
         data: {

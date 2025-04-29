@@ -3,25 +3,15 @@ import fs from "fs";
 import path from "path";
 
 import {
-  Context,
-  Conversation,
+  Memory,
   MemoryProvider,
-  MemoryQueryOptions,
-  Message,
-  Plugin
+  Plugin,
+  QueryMemoryOptions
 } from "@maiar-ai/core";
 
 import { SQLiteDatabase } from "./database";
 import { SQLiteMemoryPlugin } from "./plugin";
 import { SQLiteConfig } from "./types";
-
-type JSONValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JSONValue[]
-  | { [key: string]: JSONValue };
 
 export class SQLiteMemoryProvider extends MemoryProvider {
   private config: SQLiteConfig;
@@ -29,11 +19,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
   private plugin: SQLiteMemoryPlugin;
 
   constructor(config: SQLiteConfig) {
-    super({
-      id: "sqlite",
-      name: "SQLite Memory",
-      description: "Stores conversations in a SQLite database"
-    });
+    super();
     this.config = config;
     const dbDir = path.dirname(this.config.dbPath);
     fs.mkdirSync(dbDir, { recursive: true });
@@ -44,19 +30,12 @@ export class SQLiteMemoryProvider extends MemoryProvider {
 
   public init(): void {
     this.initializeStorage();
-    this.db.exec("PRAGMA foreign_keys = ON;");
   }
 
   public checkHealth(): void {
     try {
       this.db.prepare("SELECT 1").get();
       this.db.transaction(() => {})();
-      const fkEnabled = this.db.prepare("PRAGMA foreign_keys").get() as {
-        foreign_keys: number;
-      };
-      if (!fkEnabled || !fkEnabled.foreign_keys) {
-        throw new Error("Foreign key constraints are not enabled");
-      }
       this.logger.info("sqlite health check passed", {
         type: "memory.sqlite.health_check"
       });
@@ -85,120 +64,103 @@ export class SQLiteMemoryProvider extends MemoryProvider {
 
   private async createTables(): Promise<void> {
     await this.db.exec(`
-            CREATE TABLE IF NOT EXISTS conversations (
-                id TEXT PRIMARY KEY,
-                user TEXT NOT NULL,
-                platform TEXT NOT NULL,
-                created_at INTEGER NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS messages (
-                id TEXT PRIMARY KEY,
-                conversation_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                timestamp INTEGER NOT NULL,
-                context_id TEXT,
-                user_message_id TEXT,
-                FOREIGN KEY (conversation_id) REFERENCES conversations(id),
-                FOREIGN KEY (context_id) REFERENCES contexts(id),
-                FOREIGN KEY (user_message_id) REFERENCES messages(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS contexts (
-                id TEXT PRIMARY KEY,
-                conversation_id TEXT NOT NULL,
-                type TEXT NOT NULL,
-                content TEXT NOT NULL,
-                timestamp INTEGER NOT NULL,
-                FOREIGN KEY (conversation_id) REFERENCES conversations(id)
-            );
-        `);
+      CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        space_id TEXT NOT NULL,
+        trigger TEXT NOT NULL,
+        context TEXT,
+        timestamp INTEGER NOT NULL,
+        result_ts INTEGER,
+        reply_to_id TEXT,
+        metadata TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_space_time ON messages(space_id, timestamp DESC);
+    `);
   }
 
   public getPlugin(): Plugin {
     return this.plugin;
   }
 
-  async createConversation(options?: {
-    id?: string;
-    metadata?: Record<string, JSONValue>;
-  }): Promise<string> {
-    const stmt = this.db.prepare(
-      "INSERT INTO conversations (id, user, platform, created_at) VALUES (?, ?, ?, ?)"
+  async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
+    const id = Math.random().toString(36).substring(2);
+    const stmt = this.db.prepare(`
+      INSERT INTO messages (id, space_id, trigger, context, timestamp, result_ts, reply_to_id, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      id,
+      memory.spaceId,
+      memory.trigger,
+      memory.context || null,
+      memory.createdAt,
+      memory.resultTs || null,
+      undefined,
+      memory.metadata ? JSON.stringify(memory.metadata) : null
     );
-    const id = options?.id || Math.random().toString(36).substring(2);
-    const [user, platform] = id.split("-");
-    const timestamp = Date.now();
-
-    this.logger.info("creating new conversation", {
-      type: "memory.sqlite.conversation.creating",
-      conversationId: id
+    this.logger.info("stored memory successfully", {
+      type: "memory.sqlite.store.success",
+      id
     });
+    return id;
+  }
 
-    try {
-      stmt.run(id, user, platform, timestamp);
-      this.logger.info("created conversation successfully", {
-        type: "memory.sqlite.conversation.created",
-        conversationId: id
-      });
-      return id;
-    } catch (error) {
-      this.logger.error("failed to create conversation", {
-        type: "memory.sqlite.conversation.creation_failed",
-        conversationId: id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      throw error;
+  async updateMemory(id: string, patch: Partial<Memory>): Promise<void> {
+    const sets: string[] = [];
+    const params: (string | number | null)[] = [];
+    if (patch.context !== undefined) {
+      sets.push("context = ?");
+      params.push(patch.context);
     }
-  }
-
-  async storeMessage(message: Message, conversationId: string): Promise<void> {
-    const stmt = this.db.prepare(`
-            INSERT INTO messages (id, conversation_id, role, content, timestamp, context_id, user_message_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-    stmt.run(
-      message.id,
-      conversationId,
-      message.role,
-      message.content,
-      message.timestamp,
-      message.contextId,
-      message.user_message_id
-    );
-  }
-
-  async storeContext(context: Context, conversationId: string): Promise<void> {
-    const stmt = this.db.prepare(`
-            INSERT INTO contexts (id, conversation_id, type, content, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        `);
-    stmt.run(
-      context.id,
-      conversationId,
-      context.type,
-      context.content,
-      context.timestamp
-    );
-  }
-
-  async getMessages(options: MemoryQueryOptions): Promise<Message[]> {
-    if (!options.conversationId) {
-      throw new Error("Conversation ID is required for SQLite memory provider");
+    if (patch.resultTs !== undefined) {
+      sets.push("result_ts = ?");
+      params.push(patch.resultTs);
     }
+    if (patch.metadata !== undefined) {
+      sets.push("metadata = ?");
+      params.push(JSON.stringify(patch.metadata));
+    }
+    if (!sets.length) return;
+    params.push(id);
+    this.db
+      .prepare(`UPDATE messages SET ${sets.join(", ")} WHERE id = ?`)
+      .run(...params);
+    this.logger.info("updated memory successfully", {
+      type: "memory.sqlite.update.success",
+      id
+    });
+  }
 
-    let query = "SELECT * FROM messages WHERE conversation_id = ?";
-    const params: (string | number)[] = [options.conversationId];
+  async queryMemory(options: QueryMemoryOptions): Promise<Memory[]> {
+    let query = "SELECT * FROM messages";
+    const params: (string | number)[] = [];
+    const conditions: string[] = [];
+
+    if (options.space) {
+      if (options.space.id) {
+        conditions.push("space_id = ?");
+        params.push(options.space.id);
+      } else if (options.space.prefix) {
+        conditions.push("space_id LIKE ?");
+        params.push(options.space.prefix + "%");
+      } else if (options.space.pattern) {
+        conditions.push("space_id GLOB ?");
+        params.push(options.space.pattern);
+      }
+    }
 
     if (options.after) {
-      query += " AND timestamp > ?";
+      conditions.push("timestamp > ?");
       params.push(options.after);
     }
 
     if (options.before) {
-      query += " AND timestamp < ?";
+      conditions.push("timestamp < ?");
       params.push(options.before);
+    }
+
+    if (conditions.length > 0) {
+      query += " WHERE " + conditions.join(" AND ");
     }
 
     query += " ORDER BY timestamp DESC";
@@ -208,85 +170,36 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       params.push(options.limit);
     }
 
+    if (options.offset) {
+      query += " OFFSET ?";
+      params.push(options.offset);
+    }
+
     const stmt = this.db.prepare(query);
-    return stmt.all(...params) as Message[];
-  }
-
-  async getContexts(conversationId: string): Promise<Context[]> {
-    const stmt = this.db.prepare(
-      "SELECT * FROM contexts WHERE conversation_id = ?"
-    );
-    return stmt.all(conversationId) as Context[];
-  }
-
-  async getConversation(conversationId: string): Promise<Conversation> {
-    this.logger.info("fetching conversation", {
-      type: "memory.sqlite.conversation.fetching",
-      conversationId
-    });
-
-    const conversationStmt = this.db.prepare(
-      "SELECT * FROM conversations WHERE id = ?"
-    );
-    const conversation = conversationStmt.get(conversationId) as {
+    const results = stmt.all(...params) as {
       id: string;
-      metadata: string | null;
-    };
-
-    if (!conversation) {
-      this.logger.error("conversation not found", {
-        type: "memory.sqlite.conversation.not_found",
-        conversationId
-      });
-      throw new Error(`Conversation not found: ${conversationId}`);
-    }
-
-    const messages = await this.getMessages({ conversationId });
-    const contexts = await this.getContexts(conversationId);
-
-    this.logger.info("retrieved conversation", {
-      type: "memory.sqlite.conversation.retrieved",
-      conversationId,
-      messageCount: messages.length,
-      contextCount: contexts.length
+      space_id: string;
+      trigger: string;
+      context?: string;
+      timestamp: number;
+      result_ts?: number;
+      reply_to_id?: string;
+      metadata?: string;
+    }[];
+    this.logger.info("queried memory", {
+      type: "memory.sqlite.query",
+      count: results.length,
+      options
     });
-
-    return {
-      id: conversationId,
-      messages,
-      contexts,
-      metadata: conversation.metadata
-        ? JSON.parse(conversation.metadata)
-        : undefined
-    };
-  }
-
-  async deleteConversation(conversationId: string): Promise<void> {
-    const deleteMessages = this.db.prepare(
-      "DELETE FROM messages WHERE conversation_id = ?"
-    );
-    const deleteContexts = this.db.prepare(
-      "DELETE FROM contexts WHERE conversation_id = ?"
-    );
-    const deleteConversation = this.db.prepare(
-      "DELETE FROM conversations WHERE id = ?"
-    );
-
-    const transaction = this.db.transaction(() => {
-      deleteMessages.run(conversationId);
-      deleteContexts.run(conversationId);
-      deleteConversation.run(conversationId);
-    });
-
-    try {
-      transaction();
-    } catch (error) {
-      this.logger.error("failed to delete conversation", {
-        type: "memory.sqlite.conversation.deletion_failed",
-        conversationId,
-        error: error instanceof Error ? error.message : String(error)
-      });
-      throw error;
-    }
+    return results.map((row) => ({
+      id: row.id,
+      spaceId: row.space_id,
+      trigger: row.trigger,
+      context: row.context || undefined,
+      createdAt: row.timestamp,
+      resultTs: row.result_ts || undefined,
+      replyToId: undefined,
+      metadata: row.metadata ? JSON.parse(row.metadata) : undefined
+    }));
   }
 }

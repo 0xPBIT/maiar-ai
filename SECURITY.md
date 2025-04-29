@@ -11,6 +11,7 @@ We take the security of MAIAR seriously. If you believe you have found a securit
 ### Private Reporting Process
 
 1. **DO NOT** create a public GitHub issue for the vulnerability
+2. Send an email to contact@maiar.dev, or contact us through X ([@0xPBIT](https://x.com/0xpbit), [@dat_chillguy](https://x.com/dat_chillguy)) with:
    - A detailed description of the vulnerability
    - Steps to reproduce the issue
    - Potential impact of the vulnerability

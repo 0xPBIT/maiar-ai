@@ -18,7 +18,7 @@ import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 // import { CharacterPlugin } from "@maiar-ai/plugin-character";
 // import { CodexPlugin } from "@maiar-ai/plugin-codex";
 // import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
-// import { SearchPlugin } from "@maiar-ai/plugin-search";
+import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 
 // import { TimePlugin } from "@maiar-ai/plugin-time";
@@ -53,12 +53,12 @@ async function main() {
     //   apiKey: process.env.OPENAI_API_KEY as string
     // }),
     // new ImageGenerationPlugin(),
-    new TextGenerationPlugin()
+    new TextGenerationPlugin(),
     // new TimePlugin(),
     // new SearchPermissionPlugin(["0xPBIT"]),
-    // new SearchPlugin({
-    //   apiKey: process.env.PERPLEXITY_API_KEY as string
-    // }),
+    new SearchPlugin({
+      apiKey: process.env.PERPLEXITY_API_KEY as string
+    })
     // new CharacterPlugin({
     //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     // })

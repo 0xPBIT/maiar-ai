@@ -36,14 +36,12 @@ export class MemoryManager {
       await memoryProvider.init();
 
       this.logger.info(`memory provider initialized successfully`, {
-        type: "memory.provider.init",
-        memoryProvider
+        type: "memory.provider.init"
       });
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.logger.error(`memory provider initialization failed`, {
         type: "memory.provider.init.failed",
-        memoryProvider,
         error: error.message
       });
       throw error;
@@ -53,14 +51,12 @@ export class MemoryManager {
       await memoryProvider.checkHealth();
 
       this.logger.info(`memory provider health check passed`, {
-        type: "memory.provider.health.check.passed",
-        memoryProvider
+        type: "memory.provider.health.check.passed"
       });
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.logger.error(`memory provider health check failed`, {
         type: "memory.provider.health.check.failed",
-        memoryProvider,
         error: error.message
       });
 
@@ -69,8 +65,7 @@ export class MemoryManager {
 
     this._memoryProvider = memoryProvider;
     this.logger.info(`memory provider registered successfully`, {
-      type: "memory.provider.registered",
-      memoryProvider
+      type: "memory.provider.registered"
     });
   }
 
@@ -78,14 +73,12 @@ export class MemoryManager {
     try {
       await this.memoryProvider.shutdown();
       this.logger.info(`memory provider shutdown successfully`, {
-        type: "memory.provider.shutdown",
-        memoryProvider: this.memoryProvider
+        type: "memory.provider.shutdown"
       });
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.logger.error(`memory provider shutdown failed`, {
         type: "memory.provider.shutdown.failed",
-        memoryProvider: this.memoryProvider,
         error: error.message
       });
 
@@ -93,8 +86,7 @@ export class MemoryManager {
     }
 
     this.logger.info(`memory provider unregistered successfully`, {
-      type: "memory.provider.unregistered",
-      memoryProvider: this.memoryProvider
+      type: "memory.provider.unregistered"
     });
   }
 
@@ -137,6 +129,7 @@ export class MemoryManager {
       id,
       patch
     });
+    await this.memoryProvider.updateMemory(id, patch);
   }
 
   /**

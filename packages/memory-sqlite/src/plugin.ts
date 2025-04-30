@@ -16,7 +16,8 @@ export class SQLiteMemoryPlugin extends Plugin {
     super({
       id: "plugin-sqlite-memory",
       name: "SQLite Memory Plugin",
-      description: "Memory plugin for SQLite",
+      description:
+        "These are the tools you use to save, remove, and query information from the database. You should use this for planning long term goals, recalling information, facts, opinions you have learned, etc.",
       requiredCapabilities: []
     });
 
@@ -25,19 +26,21 @@ export class SQLiteMemoryPlugin extends Plugin {
 
     this.executors = [
       {
-        name: "memory:add_document",
-        description: "Add a peice of information into the sandboxed database",
+        name: "save_memory",
+        description:
+          "You should invoke this executor when you want to save a piece of information you might want to recall later",
         fn: this.addDocument.bind(this)
       },
       {
-        name: "memory:remove_document",
-        description: "Remove a peice of information from the sandbox database",
+        name: "remove_memory",
+        description:
+          "You should invoke this executor when you want to remove a piece of information from the database",
         fn: this.removeDocument.bind(this)
       },
       {
-        name: "memory:query",
+        name: "query_memory",
         description:
-          "Query the sandbox database for documnets that match the user or plugin requests",
+          "You should invoke this executor when you want to query the database for information that you saved earlier. This could be useful for recalling information from a previous conversation, or goals you might have set for yourself.",
         fn: this.query.bind(this)
       }
     ];
@@ -45,7 +48,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async addDocument(task: AgentTask): Promise<PluginResult> {
     const stmt = this.db.prepare(`
-      INSERT INTO sandbox (id, conversation_id, content, timestamp)
+      INSERT INTO sandbox (id, space_id, content, timestamp)
       VALUES (?, ?, ?, ?)
     `);
 
@@ -55,20 +58,20 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Get data to store in database from context chain
     const formattedResponse = await this.runtime.getObject(
       SQLiteMemoryUploadSchema,
-      generateUploadDocumentTemplate(task.contextChain),
+      generateUploadDocumentTemplate(JSON.stringify(task)),
       { temperature: 0.2 }
     );
 
     // Get conversation ID from context
-    const conversationId = task.conversationId;
-    if (!conversationId) {
+    const spaceId = task.space.id;
+    if (!spaceId) {
       return {
         success: false,
         data: { message: "Conversation ID not available in agent context" }
       };
     }
 
-    stmt.run(documentId, conversationId, formattedResponse.content, timestamp);
+    stmt.run(documentId, spaceId, formattedResponse.content, timestamp);
 
     return {
       success: true,
@@ -80,7 +83,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Construct query for document ids
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(task.contextChain),
+      generateQueryTemplate(JSON.stringify(task)),
       { temperature: 0.2 }
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
@@ -119,7 +122,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Construct query from context
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(task.contextChain, ["id", "content"]),
+      generateQueryTemplate(JSON.stringify(task), ["id", "content"]),
       { temperature: 0.2 }
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
@@ -135,10 +138,9 @@ export class SQLiteMemoryPlugin extends Plugin {
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS sandbox (
         id TEXT PRIMARY KEY,
-        conversation_id TEXT NOT NULL,
+        space_id TEXT NOT NULL,
         content TEXT NOT NULL,
-        timestamp BIGINT NOT NULL,
-        FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+        timestamp BIGINT NOT NULL
       )
     `);
   }

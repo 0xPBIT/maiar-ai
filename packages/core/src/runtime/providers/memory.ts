@@ -15,7 +15,7 @@ export interface Memory {
 
 export interface Space {
   id: string; // unique identifier for the space this message belongs to
-  relatedSpaces: {
+  relatedSpaces?: {
     prefix?: string; // prefix for the space to search for additional context
     pattern?: string; // regex pattern for the space to search for additional context
   };

@@ -16,7 +16,8 @@ export class SQLiteMemoryPlugin extends Plugin {
     super({
       id: "plugin-sqlite-memory",
       name: "SQLite Memory Plugin",
-      description: "Disabled Plugin. Do Not Use.",
+      description:
+        "These are the tools you use to save, remove, and query information from the database. You should use this for planning long term goals, recalling information, facts, opinions you have learned, etc.",
       requiredCapabilities: []
     });
 
@@ -24,24 +25,24 @@ export class SQLiteMemoryPlugin extends Plugin {
     this.db = SQLiteDatabase.getInstance().getDatabase();
 
     this.executors = [
-      // {
-      //   name: "save_memory",
-      //   description:
-      //     "You should invoke this executor when you want to save a piece of information you might want to recall later",
-      //   fn: this.addDocument.bind(this)
-      // },
-      // {
-      //   name: "remove_memory",
-      //   description:
-      //     "You should invoke this executor when you want to remove a piece of information from the database",
-      //   fn: this.removeDocument.bind(this)
-      // },
-      // {
-      //   name: "query_memory",
-      //   description:
-      //     "You should invoke this executor when you want to query the database for information that you saved earlier. This could be useful for recalling information from a previous conversation, or goals you might have set for yourself.",
-      //   fn: this.query.bind(this)
-      // }
+      {
+        name: "save_memory",
+        description:
+          "You should invoke this executor when you want to save a piece of information you might want to recall later",
+        fn: this.addDocument.bind(this)
+      },
+      {
+        name: "remove_memory",
+        description:
+          "You should invoke this executor when you want to remove a piece of information from the database",
+        fn: this.removeDocument.bind(this)
+      },
+      {
+        name: "query_memory",
+        description:
+          "You should invoke this executor when you want to query the database for information that you saved earlier. This could be useful for recalling information from a previous conversation, or goals you might have set for yourself.",
+        fn: this.query.bind(this)
+      }
     ];
   }
 

@@ -62,6 +62,9 @@ export class SQLiteMemoryProvider extends MemoryProvider {
     });
   }
 
+  // RENAME MESSAGES TO MEMORIES
+  // RENAME TIMESTAMP TO CREATED AT
+  // RENAME RESULT TS TO COMPLETED AT
   private async createTables(): Promise<void> {
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS messages (
@@ -136,17 +139,20 @@ export class SQLiteMemoryProvider extends MemoryProvider {
     const params: (string | number)[] = [];
     const conditions: string[] = [];
 
-    if (options.space) {
-      if (options.space.id) {
-        conditions.push("space_id = ?");
-        params.push(options.space.id);
-      } else if (options.space.prefix) {
-        conditions.push("space_id LIKE ?");
-        params.push(options.space.prefix + "%");
-      } else if (options.space.pattern) {
+    if (options.relatedSpaces) {
+      if (options.relatedSpaces.pattern) {
+        // if a pattern is provided, use it to filter the space_id
         conditions.push("space_id GLOB ?");
-        params.push(options.space.pattern);
+        params.push(options.relatedSpaces.pattern);
+      } else if (options.relatedSpaces.prefix) {
+        // match all spaces that have the same starting prefix
+        conditions.push("space_id LIKE ?");
+        params.push(options.relatedSpaces.prefix + "%");
       }
+    } else if (options.spaceId) {
+      // match a specific space
+      conditions.push("space_id = ?");
+      params.push(options.spaceId);
     }
 
     if (options.after) {

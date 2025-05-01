@@ -15,15 +15,18 @@ export interface Memory {
 
 export interface Space {
   id: string; // unique identifier for the space this message belongs to
-  prefix?: string; // prefix for the space to search for additional context
-  pattern?: string; // regex pattern for the space to search for additional context
+  relatedSpaces: {
+    prefix?: string; // prefix for the space to search for additional context
+    pattern?: string; // regex pattern for the space to search for additional context
+  };
 }
 
 export interface QueryMemoryOptions {
-  space?: Space;
+  relatedSpaces?: Space["relatedSpaces"];
+  spaceId?: string;
   before?: number;
   after?: number;
-  limit?: number;
+  limit?: number; // perhaps set default limit at abstract provider level
   offset?: number;
 }
 
@@ -71,7 +74,7 @@ export abstract class MemoryProvider {
    */
   public abstract updateMemory(
     id: string,
-    patch: Partial<Memory>
+    patch: Omit<Partial<Memory>, "id">
   ): Promise<void>;
 
   /**

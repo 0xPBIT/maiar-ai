@@ -363,3 +363,21 @@ The response must be valid JSON that can be parsed with JSON.parse().
     The object should satisfy this requirement:
 ${context.prompt}
 `;
+
+export function generateRelatedMemoriesTemplate(
+  relatedMemoriesContext: string
+): string {
+  return `
+  These are the related memories for your current task. What you should do is summarize them into a paragraph of text.
+
+  Your summary should be useful as if the previous messages and instructions will be useful to the agent that is now executing the pipeline.
+  Your job is to bestow previous experiences, failures, context, data, steps, and lessons you learned from the set of related memories here.
+  You can condense this into a paragraph that is ultimately understandable to another agent. You don't need to write on behalf of a human. 
+  Just make sure you include relevant contextual information as to not force the subsequent agent to engage in any guesswork.
+
+  You will be given the task context and the list of related memories. Your job is to include the relevant data for the task, including files, numbers, images, text, ids, etc.
+
+  Here are the related memories:
+  ${relatedMemoriesContext}
+  `;
+}

@@ -1,8 +1,26 @@
 import { z } from "zod";
 
-import { Memory } from "../providers/memory";
-import { AgentTask } from "./agent";
+// DEV NOTE: GET RID OF THIS ENTIRE FILE OR MOVE THE CONTENTS TO SOMEWHERE ELSE
+import { Space } from "../providers/memory";
 import { OperationConfig } from "./operations";
+
+// Base context item that all items must include
+export interface Context {
+  id: string; // Unique identifier for this context item
+  pluginId: string; // Which plugin created this context
+  content: string; // Serialized content for model consumption
+  timestamp: number; // When this context was added
+  helpfulInstruction?: string; // Instructions for how to use this context item's data
+  metadata?: Record<string, unknown>; // Additional metadata for the context item
+}
+
+// The full context chain container
+export interface AgentTask {
+  trigger: Context;
+  context: Context[];
+  space: Space;
+  metadata: Record<string, unknown>;
+}
 
 /**
  * A step in the execution pipeline
@@ -18,7 +36,14 @@ export const PipelineStepSchema = z
  * Pipeline definition, a sequence of steps to execute in order
  */
 export const PipelineSchema = z
-  .array(PipelineStepSchema)
+  .object({
+    steps: z
+      .array(PipelineStepSchema)
+      .describe("A sequence of steps to execute in order"),
+    relatedMemories: z
+      .string()
+      .describe("The memory context to use for the pipeline during execution")
+  })
   .describe("A sequence of steps to execute in order");
 
 export type PipelineStep = z.infer<typeof PipelineStepSchema>;
@@ -43,7 +68,7 @@ export interface PipelineGenerationContext {
   trigger: AgentTask["trigger"];
   availablePlugins: AvailablePlugin[];
   currentContext: {
-    relatedMemories: Memory[];
+    relatedMemoriesContext: string;
   };
 }
 

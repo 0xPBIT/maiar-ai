@@ -1,7 +1,7 @@
 import { Logger } from "winston";
 
 import logger from "../../lib/logger";
-import { AgentTask } from "../pipeline/agent";
+import { AgentTask } from "../pipeline";
 import {
   Memory,
   MemoryProvider,

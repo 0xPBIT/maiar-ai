@@ -4,8 +4,8 @@ import { Runtime } from "../..";
 import logger from "../../lib/logger";
 import { MemoryManager } from "../managers/memory";
 import { PluginRegistry } from "../managers/plugin";
-import { AgentTask } from "./agent";
 import { Processor } from "./processor";
+import { AgentTask } from "./types";
 
 export class Scheduler {
   private readonly runtime: Runtime;
@@ -135,16 +135,14 @@ export class Scheduler {
    */
   public async queueTask(
     trigger: AgentTask["trigger"],
-    space: AgentTask["space"],
-    platformContext?: AgentTask["platformContext"]
+    space: AgentTask["space"]
   ): Promise<void> {
     // Add conversationId to platform context metadata
     const task: AgentTask = {
       trigger,
       context: [],
       space,
-      metadata: {},
-      platformContext
+      metadata: {}
     };
 
     try {

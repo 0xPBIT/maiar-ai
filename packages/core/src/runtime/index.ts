@@ -335,10 +335,9 @@ export class Runtime {
    */
   public async createEvent(
     trigger: AgentTask["trigger"],
-    space: AgentTask["space"],
-    platformContext?: AgentTask["platformContext"]
+    space: AgentTask["space"]
   ): Promise<void> {
-    return this.scheduler.queueTask(trigger, space, platformContext);
+    return this.scheduler.queueTask(trigger, space);
   }
 
   /**

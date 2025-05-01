@@ -53,13 +53,14 @@ export function Pipeline() {
         flex={1}
         p={3}
         triggerValue={{
-          pipelineLength: pipelineState.pipeline?.length,
+          pipelineLength: pipelineState.pipeline?.steps.length,
           currentStepPluginId: pipelineState.currentStep?.pluginId,
           currentStepAction: pipelineState.currentStep?.action
         }}
       >
         <PipelineSteps
-          steps={pipelineState.pipeline}
+          steps={pipelineState.pipeline.steps}
+          relatedMemories={pipelineState.pipeline.relatedMemories}
           currentStep={pipelineState.currentStep}
           modifiedSteps={pipelineState.modifiedSteps}
           explanation={pipelineState.explanation}

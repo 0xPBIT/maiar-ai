@@ -3,12 +3,14 @@ import { Logger } from "winston";
 import { MemoryManager, PluginRegistry, Runtime } from "../..";
 import { PluginResult } from "../providers";
 import { Plugin } from "../providers/plugin";
-import { AgentTask, Context } from "./agent";
 import {
   generatePipelineModificationTemplate,
-  generatePipelineTemplate
+  generatePipelineTemplate,
+  generateRelatedMemoriesTemplate
 } from "./templates";
 import {
+  AgentTask,
+  Context,
   Pipeline,
   PipelineGenerationContext,
   PipelineModification,
@@ -72,7 +74,20 @@ export class Processor {
 
     // Get related memories from the space search
     const relatedMemories = await this.memoryManager.queryMemory({
-      space: task.space
+      relatedSpaces: task.space.relatedSpaces,
+      limit: 10
+    });
+
+    const relatedMemoriesContext = generateRelatedMemoriesTemplate(
+      JSON.stringify({
+        task: task.trigger,
+        relatedMemories
+      })
+    );
+
+    this.logger.debug("related memories context", {
+      type: "runtime.pipeline.related.memories",
+      relatedMemoriesContext
     });
 
     // Create the generation context
@@ -80,32 +95,32 @@ export class Processor {
       trigger: task.trigger,
       availablePlugins,
       currentContext: {
-        relatedMemories
+        relatedMemoriesContext
       }
     };
 
     try {
       // Generate the pipeline using model
-      const template = generatePipelineTemplate(pipelineContext);
-
-      // Log pipeline generation start
-      this.logger.info("pipeline generation start", {
-        type: "pipeline.generation.start",
-        template
-      });
+      const generatePipelineContext = generatePipelineTemplate(pipelineContext);
 
       this.logger.debug("generating pipeline", {
         type: "runtime.pipeline.generating",
         pipelineContext,
-        template
+        generatePipelineContext
       });
 
-      const pipeline = await this.runtime.getObject(PipelineSchema, template, {
-        temperature: 0.2 // Lower temperature for more predictable outputs
-      });
+      const pipeline = await this.runtime.getObject(
+        PipelineSchema,
+        generatePipelineContext,
+        {
+          temperature: 0.2 // Lower temperature for more predictable outputs
+        }
+      );
 
       // Add concise pipeline steps log
-      const steps = pipeline.map((step) => `${step.pluginId}:${step.action}`);
+      const steps = pipeline.steps.map(
+        (step) => `${step.pluginId}:${step.action}`
+      );
       this.logger.info("pipeline steps", {
         type: "runtime.pipeline.steps",
         steps
@@ -114,7 +129,7 @@ export class Processor {
       // Log successful pipeline generation
       this.logger.info("pipeline generation complete", {
         type: "pipeline.generation.complete",
-        template,
+        generatePipelineContext,
         pipeline,
         steps
       });
@@ -153,7 +168,7 @@ export class Processor {
         pipelineContext,
         template: generatePipelineTemplate(pipelineContext)
       });
-      return []; // Return empty pipeline on error
+      throw error;
     }
   }
 
@@ -163,12 +178,22 @@ export class Processor {
    * @param task - the task to execute, internally contains the context chain which is modified as the pipeline is executed
    */
   private async executePipeline(
-    pipeline: PipelineStep[],
+    pipeline: Pipeline,
     task: AgentTask
   ): Promise<void> {
     try {
-      let currentPipeline = [...pipeline];
+      let currentPipeline = [...pipeline.steps];
       let currentStepIndex = 0;
+
+      // push the related memories onto the context chain
+      const relatedMemoriesContext: Context = {
+        id: `related-memories-${Date.now()}`,
+        pluginId: "related-memories",
+        content: pipeline.relatedMemories,
+        timestamp: Date.now()
+      };
+
+      task.context.push(relatedMemoriesContext);
 
       // Log initial pipeline state
       this.logger.debug("pipeline state updated", {
@@ -398,8 +423,6 @@ export class Processor {
     task.context.push({
       id: `error-${Date.now()}`,
       pluginId: step.pluginId,
-      type: "error",
-      action: step.action,
       content: result.error || "Unknown error",
       timestamp: Date.now(),
       metadata: {

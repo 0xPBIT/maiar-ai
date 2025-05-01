@@ -1,6 +1,6 @@
 import { Request, RequestHandler, Response } from "express";
 
-import { AgentTask } from "../pipeline/agent";
+import { AgentTask } from "../pipeline";
 
 /**
  * Result of a plugin execution

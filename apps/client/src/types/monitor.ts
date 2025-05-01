@@ -82,7 +82,10 @@ export interface ContextChainItem {
 
 // Pipeline state
 export interface PipelineState {
-  pipeline: Array<{ pluginId: string; action: string }>;
+  pipeline: {
+    steps: Array<{ pluginId: string; action: string }>;
+    relatedMemories: string;
+  };
   currentStepIndex?: number;
   currentStep?: { pluginId: string; action: string };
   modifiedSteps?: Array<{ pluginId: string; action: string }>;

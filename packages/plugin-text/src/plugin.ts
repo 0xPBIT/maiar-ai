@@ -69,8 +69,6 @@ export class TextGenerationPlugin extends Plugin {
     } = {
       id: `${this.id}-${Date.now()}`,
       pluginId: this.id,
-      type: "generated_text",
-      action: "generate_text",
       content: generated,
       timestamp: Date.now(),
       text: generated
@@ -92,8 +90,6 @@ export class TextGenerationPlugin extends Plugin {
     const initialContext: Context = {
       id: `${this.id}-${Date.now()}`,
       pluginId: this.id,
-      type: "user_input",
-      action: "receive_message",
       content: message,
       timestamp: Date.now(),
       metadata: {
@@ -102,8 +98,13 @@ export class TextGenerationPlugin extends Plugin {
       }
     };
 
+    const spacePrefix = `${this.id}-${user}`;
+
     const space: Space = {
-      id: `${this.id}-${user}`
+      id: `${spacePrefix}-${Date.now()}`,
+      relatedSpaces: {
+        prefix: spacePrefix
+      }
     };
 
     await this.runtime.createEvent(initialContext, space);
@@ -149,7 +150,7 @@ export class TextGenerationPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         ChatResponseSchema,
-        generateChatResponseTemplate(JSON.stringify(task.context)),
+        generateChatResponseTemplate(JSON.stringify(task)),
         { temperature: 0.2 }
       );
 

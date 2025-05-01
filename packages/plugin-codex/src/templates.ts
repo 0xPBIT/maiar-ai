@@ -1,18 +1,14 @@
-import { BaseContextItem } from "@maiar-ai/core";
-
 /**
  * Generates a template for extracting Codex command details from the context chain.
  * @param contextChain The current context chain
  * @returns A formatted prompt string for extracting command details
  */
-export function generateCodexCommandTemplate(
-  contextChain: BaseContextItem[]
-): string {
+export function generateCodexCommandTemplate(contextChain: string): string {
   return `Extract the Codex CLI command details from the context chain.
 Look for the user's request or intent to run a Codex command.
 
 Here is the context chain:
-${JSON.stringify(contextChain, null, 2)}
+${contextChain}
 
 Return a JSON object with the following fields:
 - prompt: The prompt or command to pass to Codex CLI

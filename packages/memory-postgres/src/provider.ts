@@ -161,17 +161,17 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const conditions: string[] = [];
     let paramIndex = 1;
 
-    if (options.space) {
-      if (options.space.id) {
-        conditions.push(`space_id = $${paramIndex++}`);
-        params.push(options.space.id);
-      } else if (options.space.prefix) {
-        conditions.push(`space_id LIKE $${paramIndex++}`);
-        params.push(options.space.prefix + "%");
-      } else if (options.space.pattern) {
+    if (options.relatedSpaces) {
+      if (options.relatedSpaces.pattern) {
         conditions.push(`space_id ~ $${paramIndex++}`);
-        params.push(options.space.pattern);
+        params.push(options.relatedSpaces.pattern);
+      } else if (options.relatedSpaces.prefix) {
+        conditions.push(`space_id LIKE $${paramIndex++}`);
+        params.push(options.relatedSpaces.prefix + "%");
       }
+    } else if (options.spaceId) {
+      conditions.push(`space_id = $${paramIndex++}`);
+      params.push(options.spaceId);
     }
 
     if (options.after) {

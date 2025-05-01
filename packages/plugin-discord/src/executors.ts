@@ -12,7 +12,6 @@ import {
   ChannelInfo,
   DiscordChannelSelectionSchema,
   DiscordExecutorFactory,
-  DiscordPlatformContext,
   DiscordReplySchema,
   DiscordSendSchema
 } from "./types";
@@ -60,7 +59,7 @@ export const sendMessageExecutor = discordExecutorFactory(
     try {
       const response = await runtime.getObject(
         DiscordSendSchema,
-        generateResponseTemplate(task.contextChain)
+        generateResponseTemplate(JSON.stringify(task))
       );
 
       // Get all available text channels
@@ -141,18 +140,6 @@ export const sendMessageExecutor = discordExecutorFactory(
 
       await selectedChannel.send(response.message);
 
-      const user = (task.platformContext as DiscordPlatformContext).metadata
-        ?.userId;
-
-      if (user) {
-        await runtime.memory.storeAssistantInteraction(
-          user,
-          service.pluginId,
-          response.message,
-          task.contextChain
-        );
-      }
-
       return {
         success: true,
         data: {
@@ -189,8 +176,8 @@ export const replyMessageExecutor = discordExecutorFactory(
     logger: maiarLogger.Logger
   ): Promise<PluginResult> => {
     if (
-      !task.platformContext?.metadata?.channelId ||
-      !task.platformContext?.metadata?.messageId
+      !task?.trigger?.metadata?.channelId ||
+      !task?.trigger?.metadata?.messageId
     ) {
       return {
         success: false,
@@ -198,13 +185,13 @@ export const replyMessageExecutor = discordExecutorFactory(
       };
     }
 
-    const messageId = task.platformContext.metadata.messageId as string;
-    const channelId = task.platformContext.metadata.channelId as string;
+    const messageId = task.trigger.metadata.messageId as string;
+    const channelId = task.trigger.metadata.channelId as string;
 
     try {
       const response = await runtime.getObject(
         DiscordReplySchema,
-        generateResponseTemplate(task.contextChain)
+        generateResponseTemplate(JSON.stringify(task))
       );
 
       const channel = await service.client.channels.fetch(channelId);
@@ -231,18 +218,6 @@ export const replyMessageExecutor = discordExecutorFactory(
         messageId,
         channelId
       });
-
-      const user = (task.platformContext as DiscordPlatformContext).metadata
-        ?.userId;
-
-      if (user) {
-        await runtime.memory.storeAssistantInteraction(
-          user,
-          service.pluginId,
-          response.message,
-          task.contextChain
-        );
-      }
 
       return { success: true, data: { message: response.message } };
     } catch (error) {

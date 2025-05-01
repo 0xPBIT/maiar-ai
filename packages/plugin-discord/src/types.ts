@@ -1,19 +1,8 @@
 import { z } from "zod";
 
-import { AgentTask, Executor, Runtime, Trigger } from "@maiar-ai/core";
+import { Executor, Runtime, Trigger } from "@maiar-ai/core";
 
 import { DiscordService } from "./services";
-
-export interface DiscordPlatformContext
-  extends NonNullable<AgentTask["platformContext"]> {
-  platform: string;
-  responseHandler: (response: unknown) => Promise<void>;
-  metadata?: {
-    channelId: string;
-    messageId: string;
-    userId: string;
-  };
-}
 
 // Schema for channel information
 export interface ChannelInfo {

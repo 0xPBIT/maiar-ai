@@ -5,16 +5,12 @@
 import { BaseGuildTextChannel, Events } from "discord.js";
 import { Message } from "discord.js";
 
-import { Runtime, UserInputContext } from "@maiar-ai/core";
+import { AgentTask, Context, Runtime, Space } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { DiscordService } from "./services";
 import { generateMessageIntentTemplate } from "./templates";
-import {
-  DiscordPlatformContext,
-  DiscordTriggerFactory,
-  MessageIntentSchema
-} from "./types";
+import { DiscordTriggerFactory, MessageIntentSchema } from "./types";
 
 /**
  * Trigger that listens for new messages on discord
@@ -44,16 +40,41 @@ export const postListenerTrigger: DiscordTriggerFactory = (
       return;
 
     try {
-      // If we're already processing a message, skip intent check
+      // construct the discord space prefix using the guild and channel as relevant memory spaces
+      const discordSpacePrefix = `${discordService.pluginId}-${message.guildId}-${message.channelId}`;
+
+      // If we're already processing a message, skip intent check, just store the message
       if (discordService.isProcessing) {
-        // Store message in DB since it won't be processed by the event system
-        await runtime.memory.storeUserInteraction(
-          message.author.id,
-          discordService.pluginId,
-          message.content,
-          Date.now(),
-          message.id
-        );
+        // construct the unique id for the message with the prefix, user id, and message id
+        const discordSpaceId = `${discordSpacePrefix}-${message.author.id}-${message.id}`;
+        const messageSpace: Space = {
+          id: discordSpaceId,
+          relatedSpaces: {
+            prefix: discordSpacePrefix
+          }
+        };
+
+        const simpleMemory: Context = {
+          id: discordSpaceId,
+          pluginId: discordService.pluginId,
+          content: message.content,
+          timestamp: Date.now(),
+          metadata: {
+            channelId: message.channelId,
+            messageId: message.id,
+            userId: message.author.id
+          }
+        };
+
+        const messageTask: AgentTask = {
+          trigger: simpleMemory,
+          contextChain: [],
+          space: messageSpace,
+          metadata: {}
+        };
+
+        // store the message in memory as a task so it can be used as a related memory
+        await runtime.memory.storeMemory(messageTask);
 
         logger.info("skipping message - not intended for agent", {
           type: "discord.message.skipped",
@@ -81,20 +102,11 @@ export const postListenerTrigger: DiscordTriggerFactory = (
       });
 
       // Get recent conversation history
-      const recentHistory = await runtime.memory.getRecentConversationHistory(
-        message.author.id,
-        discordService.pluginId,
-        10 // Limit to last 10 messages
-      );
-
-      logger.info("retrieved conversation history", {
-        type: "discord.message.history",
-        historyCount: recentHistory.length,
-        history: recentHistory.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: new Date(msg.timestamp).toISOString()
-        }))
+      const recentHistory = await runtime.memory.queryMemory({
+        relatedSpaces: {
+          prefix: discordSpacePrefix
+        },
+        limit: 10
       });
 
       const intentTemplate = generateMessageIntentTemplate(
@@ -103,7 +115,7 @@ export const postListenerTrigger: DiscordTriggerFactory = (
         !!message.reference?.messageId,
         discordService.clientId,
         discordService.commandPrefix,
-        recentHistory
+        JSON.stringify(recentHistory)
       );
 
       const intent = await runtime.getObject(
@@ -133,30 +145,22 @@ export const postListenerTrigger: DiscordTriggerFactory = (
           discordService.startTypingIndicator(message.channel);
         }
 
-        const userContext: UserInputContext = {
-          id: `${discordService.pluginId}-${message.id}`,
-          pluginId: discordService.pluginId,
-          type: "user_input",
-          action: "receiveMessage",
-          content: message.content,
-          timestamp: Date.now(),
-          rawMessage: message.content,
-          user: message.author.username,
-          messageHistory: [
-            {
-              role: "user",
-              content: message.content,
-              timestamp: Date.now()
-            }
-          ],
-          helpfulInstruction: `Message from Discord user ${message.author.username} (${intent.reason})`
+        // construct the unique id for the message with the prefix, user id, and message id
+        const discordSpaceId = `${discordSpacePrefix}-${message.author.id}-${message.id}`;
+
+        const space: Space = {
+          id: discordSpaceId,
+          relatedSpaces: {
+            prefix: discordSpacePrefix
+          }
         };
 
-        const platformContext: DiscordPlatformContext = {
-          platform: discordService.pluginId,
-          responseHandler: async () => {
-            // Empty response handler - logic moved to reply executor
-          },
+        const trigger: Context = {
+          id: discordSpaceId,
+          pluginId: discordService.pluginId,
+          content: message.content,
+          timestamp: Date.now(),
+          helpfulInstruction: `Message from Discord user ${message.author.username} (${intent.reason})`,
           metadata: {
             channelId: message.channelId,
             messageId: message.id,
@@ -164,17 +168,40 @@ export const postListenerTrigger: DiscordTriggerFactory = (
           }
         };
 
-        await runtime.createEvent(userContext, platformContext);
+        await runtime.createEvent(trigger, space);
       } else {
+        // construct the unique id for the message with the prefix, user id, and message id
+        const discordSpaceId = `${discordSpacePrefix}-${message.author.id}-${message.id}`;
+
+        const space: Space = {
+          id: discordSpaceId,
+          relatedSpaces: {
+            prefix: discordSpacePrefix
+          }
+        };
         // Only store the message if we're not going to process it
         // (if we process it, the event system will handle storage)
-        await runtime.memory.storeUserInteraction(
-          message.author.id,
-          discordService.pluginId,
-          message.content,
-          Date.now(),
-          message.id
-        );
+
+        const simpleMemory: Context = {
+          id: discordSpaceId,
+          pluginId: discordService.pluginId,
+          content: message.content,
+          timestamp: Date.now(),
+          metadata: {
+            channelId: message.channelId,
+            messageId: message.id,
+            userId: message.author.id
+          }
+        };
+
+        const messageTask: AgentTask = {
+          trigger: simpleMemory,
+          contextChain: [],
+          space,
+          metadata: {}
+        };
+
+        await runtime.memory.storeMemory(messageTask);
 
         // Add detailed info logging for skipped messages
         logger.info("skipping message - not intended for agent", {

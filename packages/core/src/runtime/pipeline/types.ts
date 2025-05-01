@@ -17,7 +17,7 @@ export interface Context {
 // The full context chain container
 export interface AgentTask {
   trigger: Context;
-  context: Context[];
+  contextChain: Context[];
   space: Space;
   metadata: Record<string, unknown>;
 }
@@ -76,7 +76,7 @@ export interface PipelineGenerationContext {
  * Context passed to the runtime for pipeline modification evaluation
  */
 export interface PipelineModificationContext {
-  context: AgentTask["context"];
+  contextChain: AgentTask["contextChain"];
   currentStep: PipelineStep;
   pipeline: PipelineStep[];
 }

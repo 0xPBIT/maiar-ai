@@ -47,7 +47,7 @@ export class Processor {
   public async spawn(task: AgentTask): Promise<Context[]> {
     const pipeline = await this.createPipeline(task);
     await this.executePipeline(pipeline, task);
-    return task.context;
+    return task.contextChain;
   }
 
   /**
@@ -193,7 +193,7 @@ export class Processor {
         timestamp: Date.now()
       };
 
-      task.context.push(relatedMemoriesContext);
+      task.contextChain.push(relatedMemoriesContext);
 
       // Log initial pipeline state
       this.logger.debug("pipeline state updated", {
@@ -201,7 +201,7 @@ export class Processor {
         currentPipeline,
         currentStepIndex,
         pipelineLength: currentPipeline.length,
-        context: task.context
+        contextChain: task.contextChain
       });
 
       while (currentStepIndex < currentPipeline.length) {
@@ -230,7 +230,7 @@ export class Processor {
         // Evaluate pipeline modification with updated context
         const { pipeline: updatedPipeline } = await this.modifyPipeline(
           {
-            context: task.context,
+            contextChain: task.contextChain,
             currentStep,
             pipeline: currentPipeline
           },
@@ -326,7 +326,7 @@ export class Processor {
           currentStepIndex,
           pipelineLength: updatedPipeline.length,
           modification,
-          context: modificationContext.context
+          contextChain: modificationContext.contextChain
         });
 
         // Emit pipeline modification event
@@ -398,7 +398,7 @@ export class Processor {
     step: PipelineStep,
     task: AgentTask
   ) {
-    task.context.push({
+    task.contextChain.push({
       id: `${step.pluginId}-${Date.now()}`,
       pluginId: step.pluginId,
       type: step.action,
@@ -420,7 +420,7 @@ export class Processor {
     step: PipelineStep,
     task: AgentTask
   ) {
-    task.context.push({
+    task.contextChain.push({
       id: `error-${Date.now()}`,
       pluginId: step.pluginId,
       content: result.error || "Unknown error",

@@ -15,6 +15,12 @@ import {
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
+import {
+  DiscordPlugin,
+  postListenerTrigger,
+  replyMessageExecutor,
+  sendMessageExecutor
+} from "@maiar-ai/plugin-discord";
 // import { CharacterPlugin } from "@maiar-ai/plugin-character";
 // import { CodexPlugin } from "@maiar-ai/plugin-codex";
 // import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
@@ -58,6 +64,13 @@ async function main() {
     // new SearchPermissionPlugin(["0xPBIT"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
+    }),
+    new DiscordPlugin({
+      token: process.env.DISCORD_BOT_TOKEN as string,
+      clientId: process.env.DISCORD_CLIENT_ID as string,
+      commandPrefix: "!",
+      executorFactories: [sendMessageExecutor, replyMessageExecutor],
+      triggerFactories: [postListenerTrigger]
     })
     // new CharacterPlugin({
     //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")

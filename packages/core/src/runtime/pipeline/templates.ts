@@ -244,7 +244,7 @@ CRITICAL - Before suggesting any modifications:
 4. Pay special attention to response actions (e.g. send_response) - these should NEVER be duplicated
 
 Context Chain:
-${JSON.stringify(context.context, null, 2)}
+${JSON.stringify(context.contextChain, null, 2)}
 
 Current Step:
 ${JSON.stringify(context.currentStep, null, 2)}

@@ -24,12 +24,12 @@ export class CodexPlugin extends Plugin {
         name: "run_codex_command",
         description:
           "this command will write code on request and behalf of the user. coding related requesets should invoke this command.",
-        fn: async (context: AgentTask): Promise<PluginResult> => {
+        fn: async (task: AgentTask): Promise<PluginResult> => {
           try {
             // Extract command details from context
             const commandDetails = await this.runtime.getObject(
               CodexCommandSchema,
-              generateCodexCommandTemplate(context.contextChain),
+              generateCodexCommandTemplate(JSON.stringify(task)),
               { temperature: 0.2 }
             );
 

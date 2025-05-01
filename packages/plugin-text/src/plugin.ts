@@ -57,25 +57,13 @@ export class TextGenerationPlugin extends Plugin {
   private async generateText(task: AgentTask): Promise<PluginResult> {
     const generated = await this.runtime.executeCapability(
       TEXT_GENERATION_CAPABILITY_ID,
-      generateTextTemplate(JSON.stringify(task.context)),
+      generateTextTemplate(JSON.stringify(task)),
       {
         temperature: 0.7
       }
     );
 
-    // Add the generated text as a new item in the context chain
-    const textContext: Context & {
-      text: string;
-    } = {
-      id: `${this.id}-${Date.now()}`,
-      pluginId: this.id,
-      content: generated,
-      timestamp: Date.now(),
-      text: generated
-    };
-
-    task.context.push(textContext);
-    return { success: true };
+    return { success: true, data: { text: generated } };
   }
 
   private async handleChat(req: Request, res: Response): Promise<void> {

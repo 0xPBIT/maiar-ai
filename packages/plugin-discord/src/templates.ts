@@ -1,11 +1,7 @@
 /* eslint-disable no-useless-escape */
-import { BaseContextItem } from "@maiar-ai/core";
-
 import { ChannelInfo } from "./types";
 
-export function generateResponseTemplate(
-  contextChain: BaseContextItem[]
-): string {
+export function generateResponseTemplate(contextChain: string): string {
   return `You are a helpful AI assistant. Generate a response based on the context chain.
 Your response should be a JSON object with a single "message" field containing your response text.
 
@@ -17,7 +13,7 @@ IMPORTANT: Your response MUST be valid JSON:
 - Keep in mind Discord's message length limit of 2000 characters
 
 Here is the Context Chain of the user's initial message and your internal operations:
-${JSON.stringify(contextChain, null, 2)}
+${contextChain}
 
 Return ONLY a JSON object with a single "message" field containing your response.
 Example of valid response:
@@ -60,17 +56,13 @@ export function generateMessageIntentTemplate(
   isReply: boolean,
   botId: string,
   commandPrefix?: string,
-  recentHistory?: { role: string; content: string; timestamp: number }[]
+  recentHistory?: string
 ): string {
-  const historyContext = recentHistory?.length
+  const historyContext = recentHistory
     ? `\nRecent conversation history:
-${recentHistory
-  .map(
-    (msg) =>
-      `[${new Date(msg.timestamp).toISOString()}] ${msg.role}: ${msg.content}`
-  )
-  .join("\n")}`
-    : "\nNo recent conversation history.";
+${recentHistory}
+`
+    : "";
 
   return `Determine if this message is intended for the agent by analyzing both explicit markers and contextual clues.
 

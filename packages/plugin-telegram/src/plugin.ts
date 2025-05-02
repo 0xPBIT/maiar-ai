@@ -1,13 +1,15 @@
-import { Telegraf } from "telegraf";
+import { Telegraf, Context as TelegramContext } from "telegraf";
 
-import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
+import {
+  AgentTask,
+  Context,
+  Plugin,
+  PluginResult,
+  Space
+} from "@maiar-ai/core";
 
 import { generateResponseTemplate } from "./templates";
-import {
-  TelegramContext,
-  TelegramPluginConfig,
-  TelegramResponseSchema
-} from "./types";
+import { TelegramPluginConfig, TelegramResponseSchema } from "./types";
 
 export class TelegramPlugin extends Plugin {
   private bot: Telegraf<TelegramContext>;
@@ -33,13 +35,26 @@ export class TelegramPlugin extends Plugin {
         fn: this.handleSendMessage.bind(this)
       }
     ];
-  }
 
+    this.triggers = [
+      {
+        name: "telegram_message",
+        start: this.listenForTelegramMessages.bind(this)
+      }
+    ];
+  }
   private async handleSendMessage(task: AgentTask): Promise<PluginResult> {
-    if (!task.platformContext?.responseHandler) {
+    // Retrieve IDs from the task's trigger metadata
+    const chatId = task.trigger.metadata?.chatId as number | undefined;
+    const threadId = task.trigger.metadata?.threadId as number | undefined; // Retrieve threadId
+
+    if (!chatId) {
+      this.logger.error("No chatId found in trigger metadata", {
+        taskId: task.trigger.id
+      });
       return {
         success: false,
-        error: "No response handler found in platform context"
+        error: "No chatId found in trigger metadata"
       };
     }
 
@@ -47,11 +62,16 @@ export class TelegramPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         TelegramResponseSchema,
-        generateResponseTemplate(task.contextChain),
+        generateResponseTemplate(JSON.stringify(task)),
         { temperature: 0.2 }
       );
 
-      task.platformContext.responseHandler(formattedResponse.message);
+      // Use the main bot instance to send the reply
+      await this.bot.telegram.sendMessage(chatId, formattedResponse.message, {
+        parse_mode: "HTML",
+        message_thread_id: threadId // Pass threadId if it exists (will be ignored if undefined)
+      });
+
       return {
         success: true,
         data: {
@@ -61,6 +81,12 @@ export class TelegramPlugin extends Plugin {
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
+      this.logger.error("Failed to send Telegram message", {
+        error: errorMessage,
+        chatId,
+        threadId,
+        taskId: task.trigger.id
+      });
       return {
         success: false,
         error: `Failed to send message: ${errorMessage}`
@@ -68,13 +94,95 @@ export class TelegramPlugin extends Plugin {
     }
   }
 
-  public async init(): Promise<void> {
-    this.bot.use(async (ctx, next) => {
-      ctx.plugin = this;
-      return await next();
+  private async listenForTelegramMessages(): Promise<void> {
+    this.bot.on("message", async (ctx: TelegramContext) => {
+      this.logger.info("telegram message received", {
+        type: "telegram.message.received",
+        chatId: ctx.message?.chat.id,
+        threadId: ctx.message?.message_thread_id,
+        userId: ctx.message?.from?.id,
+        username: ctx.message?.from?.username,
+        messageId: ctx.message?.message_id
+      });
+
+      try {
+        // Ensure message is text
+        if (!ctx.message || !("text" in ctx.message)) return;
+
+        const chatId = ctx.message.chat.id;
+        const threadId = ctx.message.message_thread_id; // Can be undefined
+        const userId = ctx.message.from?.id ?? "unknown"; // Use 'unknown' if ID is missing
+        const username = ctx.message.from?.username || "unknown";
+        const text = ctx.message.text;
+        const messageId = ctx.message.message_id;
+
+        // Build space prefix including threadId if present
+        const spacePrefix =
+          threadId !== undefined
+            ? `${this.id}-${chatId}-${threadId}`
+            : `${this.id}-${chatId}`;
+
+        // Build unique space ID
+        const spaceId = `${spacePrefix}-${username}-${userId}-${messageId}`;
+
+        const space: Space = {
+          id: spaceId,
+          relatedSpaces: {
+            prefix: spacePrefix
+          }
+        };
+
+        // Create context, storing necessary IDs in metadata
+        const context: Context = {
+          id: `${this.id}-${messageId}`,
+          pluginId: this.id,
+          content: text,
+          timestamp: Date.now(),
+          helpfulInstruction: `Message from Telegram user ${username}`,
+          metadata: {
+            chatId: chatId,
+            threadId: threadId, // Store threadId (can be undefined)
+            userId: userId,
+            username: username,
+            messageId: messageId
+            // No platformContext or responseHandler needed here anymore
+          }
+        };
+
+        try {
+          await this.runtime.createEvent(context, space);
+          this.logger.debug(
+            "Successfully queued Telegram message for processing",
+            { contextId: context.id, spaceId: space.id }
+          );
+        } catch (error) {
+          this.logger.error("Failed to queue Telegram message", {
+            error: error instanceof Error ? error.message : String(error),
+            username: username,
+            chatId: chatId,
+            threadId: threadId
+          });
+        }
+      } catch (error) {
+        this.logger.error("Error processing Telegram message", {
+          error: error instanceof Error ? error.message : String(error),
+          ctx: {
+            chatId: ctx.message?.chat.id,
+            username: ctx.message?.from?.username,
+            messageId: ctx.message?.message_id,
+            threadId: ctx.message?.message_thread_id
+          }
+        });
+      }
     });
 
-    this.bot.use(this.config.composer);
+    this.logger.info("Telegram message listener attached.");
+  }
+
+  public async init(): Promise<void> {
+    this.bot.use(async (_ctx, next) => {
+      return await next();
+    });
 
     // Log all bot errors
     this.bot.catch((error) => {

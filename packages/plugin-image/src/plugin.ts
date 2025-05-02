@@ -25,7 +25,7 @@ export class ImageGenerationPlugin extends Plugin {
     try {
       const promptResponse = await this.runtime.getObject(
         PromptResponseSchema,
-        generatePromptTemplate(task.contextChain),
+        generatePromptTemplate(JSON.stringify(task)),
         { temperature: 0.7 }
       );
 

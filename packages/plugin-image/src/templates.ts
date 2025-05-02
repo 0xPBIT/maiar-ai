@@ -1,8 +1,4 @@
-import { BaseContextItem } from "@maiar-ai/core";
-
-export function generatePromptTemplate(
-  contextChain: BaseContextItem[]
-): string {
+export function generatePromptTemplate(context: string): string {
   return `
     Generate a prompt for an image generation model based on the context chain. Your response should be a JSON object with a single "prompt" field containing your response.
     The response should be related to the original message you received from the user. 
@@ -11,7 +7,7 @@ export function generatePromptTemplate(
     Look for the relevant information in the most recent context items (e.g. generated text, current time, etc).
 
     Here is the Context Chain of the users initial message, and your internal operations which generated useful data for your response:
-    ${JSON.stringify(contextChain, null, 2)}
+    ${context}
 
     Return a JSON object with a single "prompt" field containing your response.
     Example of valid response:

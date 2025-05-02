@@ -2,12 +2,7 @@ import { Client as MCPClient } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { z, ZodType } from "zod";
 
-import {
-  AgentTask,
-  BaseContextItem,
-  Plugin,
-  PluginResult
-} from "@maiar-ai/core";
+import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { generateArgumentTemplate } from "./templates";
 
@@ -171,12 +166,11 @@ export class MCPPlugin extends Plugin {
     this.executors.push({
       name: executorName,
       description: tool.description ?? "",
-      fn: async (context: AgentTask): Promise<PluginResult> => {
-        const contextChain = context.contextChain as BaseContextItem[];
+      fn: async (task: AgentTask): Promise<PluginResult> => {
         const prompt = generateArgumentTemplate({
           executorName,
           description: tool.description,
-          contextChain
+          task: JSON.stringify(task)
         });
 
         // Find the correct MCP client based on the prefix by matching with clientName in configs

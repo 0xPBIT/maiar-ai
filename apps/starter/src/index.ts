@@ -25,6 +25,7 @@ import {
 // import { CodexPlugin } from "@maiar-ai/plugin-codex";
 // import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
+import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 
 // import { TimePlugin } from "@maiar-ai/plugin-time";
@@ -71,6 +72,11 @@ async function main() {
       commandPrefix: "!",
       executorFactories: [sendMessageExecutor, replyMessageExecutor],
       triggerFactories: [postListenerTrigger]
+    }),
+    new TelegramPlugin({
+      token: process.env.TELEGRAM_BOT_TOKEN as string,
+      pollingTimeout: 10000,
+      dropPendingUpdates: true
     })
     // new CharacterPlugin({
     //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")

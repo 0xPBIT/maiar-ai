@@ -213,6 +213,9 @@ importers:
       express:
         specifier: 4.21.2
         version: 4.21.2
+      zod:
+        specifier: 3.24.1
+        version: 3.24.1
     devDependencies:
       '@types/cors':
         specifier: 2.8.17

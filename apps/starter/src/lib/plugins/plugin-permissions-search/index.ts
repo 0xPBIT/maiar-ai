@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 /**
@@ -48,25 +50,24 @@ export class SearchPermissionPlugin extends Plugin {
   }
 
   private async checkSearchPermission(task: AgentTask): Promise<PluginResult> {
-    // TODO USE GET OBJECT TO CHECK USER FROM TASK
-    const truthy = true;
+    const obj = await this.runtime.getObject(
+      z.object({
+        username: z.string()
+      }),
+      `here's the task: ${JSON.stringify(task)} get the username of the user running the task and output it as json with single field username object`
+    );
 
-    const userInput = {
-      user: "test-user",
-      task
-    };
-
-    const isWhitelisted = truthy;
+    const isWhitelisted = this.whitelistedUsers.includes(obj.username);
 
     return {
       success: true,
       data: {
         isWhitelisted,
-        user: userInput.user,
+        user: obj.username,
         permissionStatus: isWhitelisted ? "granted" : "denied",
         helpfulInstruction: isWhitelisted
-          ? `The user ${userInput.user} is whitelisted for search plugin actions. This information should be used when deciding whether to allow search plugin actions in the pipeline.`
-          : `The user ${userInput.user} is not whitelisted for search plugin actions. The pipeline should be modified to remove search plugin actions and inform the user about the permission requirement.`
+          ? `The user ${obj.username} is whitelisted for search plugin actions. This information should be used when deciding whether to allow search plugin actions in the pipeline.`
+          : `The user ${obj.username} is not whitelisted for search plugin actions. The pipeline should be modified to remove search plugin actions and inform the user about the permission requirement.`
       }
     };
   }

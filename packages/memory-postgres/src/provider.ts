@@ -94,7 +94,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
   }
 
   async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
-    const id = Math.random().toString(36).substring(2);
+    const id = crypto.randomUUID();
     const client = await this.pool.connect();
     try {
       await client.query(

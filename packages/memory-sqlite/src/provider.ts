@@ -82,7 +82,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
   }
 
   async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
-    const id = Math.random().toString(36).substring(2);
+    const id = crypto.randomUUID();
     const stmt = this.db.prepare(`
       INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?)

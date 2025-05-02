@@ -1,14 +1,17 @@
 import WebSocket, { WebSocketServer } from "ws";
 import { RawData } from "ws";
 
-import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
-import { UserInputContext } from "@maiar-ai/core";
+import {
+  AgentTask,
+  Context,
+  Plugin,
+  PluginResult,
+  Space
+} from "@maiar-ai/core";
 
 interface WebSocketPlatformContext {
-  platform: string;
   ws: WebSocket;
   responseHandler?: (response: unknown) => void;
-  metadata?: Record<string, unknown>;
 }
 
 export class WebSocketPlugin extends Plugin {
@@ -55,7 +58,8 @@ export class WebSocketPlugin extends Plugin {
       .reverse()
       .find((item) => "message" in item)?.message;
 
-    const platformContext = task.platformContext as WebSocketPlatformContext;
+    const platformContext = task.trigger.metadata
+      ?.platformContext as WebSocketPlatformContext;
     const ws = platformContext?.ws;
 
     if (!latestMessage || !ws) {
@@ -103,26 +107,29 @@ export class WebSocketPlugin extends Plugin {
           this.logger.info("received message", { message });
 
           // Create new context chain with initial user input
-          const initialContext: UserInputContext = {
+          const initialContext: Context = {
             id: `${this.id}-${Date.now()}`,
             pluginId: this.id,
-            action: "receive_message",
-            type: "user_input",
             content: message.text || message,
             timestamp: Date.now(),
-            rawMessage: message.text || message,
-            user: message.user || "anonymous"
+            metadata: {
+              platformContext: {
+                ws,
+                responseHandler: (result: unknown) =>
+                  ws.send(JSON.stringify(result))
+              }
+            }
           };
 
-          // Create event with initial context and response handler
-          const platformContext: WebSocketPlatformContext = {
-            platform: this.id,
-            ws,
-            responseHandler: (result: unknown) =>
-              ws.send(JSON.stringify(result))
+          const spacePrefix = `${this.id}-${message.user}`;
+          const spaceId = `${spacePrefix}-${Date.now()}`;
+
+          const space: Space = {
+            id: spaceId,
+            relatedSpaces: { prefix: spacePrefix }
           };
 
-          await this.runtime.createEvent(initialContext, platformContext);
+          await this.runtime.createEvent(initialContext, space);
         } catch (err: unknown) {
           const error = err instanceof Error ? err : new Error(String(err));
           this.logger.error("error handling message", { error: error.message });

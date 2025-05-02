@@ -1,20 +1,35 @@
 import { z } from "zod";
 
-// DEV NOTE: GET RID OF THIS ENTIRE FILE OR MOVE THE CONTENTS TO SOMEWHERE ELSE
 import { Space } from "../providers/memory";
 import { OperationConfig } from "./operations";
 
-// Base context item that all items must include
+/**
+ * Context item that makes up the context chain and the standard IO of the agent when communicating between plugins
+ *
+ * @property id - Unique identifier for this context item
+ * @property pluginId - Which plugin created this context
+ * @property content - Serialized content for model consumption
+ * @property timestamp - When this context was added
+ * @property helpfulInstruction - Instructions for how to use this context item's data
+ * @property metadata - Additional metadata for the context item
+ */
 export interface Context {
-  id: string; // Unique identifier for this context item
-  pluginId: string; // Which plugin created this context
-  content: string; // Serialized content for model consumption
-  timestamp: number; // When this context was added
-  helpfulInstruction?: string; // Instructions for how to use this context item's data
-  metadata?: Record<string, unknown>; // Additional metadata for the context item
+  id: string;
+  pluginId: string;
+  content: string;
+  timestamp: number;
+  helpfulInstruction?: string;
+  metadata?: Record<string, unknown>;
 }
 
-// The full context chain container
+/**
+ * Defines a unit of work that the agent will complete and stores the current context chain state, as well as related information as the task is processed.
+ *
+ * @property trigger - The initial trigger context data for the task
+ * @property contextChain - The context chain that will evolve and grow as the task is processed
+ * @property space - The space that the task is being processed in, as well as related space queries to find relevant context in previous tasks
+ * @property metadata - Additional metadata for the task
+ */
 export interface AgentTask {
   trigger: Context;
   contextChain: Context[];

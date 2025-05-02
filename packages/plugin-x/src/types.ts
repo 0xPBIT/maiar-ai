@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { AgentTask } from "@maiar-ai/core";
 import { Executor, Trigger } from "@maiar-ai/core";
 import { Runtime } from "@maiar-ai/core";
 
@@ -63,15 +62,6 @@ export interface XOAuthToken {
   access_token: string;
   refresh_token?: string;
   expires_at?: number;
-}
-
-export interface XPlatformContext
-  extends NonNullable<AgentTask["platformContext"]> {
-  platform: string;
-  responseHandler: (result: unknown) => Promise<void>;
-  metadata: {
-    tweetId: string;
-  };
 }
 
 // Tweet posting options

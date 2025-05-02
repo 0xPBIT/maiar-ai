@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@maiar-ai/core": "workspace:*",
-    "@maiar-ai/memory-filesystem": "workspace:*",
     "@maiar-ai/memory-postgres": "workspace:*",
     "@maiar-ai/memory-sqlite": "workspace:*",
     "@maiar-ai/model-ollama": "workspace:*",

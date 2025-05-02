@@ -80,7 +80,6 @@ export class PostgresMemoryProvider extends MemoryProvider {
           context TEXT,
           created_at BIGINT NOT NULL,
           updated_at BIGINT,
-          reply_to_id TEXT,
           metadata JSONB
         );
         CREATE INDEX IF NOT EXISTS idx_space_time ON memories(space_id, created_at DESC);
@@ -99,8 +98,8 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const client = await this.pool.connect();
     try {
       await client.query(
-        `INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, reply_to_id, metadata)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           id,
           memory.spaceId,
@@ -108,7 +107,6 @@ export class PostgresMemoryProvider extends MemoryProvider {
           memory.context || null,
           memory.createdAt,
           memory.updatedAt || null,
-          null,
           memory.metadata ? memory.metadata : null
         ]
       );
@@ -130,14 +128,15 @@ export class PostgresMemoryProvider extends MemoryProvider {
       sets.push(`context = $${paramIndex++}`);
       params.push(patch.context);
     }
-    if (patch.updatedAt !== undefined) {
-      sets.push(`updated_at = $${paramIndex++}`);
-      params.push(patch.updatedAt);
-    }
     if (patch.metadata !== undefined) {
       sets.push(`metadata = $${paramIndex++}`);
       params.push(JSON.stringify(patch.metadata));
     }
+
+    // add the updated_at field
+    sets.push(`updated_at = $${paramIndex++}`);
+    params.push(new Date().getTime());
+
     if (!sets.length) return;
     params.push(id);
     const client = await this.pool.connect();
@@ -215,7 +214,6 @@ export class PostgresMemoryProvider extends MemoryProvider {
         context: row.context || undefined,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt || undefined,
-        replyToId: undefined,
         metadata: row.metadata || undefined
       }));
     } finally {

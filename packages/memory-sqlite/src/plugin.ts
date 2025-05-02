@@ -48,7 +48,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async addDocument(task: AgentTask): Promise<PluginResult> {
     const stmt = this.db.prepare(`
-      INSERT INTO sandbox (id, space_id, content, timestamp)
+      INSERT INTO sandbox (id, space_id, content, created_at)
       VALUES (?, ?, ?, ?)
     `);
 
@@ -140,7 +140,7 @@ export class SQLiteMemoryPlugin extends Plugin {
         id TEXT PRIMARY KEY,
         space_id TEXT NOT NULL,
         content TEXT NOT NULL,
-        timestamp BIGINT NOT NULL
+        created_at BIGINT NOT NULL
       )
     `);
   }

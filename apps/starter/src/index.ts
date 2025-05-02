@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { config } from "dotenv";
+import { readFileSync } from "fs";
 // import { readFileSync } from "fs";
 import { join, resolve } from "path";
 
@@ -15,22 +16,21 @@ import {
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
+import { CharacterPlugin } from "@maiar-ai/plugin-character";
+// import { PostgresMemoryProvider } from "@maiar-ai/memory-postgres";
+
 import {
   DiscordPlugin,
   postListenerTrigger,
   replyMessageExecutor,
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
-// import { CharacterPlugin } from "@maiar-ai/plugin-character";
-// import { CodexPlugin } from "@maiar-ai/plugin-codex";
-// import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
+import { TimePlugin } from "@maiar-ai/plugin-time";
 
-// import { TimePlugin } from "@maiar-ai/plugin-time";
-
-// import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
+import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -51,18 +51,20 @@ async function main() {
     })
   ];
 
+  // SQLite memory provider
   const memoryProvider: MemoryProvider = new SQLiteMemoryProvider({
     dbPath: join(process.cwd(), "data", "conversations.db")
   });
 
+  // Postgres memory provider
+  // const memoryProvider: MemoryProvider = new PostgresMemoryProvider({
+  //   connectionString: process.env.DATABASE_URL as string
+  // });
+
   const plugins: Plugin[] = [
-    // new CodexPlugin({
-    //   apiKey: process.env.OPENAI_API_KEY as string
-    // }),
-    // new ImageGenerationPlugin(),
     new TextGenerationPlugin(),
-    // new TimePlugin(),
-    // new SearchPermissionPlugin(["0xPBIT"]),
+    new TimePlugin(),
+    new SearchPermissionPlugin(["0xPBIT"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
@@ -77,10 +79,10 @@ async function main() {
       token: process.env.TELEGRAM_BOT_TOKEN as string,
       pollingTimeout: 10000,
       dropPendingUpdates: true
+    }),
+    new CharacterPlugin({
+      character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     })
-    // new CharacterPlugin({
-    //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
-    // })
   ];
 
   const capabilityAliases: string[][] = [

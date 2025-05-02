@@ -115,9 +115,9 @@ export class PostgresMemoryPlugin extends Plugin {
       }
 
       await client.query(
-        `INSERT INTO sandbox (id, conversation_id, content, timestamp)
-                     VALUES ($1, $2, $3, $4)`,
-        [documentId, conversationId, formattedResponse.content, timestamp]
+        `INSERT INTO sandbox (id, content, created_at)
+                     VALUES ($1, $2, $3)`,
+        [documentId, formattedResponse.content, timestamp]
       );
     } finally {
       client.release();
@@ -168,10 +168,8 @@ export class PostgresMemoryPlugin extends Plugin {
       await client.query(`
         CREATE TABLE IF NOT EXISTS sandbox (
           id TEXT PRIMARY KEY,
-          conversation_id TEXT NOT NULL,
           content TEXT NOT NULL,
-          timestamp BIGINT NOT NULL,
-          FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+          created_at BIGINT NOT NULL
         );
       `);
     } finally {

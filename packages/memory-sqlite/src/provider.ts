@@ -71,7 +71,6 @@ export class SQLiteMemoryProvider extends MemoryProvider {
         context TEXT,
         created_at INTEGER NOT NULL,
         updated_at INTEGER,
-        reply_to_id TEXT,
         metadata TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_space_time ON memories(space_id, created_at DESC);
@@ -85,8 +84,8 @@ export class SQLiteMemoryProvider extends MemoryProvider {
   async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
     const id = Math.random().toString(36).substring(2);
     const stmt = this.db.prepare(`
-      INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, reply_to_id, metadata)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       id,
@@ -95,7 +94,6 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       memory.context || null,
       memory.createdAt,
       memory.updatedAt || null,
-      undefined,
       memory.metadata ? JSON.stringify(memory.metadata) : null
     );
     this.logger.info("stored memory successfully", {
@@ -112,14 +110,15 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       sets.push("context = ?");
       params.push(patch.context);
     }
-    if (patch.updatedAt !== undefined) {
-      sets.push("updated_at = ?");
-      params.push(patch.updatedAt);
-    }
     if (patch.metadata !== undefined) {
       sets.push("metadata = ?");
       params.push(JSON.stringify(patch.metadata));
     }
+
+    // add the updated_at field
+    sets.push("updated_at = ?");
+    params.push(new Date().getTime());
+
     if (!sets.length) return;
     params.push(id);
     this.db

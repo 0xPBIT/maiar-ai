@@ -106,7 +106,7 @@ export class MemoryManager {
       trigger: JSON.stringify(taskEvent.trigger),
       context: undefined,
       createdAt: taskEvent.trigger.timestamp,
-      resultTs: undefined,
+      updatedAt: undefined,
       metadata: taskEvent.metadata
     };
 

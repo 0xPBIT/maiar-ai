@@ -73,17 +73,17 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const client = await this.pool.connect();
     try {
       await client.query(`
-        CREATE TABLE IF NOT EXISTS messages (
+        CREATE TABLE IF NOT EXISTS memories (
           id TEXT PRIMARY KEY,
           space_id TEXT NOT NULL,
           trigger TEXT NOT NULL,
           context TEXT,
-          timestamp BIGINT NOT NULL,
-          result_ts BIGINT,
+          created_at BIGINT NOT NULL,
+          updated_at BIGINT,
           reply_to_id TEXT,
           metadata JSONB
         );
-        CREATE INDEX IF NOT EXISTS idx_space_time ON messages(space_id, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_space_time ON memories(space_id, created_at DESC);
       `);
     } finally {
       client.release();
@@ -99,7 +99,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const client = await this.pool.connect();
     try {
       await client.query(
-        `INSERT INTO messages (id, space_id, trigger, context, timestamp, result_ts, reply_to_id, metadata)
+        `INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, reply_to_id, metadata)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           id,
@@ -107,7 +107,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
           memory.trigger,
           memory.context || null,
           memory.createdAt,
-          memory.resultTs || null,
+          memory.updatedAt || null,
           null,
           memory.metadata ? memory.metadata : null
         ]
@@ -130,9 +130,9 @@ export class PostgresMemoryProvider extends MemoryProvider {
       sets.push(`context = $${paramIndex++}`);
       params.push(patch.context);
     }
-    if (patch.resultTs !== undefined) {
-      sets.push(`result_ts = $${paramIndex++}`);
-      params.push(patch.resultTs);
+    if (patch.updatedAt !== undefined) {
+      sets.push(`updated_at = $${paramIndex++}`);
+      params.push(patch.updatedAt);
     }
     if (patch.metadata !== undefined) {
       sets.push(`metadata = $${paramIndex++}`);
@@ -143,7 +143,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
     const client = await this.pool.connect();
     try {
       await client.query(
-        `UPDATE messages SET ${sets.join(", ")} WHERE id = $${paramIndex}`,
+        `UPDATE memories SET ${sets.join(", ")} WHERE id = $${paramIndex}`,
         params
       );
       this.logger.info("updated memory successfully", {
@@ -156,7 +156,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
   }
 
   async queryMemory(options: QueryMemoryOptions): Promise<Memory[]> {
-    let query = "SELECT * FROM messages";
+    let query = "SELECT * FROM memories";
     const params: (string | number)[] = [];
     const conditions: string[] = [];
     let paramIndex = 1;
@@ -175,12 +175,12 @@ export class PostgresMemoryProvider extends MemoryProvider {
     }
 
     if (options.after) {
-      conditions.push(`timestamp > $${paramIndex++}`);
+      conditions.push(`created_at > $${paramIndex++}`);
       params.push(options.after);
     }
 
     if (options.before) {
-      conditions.push(`timestamp < $${paramIndex++}`);
+      conditions.push(`created_at < $${paramIndex++}`);
       params.push(options.before);
     }
 
@@ -188,7 +188,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
       query += " WHERE " + conditions.join(" AND ");
     }
 
-    query += " ORDER BY timestamp DESC";
+    query += " ORDER BY created_at DESC";
 
     if (options.limit) {
       query += ` LIMIT $${paramIndex++}`;
@@ -202,7 +202,7 @@ export class PostgresMemoryProvider extends MemoryProvider {
 
     const client = await this.pool.connect();
     try {
-      const res = await client.query(query, params);
+      const res = await client.query<Memory>(query, params);
       this.logger.info("queried memory", {
         type: "memory.postgres.query",
         count: res.rows.length,
@@ -210,11 +210,11 @@ export class PostgresMemoryProvider extends MemoryProvider {
       });
       return res.rows.map((row) => ({
         id: row.id,
-        spaceId: row.space_id,
+        spaceId: row.spaceId,
         trigger: row.trigger,
         context: row.context || undefined,
-        createdAt: row.timestamp,
-        resultTs: row.result_ts || undefined,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt || undefined,
         replyToId: undefined,
         metadata: row.metadata || undefined
       }));

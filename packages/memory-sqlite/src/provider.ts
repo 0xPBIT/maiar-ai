@@ -62,22 +62,19 @@ export class SQLiteMemoryProvider extends MemoryProvider {
     });
   }
 
-  // RENAME MESSAGES TO MEMORIES
-  // RENAME TIMESTAMP TO CREATED AT
-  // RENAME RESULT TS TO COMPLETED AT
   private async createTables(): Promise<void> {
     await this.db.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
+      CREATE TABLE IF NOT EXISTS memories (
         id TEXT PRIMARY KEY,
         space_id TEXT NOT NULL,
         trigger TEXT NOT NULL,
         context TEXT,
-        timestamp INTEGER NOT NULL,
-        result_ts INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER,
         reply_to_id TEXT,
         metadata TEXT
       );
-      CREATE INDEX IF NOT EXISTS idx_space_time ON messages(space_id, timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_space_time ON memories(space_id, created_at DESC);
     `);
   }
 
@@ -88,7 +85,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
   async storeMemory(memory: Omit<Memory, "id">): Promise<string> {
     const id = Math.random().toString(36).substring(2);
     const stmt = this.db.prepare(`
-      INSERT INTO messages (id, space_id, trigger, context, timestamp, result_ts, reply_to_id, metadata)
+      INSERT INTO memories (id, space_id, trigger, context, created_at, updated_at, reply_to_id, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
@@ -97,7 +94,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       memory.trigger,
       memory.context || null,
       memory.createdAt,
-      memory.resultTs || null,
+      memory.updatedAt || null,
       undefined,
       memory.metadata ? JSON.stringify(memory.metadata) : null
     );
@@ -115,9 +112,9 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       sets.push("context = ?");
       params.push(patch.context);
     }
-    if (patch.resultTs !== undefined) {
-      sets.push("result_ts = ?");
-      params.push(patch.resultTs);
+    if (patch.updatedAt !== undefined) {
+      sets.push("updated_at = ?");
+      params.push(patch.updatedAt);
     }
     if (patch.metadata !== undefined) {
       sets.push("metadata = ?");
@@ -126,7 +123,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
     if (!sets.length) return;
     params.push(id);
     this.db
-      .prepare(`UPDATE messages SET ${sets.join(", ")} WHERE id = ?`)
+      .prepare(`UPDATE memories SET ${sets.join(", ")} WHERE id = ?`)
       .run(...params);
     this.logger.info("updated memory successfully", {
       type: "memory.sqlite.update.success",
@@ -135,7 +132,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
   }
 
   async queryMemory(options: QueryMemoryOptions): Promise<Memory[]> {
-    let query = "SELECT * FROM messages";
+    let query = "SELECT * FROM memories";
     const params: (string | number)[] = [];
     const conditions: string[] = [];
 
@@ -156,12 +153,12 @@ export class SQLiteMemoryProvider extends MemoryProvider {
     }
 
     if (options.after) {
-      conditions.push("timestamp > ?");
+      conditions.push("created_at > ?");
       params.push(options.after);
     }
 
     if (options.before) {
-      conditions.push("timestamp < ?");
+      conditions.push("created_at < ?");
       params.push(options.before);
     }
 
@@ -169,7 +166,7 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       query += " WHERE " + conditions.join(" AND ");
     }
 
-    query += " ORDER BY timestamp DESC";
+    query += " ORDER BY created_at DESC";
 
     if (options.limit) {
       query += " LIMIT ?";
@@ -187,8 +184,8 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       space_id: string;
       trigger: string;
       context?: string;
-      timestamp: number;
-      result_ts?: number;
+      created_at: number;
+      updated_at?: number;
       reply_to_id?: string;
       metadata?: string;
     }[];
@@ -202,8 +199,8 @@ export class SQLiteMemoryProvider extends MemoryProvider {
       spaceId: row.space_id,
       trigger: row.trigger,
       context: row.context || undefined,
-      createdAt: row.timestamp,
-      resultTs: row.result_ts || undefined,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at || undefined,
       replyToId: undefined,
       metadata: row.metadata ? JSON.parse(row.metadata) : undefined
     }));

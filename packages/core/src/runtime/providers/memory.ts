@@ -9,7 +9,7 @@ export interface Memory {
   trigger: string; // trigger info for the incoming event
   context?: string; // context chain built as a result of the trigger
   createdAt: number; // timestamp for the trigger event
-  resultTs?: number; // timestamp for the result of the context chain processing
+  updatedAt?: number; // timestamp for the result of the context chain processing
   metadata?: Record<string, unknown>; // extra metadata for the message
 }
 

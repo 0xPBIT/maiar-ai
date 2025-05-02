@@ -1,5 +1,4 @@
 /* eslint-disable no-useless-escape */
-import { BaseContextItem } from "@maiar-ai/core";
 
 /**
  * Template used to guide the agent when creating X posts
@@ -17,7 +16,7 @@ The last function you will call in the pipeline is "post_tweet" where you will p
  * Generates a tweet template based on the context chain
  * This template is used by the createPostExecutor
  */
-export function generateTweetTemplate(contextChain: BaseContextItem[]): string {
+export function generateTweetTemplate(contextChain: string): string {
   return `Generate a response based on the context chain. Your response should be a JSON object with a single "tweetText" field containing your response.
     The response should be related to the original message you received from the user. 
 
@@ -31,7 +30,7 @@ export function generateTweetTemplate(contextChain: BaseContextItem[]): string {
     Look for the relevant information in the most recent context items (e.g. generated text, current time, etc).
 
     Here is the Context Chain of the users initial message, and your internal operations which generated useful data for your response:
-    ${JSON.stringify(contextChain, null, 2)}
+    ${contextChain}
 
     Your job is to synthesize the context chain into a comprehensive and useful response to the user's intitial message.
 

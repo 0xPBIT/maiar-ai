@@ -1,4 +1,4 @@
-import { Runtime, Trigger, UserInputContext } from "@maiar-ai/core";
+import { Context, Runtime, Space, Trigger } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { XService } from "./services";
@@ -62,22 +62,25 @@ export const periodicPostTrigger = createXTrigger(
             const intervalMs = randomIntervalMinutes * 60 * 1000;
 
             // Create new context chain with a direction to make a post
-            const initialContext: UserInputContext = {
+            const initialContext: Context = {
               id: `x-post-${Date.now()}`,
               pluginId: "plugin-x",
-              type: "user_input",
-              action: "receive_message",
               content: postTemplate,
-              timestamp: Date.now(),
-              rawMessage: postTemplate,
-              user: "self-invoked-x-post-trigger"
+              timestamp: Date.now()
+            };
+
+            const spacePrefix = `x-post`;
+            const spaceId = `${spacePrefix}-${Date.now()}`;
+
+            const space: Space = {
+              id: spaceId,
+              relatedSpaces: { prefix: spacePrefix }
             };
 
             logger.info("creating x post event to invoke agent", {
               type: "plugin-x.event.creating",
               contextId: initialContext.id,
-              pluginId: initialContext.pluginId,
-              action: initialContext.action
+              pluginId: initialContext.pluginId
             });
 
             logger.info("context content length", {
@@ -87,7 +90,7 @@ export const periodicPostTrigger = createXTrigger(
 
             // Use the runtime to create a new event
             try {
-              await runtime.createEvent(initialContext);
+              await runtime.createEvent(initialContext, space);
             } catch (eventError) {
               logger.error("failed to create event", {
                 type: "plugin-x.event.creation_failed",

@@ -3,9 +3,10 @@ import * as net from "net";
 
 import {
   AgentTask,
+  Context,
   Plugin,
   PluginResult,
-  UserInputContext
+  Space
 } from "@maiar-ai/core";
 
 import { CHAT_SOCKET_PATH } from "./index";
@@ -13,9 +14,7 @@ import { generateResponseTemplate } from "./templates";
 import { TerminalPluginConfig, TerminalResponseSchema } from "./types";
 
 interface TerminalPlatformContext {
-  platform: string;
   responseHandler: (response: unknown) => void;
-  metadata?: Record<string, unknown>;
 }
 
 export class TerminalPlugin extends Plugin {
@@ -54,7 +53,8 @@ export class TerminalPlugin extends Plugin {
   }
 
   private async sendResponse(task: AgentTask): Promise<PluginResult> {
-    const platformContext = task.platformContext as TerminalPlatformContext;
+    const platformContext = task.trigger.metadata
+      ?.platformContext as TerminalPlatformContext;
     if (!platformContext?.responseHandler) {
       this.logger.error("no response handler available");
       return {
@@ -122,16 +122,12 @@ export class TerminalPlugin extends Plugin {
               message
             });
 
-            // Create new context chain with initial user input
-            const initialContext: UserInputContext = {
-              id: `${this.id}-${Date.now()}`,
-              pluginId: this.id,
-              action: "receive_message",
-              type: "user_input",
-              content: message,
-              timestamp: Date.now(),
-              rawMessage: message,
-              user: user || "local"
+            const spacePrefix = `${this.id}-${user}`;
+            const spaceId = `${spacePrefix}-${Date.now()}`;
+
+            const space: Space = {
+              id: spaceId,
+              relatedSpaces: { prefix: spacePrefix }
             };
 
             // Create response handler that handles type conversion
@@ -157,15 +153,21 @@ export class TerminalPlugin extends Plugin {
 
             // Create event with initial context and response handler
             const platformContext: TerminalPlatformContext = {
-              platform: this.id,
-              responseHandler,
+              responseHandler
+            };
+
+            // Create new context chain with initial user input
+            const initialContext: Context = {
+              id: `${this.id}-${Date.now()}`,
+              pluginId: this.id,
+              content: message,
+              timestamp: Date.now(),
               metadata: {
-                helpfulInstruction:
-                  "This is a terminal chat message. This means you must send a response to the user in the terminal as the very last action you perform. It is called send_response under the plugin-terminal namespace."
+                platformContext
               }
             };
 
-            await this.runtime.createEvent(initialContext, platformContext);
+            await this.runtime.createEvent(initialContext, space);
           } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
             this.logger.error("error processing message:", {

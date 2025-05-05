@@ -1,38 +1,40 @@
 import OpenAI from "openai";
+import { ImageEditParams } from "openai/resources/images";
+import { Uploadable } from "openai/uploads";
 import { z } from "zod";
 
 import { ModelProvider, ModelRequestConfig } from "@maiar-ai/core";
 
 import {
-  imageGenerationSchema,
+  imageGenerationCapability,
+  multiModalImageGenerationCapability,
+  textGenerationCapability
+} from "./capabilities";
+import {
   OpenAIConfig,
   OpenAIImageGenerationModel,
   OpenAIModel,
   OpenAIModelRequestConfig,
-  OpenAITextGenerationModel,
-  textGenerationSchema
-} from "./types";
-import {
-  IMAGE_GENERATION_CAPABILITY_ID,
-  TEXT_GENERATION_CAPABILITY_ID
+  OpenAIMultiModalImageGenerationModel,
+  OpenAITextGenerationModel
 } from "./types";
 
-// Helper functions to check model types
-const isTextGenerationModel = (
-  model: OpenAIModel
-): model is OpenAITextGenerationModel => {
-  return Object.values(OpenAITextGenerationModel).includes(
-    model as OpenAITextGenerationModel
-  );
-};
+// Aliases for input/output schemas used in type inference
+const imageGenerationSchema = imageGenerationCapability;
+const textGenerationSchema = textGenerationCapability;
+const multiModalImageGenerationSchema = multiModalImageGenerationCapability;
+// Pre-computed model family sets for quick capability checks
+const TEXT_MODELS = new Set<OpenAIModel>(
+  Object.values(OpenAITextGenerationModel) as OpenAIModel[]
+);
 
-const isImageGenerationModel = (
-  model: OpenAIModel
-): model is OpenAIImageGenerationModel => {
-  return Object.values(OpenAIImageGenerationModel).includes(
-    model as OpenAIImageGenerationModel
-  );
-};
+const IMAGE_MODELS = new Set<OpenAIModel>(
+  Object.values(OpenAIImageGenerationModel) as OpenAIModel[]
+);
+
+const MULTI_MODAL_IMAGE_MODELS = new Set<OpenAIModel>(
+  Object.values(OpenAIMultiModalImageGenerationModel) as OpenAIModel[]
+);
 
 // Constants for provider information
 const PROVIDER_ID = "openai";
@@ -52,14 +54,10 @@ export class OpenAIModelProvider extends ModelProvider {
     this.client = new OpenAI({ apiKey: config.apiKey });
     this.models = config.models;
 
-    if (this.models.some(isTextGenerationModel)) {
+    if (this.models.some((m) => TEXT_MODELS.has(m))) {
       this.addCapability({
-        id: TEXT_GENERATION_CAPABILITY_ID,
-        name: "Text generation capability",
-        description: "Generate text completions from prompts",
-        input: textGenerationSchema.input,
-        output: textGenerationSchema.output,
-        execute: this.generateText.bind(this)
+        ...textGenerationCapability,
+        execute: this.generateTextWithText.bind(this)
       });
 
       this.logger.info("add text generation capability", {
@@ -71,14 +69,10 @@ export class OpenAIModelProvider extends ModelProvider {
       });
     }
 
-    if (this.models.some(isImageGenerationModel)) {
+    if (this.models.some((m) => IMAGE_MODELS.has(m))) {
       this.addCapability({
-        id: IMAGE_GENERATION_CAPABILITY_ID,
-        name: "Image generation capability",
-        description: "Generate images from prompts",
-        input: imageGenerationSchema.input,
-        output: imageGenerationSchema.output,
-        execute: this.generateImage.bind(this)
+        ...imageGenerationCapability,
+        execute: this.generateImageWithText.bind(this)
       });
 
       this.logger.info("add image generation capability", {
@@ -89,15 +83,28 @@ export class OpenAIModelProvider extends ModelProvider {
         outputSchema: imageGenerationSchema.output
       });
     }
-  }
 
-  public async init(): Promise<void> {}
+    if (this.models.some((m) => MULTI_MODAL_IMAGE_MODELS.has(m))) {
+      this.addCapability({
+        ...multiModalImageGenerationCapability,
+        execute: this.generateImageMultimodal.bind(this)
+      });
+
+      this.logger.info("add multi-modal image generation capability", {
+        type: "openai.model.capability.registration",
+        model: this.id,
+        capability: "multi-modal-image-generation",
+        inputSchema: multiModalImageGenerationSchema.input,
+        outputSchema: multiModalImageGenerationSchema.output
+      });
+    }
+  }
 
   public async checkHealth(): Promise<void> {
     // Verifying if we can call the API
     try {
       await this.executeCapability(
-        TEXT_GENERATION_CAPABILITY_ID,
+        textGenerationCapability.id,
         "[SYSTEM HEALTH CHECK] are you alive? please response with 'yes' only",
         {
           temperature: 0.7,
@@ -112,9 +119,11 @@ export class OpenAIModelProvider extends ModelProvider {
     }
   }
 
+  public async init(): Promise<void> {}
+
   public async shutdown(): Promise<void> {}
 
-  public async generateImage(
+  public async generateImageWithText(
     prompt: string,
     config?: OpenAIModelRequestConfig
   ): Promise<z.infer<typeof imageGenerationSchema.output>> {
@@ -138,12 +147,12 @@ export class OpenAIModelProvider extends ModelProvider {
     return filteredUrls;
   }
 
-  public async generateText(
+  public async generateTextWithText(
     prompt: string,
     config?: ModelRequestConfig
   ): Promise<z.infer<typeof textGenerationSchema.output>> {
     try {
-      const textModel = this.models.find(isTextGenerationModel);
+      const textModel = this.models.find((m) => TEXT_MODELS.has(m));
 
       if (!textModel) {
         throw new Error("No text generation model configured");
@@ -185,5 +194,18 @@ export class OpenAIModelProvider extends ModelProvider {
 
       throw error;
     }
+  }
+
+  public async generateImageMultimodal(
+    prompt: string,
+    config?: Omit<ImageEditParams, "model" | "prompt" | "user">
+  ): Promise<z.infer<typeof multiModalImageGenerationSchema.output>> {
+    const response = await this.client.images.edit({
+      model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m)),
+      prompt: prompt,
+      image: config?.image as Uploadable
+    });
+
+    return response.data.map((image) => image.url).filter(Boolean) as string[];
   }
 }

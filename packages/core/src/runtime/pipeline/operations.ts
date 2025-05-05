@@ -1,12 +1,6 @@
 // DEV NOTE: GET RID OF THIS ENTIRE FILE OR MOVE THE CONTENTS TO SOMEWHERE ELSE
 import { z } from "zod";
 
-import { ModelProvider, ModelRequestConfig } from "../providers/model";
-
-export interface OperationConfig extends ModelRequestConfig {
-  model?: ModelProvider;
-}
-
 /**
  * Template function that takes input of type T and returns a string prompt
  */

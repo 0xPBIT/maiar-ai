@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import logger from "../../lib/logger";
 import { ICapabilities } from "../managers/model/capability/types";
-import { OperationConfig } from "../pipeline/operations";
 
 /**
  * Interface that model capabilities must implement
@@ -15,7 +14,7 @@ export interface ModelCapability<InputType = unknown, OutputType = unknown> {
   readonly input: z.ZodType<InputType>;
   readonly output: z.ZodType<OutputType>;
 
-  execute(input: InputType, config?: OperationConfig): Promise<OutputType>;
+  execute(input: InputType, config?: unknown): Promise<OutputType>;
 }
 
 /**

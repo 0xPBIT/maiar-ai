@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { Space } from "../providers/memory";
-import { OperationConfig } from "./operations";
 
 /**
  * Context item that makes up the context chain and the standard IO of the agent when communicating between plugins
@@ -116,6 +115,6 @@ export const PipelineModificationSchema = z
 
 export type PipelineModification = z.infer<typeof PipelineModificationSchema>;
 
-export interface GetObjectConfig extends OperationConfig {
+export interface GetObjectConfig {
   maxRetries?: number;
 }

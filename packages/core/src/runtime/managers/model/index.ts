@@ -1,7 +1,6 @@
 import { Logger } from "winston";
 
 import logger from "../../../lib/logger";
-import { OperationConfig } from "../../pipeline/operations";
 import { ModelProvider } from "../../providers/model";
 import { CapabilityRegistry } from "./capability";
 import { ICapabilities } from "./capability/types";
@@ -176,7 +175,6 @@ export class ModelManager {
   public async executeCapability<K extends keyof ICapabilities>(
     capabilityId: K,
     input: ICapabilities[K]["input"],
-    config?: OperationConfig,
     modelId?: string
   ): Promise<ICapabilities[K]["output"]> {
     // Resolve the canonical capability ID
@@ -218,7 +216,7 @@ export class ModelManager {
         `Invalid input for capability ${resolvedCapabilityId}: ${validatedInput.error}`
       );
     }
-    const result = await capability.execute(validatedInput.data, config);
+    const result = await capability.execute(validatedInput.data);
     return capability.output.parse(result) as ICapabilities[K]["output"];
   }
 

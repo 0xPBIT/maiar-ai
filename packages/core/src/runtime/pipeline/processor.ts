@@ -111,10 +111,7 @@ export class Processor {
 
       const pipeline = await this.runtime.getObject(
         PipelineSchema,
-        generatePipelineContext,
-        {
-          temperature: 0.2 // Lower temperature for more predictable outputs
-        }
+        generatePipelineContext
       );
 
       // Add concise pipeline steps log
@@ -289,10 +286,7 @@ export class Processor {
     try {
       const modification = await this.runtime.getObject(
         PipelineModificationSchema,
-        template,
-        {
-          temperature: 0.2 // Lower temperature for more predictable outputs
-        }
+        template
       );
 
       this.logger.info("pipeline modification evaluation result", {

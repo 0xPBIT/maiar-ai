@@ -1,6 +1,8 @@
+import fs from "fs";
 import OpenAI from "openai";
-import { ImageEditParams } from "openai/resources/images";
-import { Uploadable } from "openai/uploads";
+import { toFile } from "openai/uploads";
+import os from "os";
+import path from "path";
 import { z } from "zod";
 
 import { ModelProvider, ModelRequestConfig } from "@maiar-ai/core";
@@ -105,11 +107,7 @@ export class OpenAIModelProvider extends ModelProvider {
     try {
       await this.executeCapability(
         textGenerationCapability.id,
-        "[SYSTEM HEALTH CHECK] are you alive? please response with 'yes' only",
-        {
-          temperature: 0.7,
-          maxTokens: 5
-        }
+        "[SYSTEM HEALTH CHECK] are you alive? please response with 'yes' only"
       );
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -133,11 +131,15 @@ export class OpenAIModelProvider extends ModelProvider {
       size: config?.size ?? "1024x1024"
     });
 
+    if (!response.data || response.data.length === 0) {
+      throw new Error("No image data returned from OpenAI");
+    }
+
     if (response.data.length !== (config?.n ?? 1)) {
       throw new Error("Unexpected number of images generated");
     }
 
-    const urls = response.data.map((image) => image.url).filter(Boolean);
+    const urls = response.data!.map((image) => image.url).filter(Boolean);
     const filteredUrls = urls.filter((url) => url !== undefined);
 
     if (filteredUrls.length === 0) {
@@ -197,15 +199,181 @@ export class OpenAIModelProvider extends ModelProvider {
   }
 
   public async generateImageMultimodal(
-    prompt: string,
-    config?: Omit<ImageEditParams, "model" | "prompt" | "user">
+    input: z.infer<typeof multiModalImageGenerationSchema.input>
   ): Promise<z.infer<typeof multiModalImageGenerationSchema.output>> {
-    const response = await this.client.images.edit({
-      model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m)),
-      prompt: prompt,
-      image: config?.image as Uploadable
-    });
+    // If no images are provided, call the create method
+    if (input.images.length === 0) {
+      const response = await this.client.images.generate({
+        prompt: input.prompt,
+        n: 1,
+        size: "1024x1024",
+        model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m))
+      });
 
-    return response.data.map((image) => image.url).filter(Boolean) as string[];
+      const filePaths: string[] = [];
+      for (let i = 0; i < (response.data ?? []).length; i++) {
+        const image = (response.data ?? [])[i];
+        if (image) {
+          if (image.url) {
+            const tempFilePath = await this.saveImageFromUrl(
+              image.url,
+              `generated_image_${Date.now()}_${i}`
+            );
+            filePaths.push(tempFilePath);
+          } else if (image.b64_json) {
+            const tempFilePath = await this.saveImageFromBase64(
+              image.b64_json,
+              `generated_image_${Date.now()}_${i}`
+            );
+            filePaths.push(tempFilePath);
+          }
+        }
+      }
+
+      if (filePaths.length === 0) {
+        throw new Error("No valid image data to save");
+      }
+
+      return filePaths;
+    }
+
+    // If images are provided, call the edit method
+    if (input.images.length > 0) {
+      const results: string[] = [];
+      for (const image of input.images) {
+        try {
+          let imageData;
+          let fileName = `image-${results.length}`;
+          let mimeType = "image/png";
+          if (image.startsWith("http://") || image.startsWith("https://")) {
+            // Handle URL
+            const response = await fetch(image);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image from ${image}: ${response.status} ${response.statusText}`
+              );
+            }
+            const blob = await response.blob();
+            imageData = blob;
+            // Try to infer file extension from URL if possible
+            const urlParts = image.split(".");
+            const extension =
+              urlParts[urlParts.length - 1]?.toLowerCase() || "";
+            if (["png", "jpg", "jpeg", "webp"].includes(extension)) {
+              fileName += `.${extension}`;
+              mimeType =
+                extension === "png"
+                  ? "image/png"
+                  : extension === "webp"
+                    ? "image/webp"
+                    : "image/jpeg";
+            }
+          } else {
+            // Handle local file path
+            if (!fs.existsSync(image)) {
+              throw new Error(`File does not exist at path: ${image}`);
+            }
+            const fileExtension = image.split(".").pop()?.toLowerCase() || "";
+            if (!["png", "jpg", "jpeg", "webp"].includes(fileExtension)) {
+              throw new Error(
+                `Unsupported file format for ${image}. Only PNG, JPEG, and WebP are supported for image editing.`
+              );
+            }
+            fileName += fileExtension ? `.${fileExtension}` : ".png";
+            mimeType =
+              fileExtension === "png"
+                ? "image/png"
+                : fileExtension === "webp"
+                  ? "image/webp"
+                  : fileExtension === "jpg" || fileExtension === "jpeg"
+                    ? "image/jpeg"
+                    : "image/png";
+            imageData = fs.createReadStream(image);
+          }
+          const uploadableImage = await toFile(imageData, fileName, {
+            type: mimeType
+          });
+          const editResponse = await this.client.images
+            .edit({
+              prompt: input.prompt,
+              n: 1,
+              size: "1024x1024",
+              image: uploadableImage,
+              model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m))
+            })
+            .catch((err) => {
+              throw new Error(
+                `API error during image edit for ${image}: ${err.message || err}`
+              );
+            });
+
+          if (!editResponse.data) {
+            continue;
+          }
+          for (let i = 0; i < editResponse.data.length; i++) {
+            const editedImage = editResponse.data[i];
+            if (editedImage) {
+              if (editedImage.url) {
+                const tempFilePath = await this.saveImageFromUrl(
+                  editedImage.url,
+                  `edited_image_${Date.now()}_${results.length}_${i}`
+                );
+                results.push(tempFilePath);
+              } else if (editedImage.b64_json) {
+                const tempFilePath = await this.saveImageFromBase64(
+                  editedImage.b64_json,
+                  `edited_image_${Date.now()}_${results.length}_${i}`
+                );
+                results.push(tempFilePath);
+              }
+            }
+          }
+        } catch (error: unknown) {
+          console.error(`Error processing image ${image}:`, error);
+          throw new Error(
+            `Failed to process image ${image}: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
+      if (results.length === 0) {
+        throw new Error("No valid edited image data to save");
+      }
+
+      return results;
+    }
+
+    return [];
+  }
+
+  // Helper method to save image from URL to a temporary file
+  private async saveImageFromUrl(
+    url: string,
+    filename: string
+  ): Promise<string> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch image from ${url}: ${response.status} ${response.statusText}`
+      );
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const tempDir = os.tmpdir();
+    const filePath = path.join(tempDir, `${filename}.png`);
+    fs.writeFileSync(filePath, buffer);
+    return filePath;
+  }
+
+  // Helper method to save image from base64 data to a temporary file
+  private async saveImageFromBase64(
+    base64Data: string,
+    filename: string
+  ): Promise<string> {
+    const buffer = Buffer.from(base64Data, "base64");
+    const tempDir = os.tmpdir();
+    const filePath = path.join(tempDir, `${filename}.png`);
+    fs.writeFileSync(filePath, buffer);
+    return filePath;
   }
 }

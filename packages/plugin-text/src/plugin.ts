@@ -57,10 +57,7 @@ export class TextGenerationPlugin extends Plugin {
   private async generateText(task: AgentTask): Promise<PluginResult> {
     const generated = await this.runtime.executeCapability(
       TEXT_GENERATION_CAPABILITY_ID,
-      generateTextTemplate(JSON.stringify(task)),
-      {
-        temperature: 0.7
-      }
+      generateTextTemplate(JSON.stringify(task))
     );
 
     return { success: true, data: { text: generated } };
@@ -138,8 +135,7 @@ export class TextGenerationPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         ChatResponseSchema,
-        generateChatResponseTemplate(JSON.stringify(task)),
-        { temperature: 0.2 }
+        generateChatResponseTemplate(JSON.stringify(task))
       );
 
       // Type assertion for responseHandler since TypeScript doesn't know its type

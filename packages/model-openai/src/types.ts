@@ -15,7 +15,7 @@ export enum OpenAIImageGenerationModel {
 }
 
 export enum OpenAIMultiModalImageGenerationModel {
-  GPT_IMAGE_GEN = "gpt-image-1"
+  GPT_IMAGE_1 = "gpt-image-1"
 }
 
 export type OpenAIModel =

@@ -45,7 +45,7 @@ async function main() {
     new OpenAIModelProvider({
       models: [
         OpenAITextGenerationModel.GPT_41,
-        OpenAIImageGenerationModel.DALLE3
+        OpenAIImageGenerationModel.GPT_IMAGE_1
       ],
       apiKey: process.env.OPENAI_API_KEY as string
     })

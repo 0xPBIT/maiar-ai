@@ -31,8 +31,7 @@ export class SearchPlugin extends Plugin {
   private async search(task: AgentTask): Promise<PluginResult> {
     const params = await this.runtime.getObject(
       PerplexityQueryResponseSchema,
-      generateQueryTemplate(JSON.stringify(task)),
-      { temperature: 0.7 }
+      generateQueryTemplate(JSON.stringify(task))
     );
 
     const query = params.query;

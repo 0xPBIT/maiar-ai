@@ -94,8 +94,7 @@ export abstract class ModelProvider {
 
   public async executeCapability<K extends keyof ICapabilities>(
     capabilityId: K,
-    input: ICapabilities[K]["input"],
-    config?: ModelRequestConfig
+    input: ICapabilities[K]["input"]
   ): Promise<ICapabilities[K]["output"]> {
     const capability = this.capabilities.get(capabilityId as string);
     if (!capability) {
@@ -103,8 +102,6 @@ export abstract class ModelProvider {
         `Capability ${capabilityId} not found on model ${this.id}`
       );
     }
-    return capability.execute(input, config) as Promise<
-      ICapabilities[K]["output"]
-    >;
+    return capability.execute(input) as Promise<ICapabilities[K]["output"]>;
   }
 }

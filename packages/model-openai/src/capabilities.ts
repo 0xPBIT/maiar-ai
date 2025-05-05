@@ -22,7 +22,10 @@ export const multiModalImageGenerationCapability = defineCapability({
   id: "multi-modal-image-generation",
   name: "Multi-modal image generation",
   description: "Generate images from text prompts and other images",
-  input: z.string(),
+  input: z.object({
+    prompt: z.string(),
+    images: z.array(z.string())
+  }),
   output: z.array(z.string())
 });
 

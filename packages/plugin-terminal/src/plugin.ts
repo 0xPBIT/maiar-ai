@@ -67,8 +67,7 @@ export class TerminalPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         TerminalResponseSchema,
-        generateResponseTemplate(JSON.stringify(task)),
-        { temperature: 0.2 }
+        generateResponseTemplate(JSON.stringify(task))
       );
 
       await platformContext.responseHandler(formattedResponse.message);

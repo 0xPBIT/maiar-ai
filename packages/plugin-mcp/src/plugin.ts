@@ -133,9 +133,10 @@ export class MCPPlugin extends Plugin {
 
         try {
           // Ask the LLM to produce arguments matching the schema
-          const args = (await this.runtime.getObject(zodSchema, prompt, {
-            temperature: 0.2
-          })) as Record<string, unknown>;
+          const args = (await this.runtime.getObject(
+            zodSchema,
+            prompt
+          )) as Record<string, unknown>;
 
           const result = await client.callTool({
             name: tool.name,

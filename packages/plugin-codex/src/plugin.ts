@@ -29,8 +29,7 @@ export class CodexPlugin extends Plugin {
             // Extract command details from context
             const commandDetails = await this.runtime.getObject(
               CodexCommandSchema,
-              generateCodexCommandTemplate(JSON.stringify(task)),
-              { temperature: 0.2 }
+              generateCodexCommandTemplate(JSON.stringify(task))
             );
 
             // Resolve the path to the Codex CLI binary

@@ -22,7 +22,7 @@ import {
 } from "./pipeline/templates";
 import { GetObjectConfig } from "./pipeline/types";
 import { MemoryProvider } from "./providers/memory";
-import { ModelProvider, ModelRequestConfig } from "./providers/model";
+import { ModelProvider } from "./providers/model";
 import { Plugin } from "./providers/plugin";
 
 const REQUIRED_CAPABILITIES = [TEXT_GENERATION_CAPABILITY];
@@ -345,10 +345,9 @@ export class Runtime {
    */
   public async executeCapability<K extends keyof ICapabilities>(
     capabilityId: K,
-    input: ICapabilities[K]["input"],
-    config?: ModelRequestConfig
+    input: ICapabilities[K]["input"]
   ): Promise<ICapabilities[K]["output"]> {
-    return this.modelManager.executeCapability(capabilityId, input, config);
+    return this.modelManager.executeCapability(capabilityId, input);
   }
 
   /**
@@ -384,8 +383,7 @@ export class Runtime {
               });
         const response = await this.modelManager.executeCapability(
           "text-generation",
-          fullPrompt,
-          config
+          fullPrompt
         );
         lastResponse = response;
 

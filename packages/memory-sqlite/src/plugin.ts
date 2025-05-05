@@ -58,8 +58,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Get data to store in database from context chain
     const formattedResponse = await this.runtime.getObject(
       SQLiteMemoryUploadSchema,
-      generateUploadDocumentTemplate(JSON.stringify(task)),
-      { temperature: 0.2 }
+      generateUploadDocumentTemplate(JSON.stringify(task))
     );
 
     // Get conversation ID from context
@@ -83,8 +82,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Construct query for document ids
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(JSON.stringify(task)),
-      { temperature: 0.2 }
+      generateQueryTemplate(JSON.stringify(task))
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
     const queryResults = queryStmt.all() as { id: string }[];
@@ -122,8 +120,7 @@ export class SQLiteMemoryPlugin extends Plugin {
     // Construct query from context
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(JSON.stringify(task), ["id", "content"]),
-      { temperature: 0.2 }
+      generateQueryTemplate(JSON.stringify(task), ["id", "content"])
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
     const results = queryStmt.all() as { id: string; content: string }[];

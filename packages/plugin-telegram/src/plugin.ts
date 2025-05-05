@@ -62,8 +62,7 @@ export class TelegramPlugin extends Plugin {
       // Format the response based on the context chain
       const formattedResponse = await this.runtime.getObject(
         TelegramResponseSchema,
-        generateResponseTemplate(JSON.stringify(task)),
-        { temperature: 0.2 }
+        generateResponseTemplate(JSON.stringify(task))
       );
 
       // Use the main bot instance to send the reply

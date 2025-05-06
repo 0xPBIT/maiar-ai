@@ -223,16 +223,21 @@ export class OpenAIModelProvider extends ModelProvider {
   /**
    * Generate an image with a text prompt and other images
    * @param input - The text prompt and other images to generate an image from
+   * @param config - The configuration for the image generation
    * @returns an array of strings, each representing a URL to the generated image
    */
   public async generateImageMultimodal(
-    input: z.infer<typeof multiModalImageGenerationCapability.input>
+    input: z.infer<typeof multiModalImageGenerationCapability.input>,
+    config?: z.infer<
+      NonNullable<typeof multiModalImageGenerationCapability.config>
+    >
   ): Promise<z.infer<typeof multiModalImageGenerationCapability.output>> {
     // If no images are provided, call the create method
     if (!input.images || input.images?.length === 0) {
+      const n = config?.n ?? 1;
       const response = await this.client.images.generate({
         prompt: input.prompt,
-        n: 1,
+        n,
         size: "1024x1024",
         model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m))
       });

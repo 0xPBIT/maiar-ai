@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import { readFileSync } from "fs";
 // import { readFileSync } from "fs";
 import { join, resolve } from "path";
+import { z } from "zod";
 
 import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
 import { stdout, websocket } from "@maiar-ai/core/dist/logger";
@@ -13,6 +14,7 @@ import {
   OpenAIMultiModalImageGenerationModel,
   OpenAIMultiModalTextGenerationModel
 } from "@maiar-ai/model-openai";
+import { multiModalImageGenerationCapability as openaiMM } from "@maiar-ai/model-openai";
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
@@ -25,6 +27,10 @@ import {
   replyMessageExecutor,
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
+import {
+  ImageGenerationPlugin,
+  multiModalImageGenerationCapability as pluginMM
+} from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
@@ -68,6 +74,7 @@ async function main() {
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
+    new ImageGenerationPlugin(),
     new DiscordPlugin({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,
@@ -85,8 +92,27 @@ async function main() {
     })
   ];
 
-  const capabilityAliases: string[][] = [
-    ["image-generation", "create-image", "generate-image"]
+  const capabilityAliases = [
+    {
+      ids: ["image-generation", "create-image", "generate-image"]
+    },
+    {
+      ids: ["multi-modal-image-generation", "generate-image-mm"],
+      transforms: [
+        {
+          config: {
+            plugin: pluginMM.config ?? z.any(),
+            provider: openaiMM.config ?? z.any(),
+            transform: (
+              cfg: unknown
+            ): z.infer<NonNullable<typeof openaiMM.config>> | undefined =>
+              cfg && typeof cfg === "object" && "number" in cfg
+                ? { n: (cfg as { number: number }).number }
+                : undefined
+          }
+        }
+      ]
+    }
   ];
 
   const agent = await Runtime.init({

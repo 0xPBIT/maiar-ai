@@ -3,7 +3,7 @@ import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 import {
   imageGenerationCapability,
   multiModalImageGenerationCapability
-} from "./capabiliites";
+} from "./capabilities";
 import { multimodalToImageTemplate, textToImageTemplate } from "./templates";
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 

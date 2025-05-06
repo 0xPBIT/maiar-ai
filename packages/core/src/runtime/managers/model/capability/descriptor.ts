@@ -1,11 +1,18 @@
 import { z, ZodType } from "zod";
 
-export interface CapabilityDescriptor<I, O, Id extends string = string> {
+export interface CapabilityDescriptor<
+  I,
+  O,
+  Id extends string = string,
+  C = unknown
+> {
   readonly id: Id;
   readonly name: string;
   readonly description: string;
   readonly input: ZodType<I>;
   readonly output: ZodType<O>;
+  /** optional provider/plugin-specific config schema */
+  readonly config?: ZodType<C>;
 }
 
 //
@@ -24,17 +31,20 @@ export interface CapabilityDescriptor<I, O, Id extends string = string> {
  * @param def - Capability descriptor
  * @returns Capability descriptor
  */
-export function defineCapability<I, O, Id extends string = string>(
-  def: CapabilityDescriptor<I, O, Id>
+export function defineCapability<I, O, Id extends string = string, C = unknown>(
+  def: CapabilityDescriptor<I, O, Id, C>
 ) {
   return def;
 }
 
 export type CapabilityMap<
-  T extends readonly CapabilityDescriptor<unknown, unknown, string>[]
+  T extends readonly CapabilityDescriptor<unknown, unknown, string, unknown>[]
 > = {
   [K in T[number]["id"]]: {
     input: z.infer<Extract<T[number], { id: K }>["input"]>;
     output: z.infer<Extract<T[number], { id: K }>["output"]>;
+    config: Extract<T[number], { id: K }>["config"] extends ZodType<infer C>
+      ? C
+      : undefined;
   };
 };

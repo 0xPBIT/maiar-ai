@@ -9,6 +9,7 @@ import { WebSocketTransport } from "../lib/winston/transports/websocket";
 import { MemoryManager } from "./managers/memory";
 import { ModelManager } from "./managers/model";
 import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constants";
+import { CapabilityAliasGroup } from "./managers/model/capability/transform";
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { ServerManager } from "./managers/server";
@@ -93,7 +94,7 @@ export class Runtime {
     modelProviders: ModelProvider[];
     memoryProvider: MemoryProvider;
     plugins: Plugin[];
-    capabilityAliases: string[][];
+    capabilityAliases: CapabilityAliasGroup[];
     options?: {
       logger?: LoggerOptions;
       server?: {
@@ -143,15 +144,24 @@ export class Runtime {
     }
 
     // Add capability aliases to the model manager
-    for (const aliasGroup of capabilityAliases) {
-      const canonicalId =
-        aliasGroup.find((id) => modelManager.hasCapability(id)) ??
-        (aliasGroup[0] as string);
-
-      // Register all other IDs in the group as aliases to the canonical ID
-      for (const alias of aliasGroup) {
-        if (alias !== canonicalId) {
-          modelManager.registerCapabilityAlias(alias, canonicalId);
+    for (const group of capabilityAliases) {
+      if (Array.isArray(group)) {
+        // legacy synonym list
+        const canonical =
+          group.find((id) => modelManager.hasCapability(id)) || group[0];
+        if (!canonical) continue;
+        for (const id of group) {
+          if (id !== canonical)
+            modelManager.registerCapabilityAlias(id, canonical);
+        }
+      } else {
+        const canonical =
+          group.ids.find((id) => modelManager.hasCapability(id)) ||
+          group.ids[0];
+        if (!canonical) continue;
+        for (const id of group.ids) {
+          if (id === canonical) continue;
+          modelManager.registerCapabilityAlias(id, canonical, group.transforms);
         }
       }
     }
@@ -341,13 +351,27 @@ export class Runtime {
   }
 
   /**
-   * Execute a capability on the model manager
+   * Execute a capability through the model-manager.
+   *
+   * @typeParam K – Capability identifier literal (key of the `ICapabilities` interface).
+   * @param capabilityId – The capability ID or alias.
+   * @param input – Data validated against the capability's `input` Zod schema.
+   * @param config – Optional configuration object.
+   *
+   * The type of `config` is computed with the conditional type
+   * `ICapabilities[K] extends { config: infer C } ? C : unknown`:
+   *   • If a given capability **defines** a `config` schema, the parameter is
+   *     strongly typed as that schema (`C`).
+   *   • Otherwise the parameter collapses to `unknown`, making it truly
+   *     optional and preventing "config" from being accessed on capabilities
+   *     that don't declare one.
    */
   public async executeCapability<K extends keyof ICapabilities>(
     capabilityId: K,
-    input: ICapabilities[K]["input"]
+    input: ICapabilities[K]["input"],
+    config?: ICapabilities[K] extends { config: infer C } ? C : unknown
   ): Promise<ICapabilities[K]["output"]> {
-    return this.modelManager.executeCapability(capabilityId, input);
+    return this.modelManager.executeCapability(capabilityId, input, config);
   }
 
   /**

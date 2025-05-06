@@ -37,7 +37,10 @@ export const multiModalImageGenerationCapability = defineCapability({
     prompt: z.string(),
     images: z.array(z.string()).optional()
   }),
-  output: z.array(z.string())
+  output: z.array(z.string()),
+  config: z.object({
+    n: z.number().int().positive().default(1)
+  })
 });
 
 // Group all capabilities for this provider into a readonly tuple so we can derive

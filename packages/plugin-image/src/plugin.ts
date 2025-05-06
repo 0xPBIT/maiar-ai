@@ -1,7 +1,11 @@
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
-import { generatePromptTemplate } from "./templates";
-import { IMAGE_GENERATION_CAPABILITY_ID, PromptResponseSchema } from "./types";
+import {
+  imageGenerationCapability,
+  multiModalImageGenerationCapability
+} from "./capabiliites";
+import { multimodalToImageTemplate, textToImageTemplate } from "./templates";
+import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
   constructor() {
@@ -9,7 +13,10 @@ export class ImageGenerationPlugin extends Plugin {
       id: "plugin-image-generation",
       name: "image",
       description: "Generate images from text descriptions using GetImg.ai API",
-      requiredCapabilities: [IMAGE_GENERATION_CAPABILITY_ID]
+      requiredCapabilities: [
+        imageGenerationCapability.id,
+        multiModalImageGenerationCapability.id
+      ]
     });
 
     this.executors = [
@@ -17,6 +24,12 @@ export class ImageGenerationPlugin extends Plugin {
         name: "generate_image",
         description: "Generate an image based on a text prompt",
         fn: this.generateImage.bind(this)
+      },
+      {
+        name: "generate_image_with_images",
+        description:
+          "Generate an image based on a text prompt and other images",
+        fn: this.generateImageWithImages.bind(this)
       }
     ];
   }
@@ -25,14 +38,50 @@ export class ImageGenerationPlugin extends Plugin {
     try {
       const promptResponse = await this.runtime.getObject(
         PromptResponseSchema,
-        generatePromptTemplate(JSON.stringify(task))
+        textToImageTemplate(JSON.stringify(task))
       );
 
       const prompt = promptResponse.prompt;
 
       const urls = await this.runtime.executeCapability(
-        IMAGE_GENERATION_CAPABILITY_ID,
+        imageGenerationCapability.id,
         prompt
+      );
+
+      return {
+        success: true,
+        data: {
+          urls,
+          helpfulInstruction:
+            "IMPORTANT: You MUST use the exact URLs provided in the urls array above, including query parameters. DO NOT trucate the urls. DO NOT use placeholders like [generated-image-url]. Instead, copy and paste the complete URL from the urls array into your response. The user can access these URLs directly. Other plugins can also access these URLs."
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      };
+    }
+  }
+
+  private async generateImageWithImages(
+    task: AgentTask
+  ): Promise<PluginResult> {
+    try {
+      const promptResponse = await this.runtime.getObject(
+        MultimodalPromptResponseSchema,
+        multimodalToImageTemplate(JSON.stringify(task))
+      );
+
+      const prompt = promptResponse.prompt;
+      const images = promptResponse.images;
+
+      const urls = await this.runtime.executeCapability(
+        multiModalImageGenerationCapability.id,
+        {
+          prompt,
+          images
+        }
       );
 
       return {

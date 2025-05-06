@@ -1,4 +1,5 @@
 import fs from "fs";
+import mime from "mime";
 import OpenAI from "openai";
 import { toFile } from "openai/uploads";
 import os from "os";
@@ -10,6 +11,7 @@ import { ModelProvider, ModelRequestConfig } from "@maiar-ai/core";
 import {
   imageGenerationCapability,
   multiModalImageGenerationCapability,
+  multiModalTextGenerationCapability,
   textGenerationCapability
 } from "./capabilities";
 import {
@@ -18,16 +20,17 @@ import {
   OpenAIModel,
   OpenAIModelRequestConfig,
   OpenAIMultiModalImageGenerationModel,
+  OpenAIMultiModalTextGenerationModel,
   OpenAITextGenerationModel
 } from "./types";
 
-// Aliases for input/output schemas used in type inference
-const imageGenerationSchema = imageGenerationCapability;
-const textGenerationSchema = textGenerationCapability;
-const multiModalImageGenerationSchema = multiModalImageGenerationCapability;
 // Pre-computed model family sets for quick capability checks
 const TEXT_MODELS = new Set<OpenAIModel>(
   Object.values(OpenAITextGenerationModel) as OpenAIModel[]
+);
+
+const MULTI_MODAL_TEXT_MODELS = new Set<OpenAIModel>(
+  Object.values(OpenAIMultiModalTextGenerationModel) as OpenAIModel[]
 );
 
 const IMAGE_MODELS = new Set<OpenAIModel>(
@@ -66,8 +69,15 @@ export class OpenAIModelProvider extends ModelProvider {
         type: "openai.model.capability.registration",
         model: this.id,
         capability: "text-generation",
-        inputSchema: textGenerationSchema.input,
-        outputSchema: textGenerationSchema.output
+        inputSchema: textGenerationCapability.input,
+        outputSchema: textGenerationCapability.output
+      });
+    }
+
+    if (this.models.some((m) => MULTI_MODAL_TEXT_MODELS.has(m))) {
+      this.addCapability({
+        ...multiModalTextGenerationCapability,
+        execute: this.generateTextMultimodal.bind(this)
       });
     }
 
@@ -81,8 +91,8 @@ export class OpenAIModelProvider extends ModelProvider {
         type: "openai.model.capability.registration",
         model: this.id,
         capability: "image-generation",
-        inputSchema: imageGenerationSchema.input,
-        outputSchema: imageGenerationSchema.output
+        inputSchema: imageGenerationCapability.input,
+        outputSchema: imageGenerationCapability.output
       });
     }
 
@@ -96,8 +106,8 @@ export class OpenAIModelProvider extends ModelProvider {
         type: "openai.model.capability.registration",
         model: this.id,
         capability: "multi-modal-image-generation",
-        inputSchema: multiModalImageGenerationSchema.input,
-        outputSchema: multiModalImageGenerationSchema.output
+        inputSchema: multiModalImageGenerationCapability.input,
+        outputSchema: multiModalImageGenerationCapability.output
       });
     }
   }
@@ -121,12 +131,18 @@ export class OpenAIModelProvider extends ModelProvider {
 
   public async shutdown(): Promise<void> {}
 
+  /**
+   * Generate an image with a text prompt
+   * @param input - The text prompt to generate an image from
+   * @param config - The configuration for the image generation
+   * @returns an array of strings, each representing a URL to the generated image
+   */
   public async generateImageWithText(
-    prompt: string,
+    input: z.infer<typeof imageGenerationCapability.input>,
     config?: OpenAIModelRequestConfig
-  ): Promise<z.infer<typeof imageGenerationSchema.output>> {
+  ): Promise<z.infer<typeof imageGenerationCapability.output>> {
     const response = await this.client.images.generate({
-      prompt: prompt,
+      prompt: input,
       n: config?.n ?? 1,
       size: config?.size ?? "1024x1024"
     });
@@ -149,10 +165,16 @@ export class OpenAIModelProvider extends ModelProvider {
     return filteredUrls;
   }
 
+  /**
+   * Generate text with a text prompt
+   * @param input - The text prompt to generate text from
+   * @param config - The configuration for the text generation
+   * @returns the generated text
+   */
   public async generateTextWithText(
-    prompt: string,
+    input: z.infer<typeof textGenerationCapability.input>,
     config?: ModelRequestConfig
-  ): Promise<z.infer<typeof textGenerationSchema.output>> {
+  ): Promise<z.infer<typeof textGenerationCapability.output>> {
     try {
       const textModel = this.models.find((m) => TEXT_MODELS.has(m));
 
@@ -162,7 +184,7 @@ export class OpenAIModelProvider extends ModelProvider {
 
       const completion = await this.client.chat.completions.create({
         model: textModel,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: input }],
         temperature: config?.temperature ?? 0.7,
         max_tokens: config?.maxTokens,
         stop: config?.stopSequences
@@ -180,7 +202,7 @@ export class OpenAIModelProvider extends ModelProvider {
         metadata: {
           modelId: this.id,
           capabilityId: "text-generation",
-          input: prompt,
+          input: input,
           output: content
         }
       });
@@ -198,11 +220,16 @@ export class OpenAIModelProvider extends ModelProvider {
     }
   }
 
+  /**
+   * Generate an image with a text prompt and other images
+   * @param input - The text prompt and other images to generate an image from
+   * @returns an array of strings, each representing a URL to the generated image
+   */
   public async generateImageMultimodal(
-    input: z.infer<typeof multiModalImageGenerationSchema.input>
-  ): Promise<z.infer<typeof multiModalImageGenerationSchema.output>> {
+    input: z.infer<typeof multiModalImageGenerationCapability.input>
+  ): Promise<z.infer<typeof multiModalImageGenerationCapability.output>> {
     // If no images are provided, call the create method
-    if (input.images.length === 0) {
+    if (!input.images || input.images?.length === 0) {
       const response = await this.client.images.generate({
         prompt: input.prompt,
         n: 1,
@@ -346,7 +373,61 @@ export class OpenAIModelProvider extends ModelProvider {
     return [];
   }
 
-  // Helper method to save image from URL to a temporary file
+  /**
+   * Generate text with a text prompt and other images
+   * @param input - The text prompt and other images to generate text from
+   * @returns the generated text
+   */
+  public async generateTextMultimodal(
+    input: z.infer<typeof multiModalTextGenerationCapability.input>
+  ): Promise<z.infer<typeof multiModalTextGenerationCapability.output>> {
+    const model = this.models.find((m) => MULTI_MODAL_TEXT_MODELS.has(m));
+    if (!model) throw new Error("No multimodal text model configured");
+
+    const imageParts = input.images
+      ? await Promise.all(
+          input.images.map(
+            async (image): Promise<OpenAI.ChatCompletionContentPartImage> => {
+              if (image.startsWith("http://") || image.startsWith("https://")) {
+                return {
+                  type: "image_url",
+                  image_url: { url: image }
+                };
+              } else {
+                // Local file: read and convert to base64
+                const fileBuffer = fs.readFileSync(image);
+                const ext = image.split(".").pop() || "png";
+                const mimeType = mime.getType(ext) || "image/png";
+                const base64 = fileBuffer.toString("base64");
+                return {
+                  type: "image_url",
+                  image_url: { url: `data:${mimeType};base64,${base64}` }
+                };
+              }
+            }
+          )
+        )
+      : [];
+
+    const response = await this.client.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: "user",
+          content: [{ type: "text", text: input.prompt }, ...imageParts]
+        }
+      ]
+    });
+
+    return response.choices[0]?.message?.content ?? "";
+  }
+
+  /**
+   * Save an image from a URL to a temporary file
+   * @param url - The URL of the image to save
+   * @param filename - The filename to save the image as
+   * @returns the path to the saved image
+   */
   private async saveImageFromUrl(
     url: string,
     filename: string
@@ -365,7 +446,12 @@ export class OpenAIModelProvider extends ModelProvider {
     return filePath;
   }
 
-  // Helper method to save image from base64 data to a temporary file
+  /**
+   * Save an image from base64 data to a temporary file
+   * @param base64Data - The base64 data of the image to save
+   * @param filename - The filename to save the image as
+   * @returns the path to the saved image
+   */
   private async saveImageFromBase64(
     base64Data: string,
     filename: string

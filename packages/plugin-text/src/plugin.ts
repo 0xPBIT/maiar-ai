@@ -11,13 +11,18 @@ import {
 } from "@maiar-ai/core";
 
 import {
+  multiModalTextGenerationCapability,
+  textGenerationCapability
+} from "./capabiliites";
+import {
   generateChatResponseTemplate,
+  generateTextMultimodalTemplate,
   generateTextTemplate
 } from "./templates";
 import {
   ChatPlatformContext,
   ChatResponseSchema,
-  TEXT_GENERATION_CAPABILITY_ID
+  MultimodalPromptResponseSchema
 } from "./types";
 
 export class TextGenerationPlugin extends Plugin {
@@ -26,7 +31,10 @@ export class TextGenerationPlugin extends Plugin {
       id: "plugin-text",
       name: "Text Generation",
       description: "Provides text generation capabilities",
-      requiredCapabilities: [TEXT_GENERATION_CAPABILITY_ID]
+      requiredCapabilities: [
+        textGenerationCapability.id,
+        multiModalTextGenerationCapability.id
+      ]
     });
 
     this.executors = [
@@ -34,6 +42,12 @@ export class TextGenerationPlugin extends Plugin {
         name: "generate_text",
         description: "Generates text in response to a prompt",
         fn: this.generateText.bind(this)
+      },
+      {
+        name: "generate_text_multimodal",
+        description:
+          "Generates text in response to a prompt and images. Use this when you need to understand any images that are in your context chain that are relevant to the prompt.",
+        fn: this.generateTextMultimodal.bind(this)
       },
       {
         name: "send_chat_response",
@@ -56,8 +70,28 @@ export class TextGenerationPlugin extends Plugin {
 
   private async generateText(task: AgentTask): Promise<PluginResult> {
     const generated = await this.runtime.executeCapability(
-      TEXT_GENERATION_CAPABILITY_ID,
+      textGenerationCapability.id,
       generateTextTemplate(JSON.stringify(task))
+    );
+
+    return { success: true, data: { text: generated } };
+  }
+
+  private async generateTextMultimodal(task: AgentTask): Promise<PluginResult> {
+    const promptResponse = await this.runtime.getObject(
+      MultimodalPromptResponseSchema,
+      generateTextMultimodalTemplate(JSON.stringify(task))
+    );
+
+    const prompt = promptResponse.prompt;
+    const images = promptResponse.images;
+
+    const generated = await this.runtime.executeCapability(
+      multiModalTextGenerationCapability.id,
+      {
+        prompt,
+        images
+      }
     );
 
     return { success: true, data: { text: generated } };

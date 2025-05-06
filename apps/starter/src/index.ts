@@ -9,9 +9,9 @@ import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
 import { stdout, websocket } from "@maiar-ai/core/dist/logger";
 
 import {
-  OpenAIImageGenerationModel,
   OpenAIModelProvider,
-  OpenAITextGenerationModel
+  OpenAIMultiModalImageGenerationModel,
+  OpenAIMultiModalTextGenerationModel
 } from "@maiar-ai/model-openai";
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
@@ -44,8 +44,8 @@ async function main() {
   const modelProviders: ModelProvider[] = [
     new OpenAIModelProvider({
       models: [
-        OpenAITextGenerationModel.GPT_41,
-        OpenAIImageGenerationModel.GPT_IMAGE_1
+        OpenAIMultiModalTextGenerationModel.GPT_41,
+        OpenAIMultiModalImageGenerationModel.GPT_IMAGE_1
       ],
       apiKey: process.env.OPENAI_API_KEY as string
     })
@@ -86,8 +86,7 @@ async function main() {
   ];
 
   const capabilityAliases: string[][] = [
-    ["image-generation", "generate_image"],
-    ["text-generation", "text-creation"]
+    ["image-generation", "create-image", "generate-image"]
   ];
 
   const agent = await Runtime.init({

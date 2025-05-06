@@ -9,9 +9,15 @@ export enum OpenAITextGenerationModel {
   GPT_41_NANO = "gpt-4.1-nano"
 }
 
+export enum OpenAIMultiModalTextGenerationModel {
+  GPT_4O = "gpt-4o",
+  GPT_41 = "gpt-4.1"
+}
+
 export enum OpenAIImageGenerationModel {
   DALLE2 = "dall-e-2",
-  DALLE3 = "dall-e-3"
+  DALLE3 = "dall-e-3",
+  GPT_IMAGE_1 = "gpt-image-1"
 }
 
 export enum OpenAIMultiModalImageGenerationModel {
@@ -21,8 +27,8 @@ export enum OpenAIMultiModalImageGenerationModel {
 export type OpenAIModel =
   | OpenAITextGenerationModel
   | OpenAIImageGenerationModel
-  | OpenAIMultiModalImageGenerationModel;
-
+  | OpenAIMultiModalImageGenerationModel
+  | OpenAIMultiModalTextGenerationModel;
 export interface OpenAIConfig {
   apiKey: string;
   models: OpenAIModel[];

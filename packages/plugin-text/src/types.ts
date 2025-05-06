@@ -1,22 +1,5 @@
 import { z } from "zod";
 
-export const TextGenerationSchema = z.object({
-  text: z.string().describe("The generated text content")
-});
-
-export type TextGeneration = z.infer<typeof TextGenerationSchema>;
-
-export const TEXT_GENERATION_CAPABILITY_ID = "text-generation";
-
-declare module "@maiar-ai/core" {
-  interface ICapabilities {
-    [TEXT_GENERATION_CAPABILITY_ID]: {
-      input: string;
-      output: string;
-    };
-  }
-}
-
 export interface ChatPlatformContext {
   platform: string;
   responseHandler?: (response: unknown) => void;
@@ -31,3 +14,16 @@ export const ChatResponseSchema = z.object({
 });
 
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+
+export const MultimodalPromptResponseSchema = z.object({
+  prompt: z.string().describe("The prompt for the text generation model"),
+  images: z
+    .array(z.string())
+    .describe(
+      "The URLs of the images that are related to the text you would like to generate"
+    )
+});
+
+export type MultimodalPromptResponse = z.infer<
+  typeof MultimodalPromptResponseSchema
+>;

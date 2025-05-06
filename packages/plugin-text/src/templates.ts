@@ -14,6 +14,16 @@ Do NOT include any meta-commentary about how you generated the response or what 
 Respond as if you are directly answering the user's request.`;
 }
 
+export function generateTextMultimodalTemplate(context: string): string {
+  return `Generate a JSON object that contains a "text" field and a "images" field.
+  The "text" field should contain the text you would like to generate.
+  The "images" field should contain an array of URLs to images that are relevant to the text you would like to generate.
+
+  Here is the context chain of the users initial message, and your internal operations which generated useful data for your response:
+  ${context}
+  `;
+}
+
 export function generateChatResponseTemplate(context: string): string {
   return `Generate a response based on the context chain. Your response should be a JSON object with a single "message" field containing your response.
     The response should be related to the original message you received from the user. 

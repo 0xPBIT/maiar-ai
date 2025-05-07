@@ -107,3 +107,9 @@ export type DiscordTriggerFactory = (
     commandPrefix: string;
   }
 ) => Trigger;
+
+export const DiscordImageListSchema = z.object({
+  images: z
+    .array(z.string())
+    .describe("File paths or URLs of images to send to Discord")
+});

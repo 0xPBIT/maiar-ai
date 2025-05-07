@@ -8,7 +8,6 @@ export interface GenerateImageParams {
   steps?: number;
   seed?: number;
   output_format?: string;
-  response_format?: string;
 }
 
 export interface GenerateImageResponse {

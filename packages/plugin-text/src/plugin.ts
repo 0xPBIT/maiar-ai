@@ -46,7 +46,7 @@ export class TextGenerationPlugin extends Plugin {
       {
         name: "generate_text_multimodal",
         description:
-          "Generates text in response to a prompt and images. Use this when you need to understand any images that are in your context chain that are relevant to the prompt.",
+          "Generates text in response to a prompt and images. Use this tool when you need to understand any images that are in your context chain that are relevant to the prompt. You should run this tool when you are presented with a list of images that you should label. That way you can reference specific ones later.",
         fn: this.generateTextMultimodal.bind(this)
       },
       {
@@ -69,12 +69,12 @@ export class TextGenerationPlugin extends Plugin {
   }
 
   private async generateText(task: AgentTask): Promise<PluginResult> {
-    const generated = await this.runtime.executeCapability(
+    const text = await this.runtime.executeCapability(
       textGenerationCapability.id,
       generateTextTemplate(JSON.stringify(task))
     );
 
-    return { success: true, data: { text: generated } };
+    return { success: true, data: { text } };
   }
 
   private async generateTextMultimodal(task: AgentTask): Promise<PluginResult> {
@@ -86,7 +86,7 @@ export class TextGenerationPlugin extends Plugin {
     const prompt = promptResponse.prompt;
     const images = promptResponse.images;
 
-    const generated = await this.runtime.executeCapability(
+    const text = await this.runtime.executeCapability(
       multiModalTextGenerationCapability.id,
       {
         prompt,
@@ -94,7 +94,7 @@ export class TextGenerationPlugin extends Plugin {
       }
     );
 
-    return { success: true, data: { text: generated } };
+    return { success: true, data: { text, prompt, images } };
   }
 
   private async handleChat(req: Request, res: Response): Promise<void> {

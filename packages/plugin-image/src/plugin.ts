@@ -52,6 +52,7 @@ export class ImageGenerationPlugin extends Plugin {
         success: true,
         data: {
           urls,
+          prompt,
           helpfulInstruction:
             "IMPORTANT: You MUST use the exact URLs provided in the urls array above, including query parameters. DO NOT trucate the urls. DO NOT use placeholders like [generated-image-url]. Instead, copy and paste the complete URL from the urls array into your response. The user can access these URLs directly. Other plugins can also access these URLs."
         }
@@ -76,7 +77,7 @@ export class ImageGenerationPlugin extends Plugin {
       const prompt = promptResponse.prompt;
       const images = promptResponse.images;
 
-      const urls = await this.runtime.executeCapability(
+      const outputImageUrls = await this.runtime.executeCapability(
         multiModalImageGenerationCapability.id,
         {
           prompt,
@@ -87,9 +88,19 @@ export class ImageGenerationPlugin extends Plugin {
       return {
         success: true,
         data: {
-          urls,
+          inputData: {
+            prompt,
+            images,
+            helpfulInstruction:
+              "These are the inputs that you used to generate the images. These datapoints are here only for reference. These are not the actual images that you generated."
+          },
+          outputData: {
+            outputImageUrls,
+            helpfulInstruction:
+              "These are the images that you generated. Use these URLs to access the images directly. Other plugins can also access these URLs."
+          },
           helpfulInstruction:
-            "IMPORTANT: You MUST use the exact URLs provided in the urls array above, including query parameters. DO NOT trucate the urls. DO NOT use placeholders like [generated-image-url]. Instead, copy and paste the complete URL from the urls array into your response. The user can access these URLs directly. Other plugins can also access these URLs."
+            "IMPORTANT: You MUST use the exact URLs provided in the outputImageUrls array above, including query parameters. DO NOT trucate the urls. DO NOT use placeholders like [generated-image-url]. Instead, copy and paste the complete URL from the outputImageUrls array into your response. The user can access these URLs directly. Other plugins can also access these URLs."
         }
       };
     } catch (error) {

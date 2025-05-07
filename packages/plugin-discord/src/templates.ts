@@ -115,3 +115,22 @@ Example responses:
     "reason": "Thematic continuity with bot's previous message about [theme]"
 }`;
 }
+
+export function discordImageListTemplate(context: string): string {
+  return `You are a helpful AI assistant. 
+  From the following context chain, extract relevant output image file paths or URLs that should be sent to Discord.
+  Return ONLY a JSON object with an 'images' array containing all such file paths or URLs. 
+  Do not include any other fields or explanation.
+
+  You aren't meant to simply share all image paths. 
+  You are meant to share only the ones that are relevant to the context. Such as requests made, jobs you've performed that are specified or related to intended outputs.
+  Don't just spit out every image path you can find. Think carefully about what is relevant.
+Context Chain:
+${context}
+
+Example response:
+{
+  "images": ["/tmp/generated_image_123.png", "https://example.com/image1.png"]
+}
+`;
+}

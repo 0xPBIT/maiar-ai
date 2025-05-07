@@ -1,10 +1,13 @@
 import { BaseGuildTextChannel } from "discord.js";
+import os from "os";
+import path from "path";
 
 import { AgentTask, Executor, PluginResult, Runtime } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { DiscordService } from "./services";
 import {
+  discordImageListTemplate,
   generateChannelSelectionTemplate,
   generateResponseTemplate
 } from "./templates";
@@ -12,6 +15,7 @@ import {
   ChannelInfo,
   DiscordChannelSelectionSchema,
   DiscordExecutorFactory,
+  DiscordImageListSchema,
   DiscordReplySchema,
   DiscordSendSchema
 } from "./types";
@@ -61,6 +65,19 @@ export const sendMessageExecutor = discordExecutorFactory(
         DiscordSendSchema,
         generateResponseTemplate(JSON.stringify(task))
       );
+
+      // Extract images from context chain using DiscordImageListSchema and template
+      let images: string[] = [];
+      try {
+        const imageList = await runtime.getObject(
+          DiscordImageListSchema,
+          discordImageListTemplate(JSON.stringify(task))
+        );
+        images = imageList.images || [];
+      } catch {
+        // No images found in context, continue without attachments
+        images = [];
+      }
 
       // Get all available text channels
       const guild = service.guildId
@@ -138,7 +155,21 @@ export const sendMessageExecutor = discordExecutorFactory(
         channelName: selectedChannel.name
       });
 
-      await selectedChannel.send(response.message);
+      // Prepare files and content
+      const files: string[] = [];
+      let content = response.message;
+      for (const img of images) {
+        if (img.startsWith("http://") || img.startsWith("https://")) {
+          content += `\n${img}`;
+        } else if (img.startsWith(os.tmpdir()) || path.isAbsolute(img)) {
+          files.push(img);
+        }
+      }
+
+      await selectedChannel.send({
+        content,
+        files: files.length > 0 ? files : undefined
+      });
 
       return {
         success: true,
@@ -146,7 +177,8 @@ export const sendMessageExecutor = discordExecutorFactory(
           helpfulInstruction: `Message sent to Discord channel ${selectedChannel.name} successfully. Attached is some metadata about the message and the channel.`,
           message: response.message,
           channelId: selectedChannel.id,
-          channelName: selectedChannel.name
+          channelName: selectedChannel.name,
+          images
         }
       };
     } catch (error) {

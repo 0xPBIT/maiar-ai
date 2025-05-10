@@ -145,31 +145,25 @@ export class Runtime {
 
     // Add capability aliases to the model manager
     for (const group of capabilityAliases) {
-      if (Array.isArray(group)) {
-        // legacy synonym list
-        const canonical =
-          group.find((id) => modelManager.hasCapability(id)) || group[0];
-        if (!canonical) continue;
-        for (const id of group) {
-          if (id !== canonical)
-            modelManager.registerCapabilityAlias(id, canonical);
-        }
-      } else {
-        const canonical =
-          group.ids.find((id) => modelManager.hasCapability(id)) ||
-          group.ids[0];
-        if (!canonical) continue;
-        if (group.transforms && group.transforms.length > 0) {
-          modelManager.registerCapabilityAlias(
-            canonical,
-            canonical,
-            group.transforms
-          );
-        }
-        for (const id of group.ids) {
-          if (id === canonical) continue;
-          modelManager.registerCapabilityAlias(id, canonical, group.transforms);
-        }
+      // canonical capability ID is the first one that exists on a registered model, or the first ID in the list
+      const canonical =
+        group.ids.find((id) => modelManager.hasCapability(id)) || group.ids[0];
+
+      if (!canonical) continue;
+
+      // register transforms (if any) on the canonical id itself
+      if (group.transforms?.length) {
+        modelManager.registerCapabilityAlias(
+          canonical,
+          canonical,
+          group.transforms
+        );
+      }
+
+      // register each non-canonical id as an alias of the canonical id
+      for (const id of group.ids) {
+        if (id === canonical) continue;
+        modelManager.registerCapabilityAlias(id, canonical, group.transforms);
       }
     }
 
@@ -195,7 +189,7 @@ export class Runtime {
       }
     );
 
-    // Validate all plugins have required capabilities implemented in the model manager
+    // Validate all the model manager has all the capabilities required by the plugins
     for (const plugin of pluginRegistry.plugins) {
       for (const capability of plugin.requiredCapabilities) {
         if (!modelManager.hasCapability(capability)) {

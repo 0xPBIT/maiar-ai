@@ -1,5 +1,10 @@
 import { ZodType } from "zod";
 
+/*
+ * Capability transform entry - used to transform the input, output, or config of a capability.
+ * This enables consumers of model providers and plugins to bind together disparate capabilities that
+ * share similar functionality, but have different names, or input/output types or shapes.
+ */
 export interface CapabilityTransformEntry {
   input?: {
     plugin: ZodType<unknown>;
@@ -30,6 +35,7 @@ export interface CapabilityTransformEntry {
   };
 }
 
-export type CapabilityAliasGroup =
-  | string[]
-  | { ids: string[]; transforms?: CapabilityTransformEntry[] };
+export type CapabilityAliasGroup = {
+  ids: string[];
+  transforms?: CapabilityTransformEntry[];
+};

@@ -25,8 +25,8 @@ import {
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
 import {
-  ImageGenerationPlugin,
-  multiModalImageGenerationCapability as pluginMM
+  multiModalImageGenerationCapability as comicImageMM,
+  ImageGenerationPlugin
 } from "@maiar-ai/plugin-image";
 import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
@@ -94,28 +94,15 @@ async function main() {
 
   const capabilityAliases = [
     {
-      ids: ["image-generation", "create-image", "generate-image"]
-    },
-    {
-      ids: [openaiMM.id, pluginMM.id],
+      ids: [openaiMM.id, comicImageMM.id],
       transforms: [
         {
-          config: {
-            plugin: pluginMM.config ?? z.any(),
-            provider: openaiMM.config ?? z.any(),
-            transform: (
-              cfg: unknown
-            ): z.infer<NonNullable<typeof openaiMM.config>> | undefined =>
-              cfg && typeof cfg === "object" && "number" in cfg
-                ? { n: (cfg as { number: number }).number }
-                : undefined
-          },
           input: {
-            plugin: pluginMM.input,
+            plugin: comicImageMM.input,
             provider: openaiMM.input,
             transform: (data: unknown) => {
               return {
-                ...(data as z.infer<typeof pluginMM.input>),
+                ...(data as z.infer<typeof comicImageMM.input>),
                 images: (data as { urls: string[] }).urls
               };
             }
@@ -148,7 +135,6 @@ async function main() {
 if (require.main === module) {
   (async () => {
     try {
-      console.log("Starting agent...");
       await main();
     } catch (error) {
       console.error("Failed to start agent");

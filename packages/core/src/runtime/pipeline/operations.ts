@@ -1,4 +1,3 @@
-// DEV NOTE: GET RID OF THIS ENTIRE FILE OR MOVE THE CONTENTS TO SOMEWHERE ELSE
 import { z } from "zod";
 
 /**

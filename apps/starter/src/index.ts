@@ -4,7 +4,13 @@ import { config } from "dotenv";
 import { join, resolve } from "path";
 import { z } from "zod";
 
-import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
+import {
+  CapabilityAliasGroup,
+  MemoryProvider,
+  ModelProvider,
+  Plugin,
+  Runtime
+} from "@maiar-ai/core";
 import { stdout, websocket } from "@maiar-ai/core/dist/logger";
 
 import {
@@ -12,11 +18,9 @@ import {
   OpenAIMultiModalImageGenerationModel,
   OpenAIMultiModalTextGenerationModel
 } from "@maiar-ai/model-openai";
-import { multiModalImageGenerationCapability as openaiMM } from "@maiar-ai/model-openai";
+import { multiModalImageGenerationCapability as openaiImageGenMM } from "@maiar-ai/model-openai";
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
-
-// import { PostgresMemoryProvider } from "@maiar-ai/memory-postgres";
 
 import {
   DiscordPlugin,
@@ -25,8 +29,8 @@ import {
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
 import {
-  multiModalImageGenerationCapability as comicImageMM,
-  ImageGenerationPlugin
+  ImageGenerationPlugin,
+  multiModalImageGenerationCapability as pluginImageGenMM
 } from "@maiar-ai/plugin-image";
 import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
@@ -92,17 +96,29 @@ async function main() {
     // })
   ];
 
-  const capabilityAliases = [
+  const capabilityAliases: CapabilityAliasGroup[] = [
     {
-      ids: [openaiMM.id, comicImageMM.id],
+      ids: [openaiImageGenMM.id, pluginImageGenMM.id],
       transforms: [
         {
-          input: {
-            plugin: comicImageMM.input,
-            provider: openaiMM.input,
+          config: {
+            plugin: pluginImageGenMM.config!,
+            provider: openaiImageGenMM.config!,
             transform: (data: unknown) => {
               return {
-                ...(data as z.infer<typeof comicImageMM.input>),
+                ...(data as z.infer<
+                  NonNullable<typeof pluginImageGenMM.config>
+                >),
+                images: (data as { urls: string[] }).urls
+              };
+            }
+          },
+          input: {
+            plugin: pluginImageGenMM.input,
+            provider: openaiImageGenMM.input,
+            transform: (data: unknown) => {
+              return {
+                ...(data as z.infer<typeof pluginImageGenMM.input>),
                 images: (data as { urls: string[] }).urls
               };
             }

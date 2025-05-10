@@ -159,6 +159,13 @@ export class Runtime {
           group.ids.find((id) => modelManager.hasCapability(id)) ||
           group.ids[0];
         if (!canonical) continue;
+        if (group.transforms && group.transforms.length > 0) {
+          modelManager.registerCapabilityAlias(
+            canonical,
+            canonical,
+            group.transforms
+          );
+        }
         for (const id of group.ids) {
           if (id === canonical) continue;
           modelManager.registerCapabilityAlias(id, canonical, group.transforms);

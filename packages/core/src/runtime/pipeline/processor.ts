@@ -131,7 +131,7 @@ export class Processor {
         steps
       });
 
-      this.logger.info("generated pipeline", {
+      this.logger.warn("generated pipeline", {
         type: "runtime.pipeline.generated",
         pipeline
       });

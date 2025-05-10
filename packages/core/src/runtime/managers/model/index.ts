@@ -198,13 +198,20 @@ export class ModelManager {
     modelId?: string
   ): Promise<ICapabilities[K]["output"]> {
     // [alias-transform] begin resolve alias and transform
-    const aliasMeta = this.capabilityAliasTransforms.get(
-      capabilityId as string
-    );
+    let aliasMeta = this.capabilityAliasTransforms.get(capabilityId as string);
+
     const resolvedCapabilityId =
       aliasMeta?.canonical ||
       this.capabilityAliases.get(capabilityId as string) ||
       capabilityId;
+
+    // If no meta was found for the alias itself, try the canonical id. This covers the
+    // case where the alias == canonical (we still registered transforms keyed by the canonical id).
+    if (!aliasMeta) {
+      aliasMeta = this.capabilityAliasTransforms.get(
+        resolvedCapabilityId as string
+      );
+    }
     // [alias-transform] end resolve alias and transform
 
     // Get the effective model to use
@@ -238,8 +245,24 @@ export class ModelManager {
     // [alias-transform] begin schema transform logic (new grouped design)
     let entry: CapabilityTransformEntry | undefined = undefined;
     if (aliasMeta) {
-      // Find first entry where input, output, or config group matches (or just use first)
-      entry = aliasMeta.entries[0]; // For demo, use first; can add smarter matching if needed
+      // Try to find an entry whose plugin-side schemas accept the provided data
+      entry =
+        aliasMeta.entries.find((e) => {
+          // Check input schema match (if defined)
+          if (e.input) {
+            const result = e.input.plugin.safeParse(input);
+            if (!result.success) return false;
+          }
+
+          // Check config schema match (if defined and config provided)
+          if (e.config && config !== undefined) {
+            const cfgResult = e.config.plugin.safeParse(config);
+            if (!cfgResult.success) return false;
+          }
+
+          // Optionally we could verify output compatibility here, but input/config is enough
+          return true;
+        }) || aliasMeta.entries[0]; // Fallback to the first entry
     }
     // Input transform
     let providerInput: unknown = input;

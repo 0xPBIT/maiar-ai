@@ -1,8 +1,6 @@
 import "dotenv/config";
 
 import { config } from "dotenv";
-import { readFileSync } from "fs";
-// import { readFileSync } from "fs";
 import { join, resolve } from "path";
 import { z } from "zod";
 
@@ -18,7 +16,6 @@ import { multiModalImageGenerationCapability as openaiMM } from "@maiar-ai/model
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
-import { CharacterPlugin } from "@maiar-ai/plugin-character";
 // import { PostgresMemoryProvider } from "@maiar-ai/memory-postgres";
 
 import {
@@ -31,12 +28,11 @@ import {
   ImageGenerationPlugin,
   multiModalImageGenerationCapability as pluginMM
 } from "@maiar-ai/plugin-image";
+import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
-
-import { SearchPermissionPlugin } from "./lib/plugins/plugin-permissions-search";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -70,9 +66,13 @@ async function main() {
   const plugins: Plugin[] = [
     new TextGenerationPlugin(),
     new TimePlugin(),
-    new SearchPermissionPlugin(["0xPBIT"]),
+    //new SearchPermissionPlugin(["0xPBIT"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
+    }),
+    new MCPPlugin({
+      name: "solcopilot",
+      url: "https://solcopilot.com/api/mcp/f93d71fc23b61cc95172ef1842fd7d78ae3357b26a4733b41bc6a913c5a78285"
     }),
     new ImageGenerationPlugin(),
     new DiscordPlugin({
@@ -86,10 +86,10 @@ async function main() {
       token: process.env.TELEGRAM_BOT_TOKEN as string,
       pollingTimeout: 10000,
       dropPendingUpdates: true
-    }),
-    new CharacterPlugin({
-      character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     })
+    // new CharacterPlugin({
+    //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
+    // })
   ];
 
   const capabilityAliases = [
@@ -97,7 +97,7 @@ async function main() {
       ids: ["image-generation", "create-image", "generate-image"]
     },
     {
-      ids: ["multi-modal-image-generation", "generate-image-mm"],
+      ids: [openaiMM.id, pluginMM.id],
       transforms: [
         {
           config: {
@@ -109,6 +109,16 @@ async function main() {
               cfg && typeof cfg === "object" && "number" in cfg
                 ? { n: (cfg as { number: number }).number }
                 : undefined
+          },
+          input: {
+            plugin: pluginMM.input,
+            provider: openaiMM.input,
+            transform: (data: unknown) => {
+              return {
+                ...(data as z.infer<typeof pluginMM.input>),
+                images: (data as { urls: string[] }).urls
+              };
+            }
           }
         }
       ]

@@ -45,7 +45,7 @@ export const multiModalImageGenerationCapability = defineCapability({
 
 // Group all capabilities for this provider into a readonly tuple so we can derive
 // a CapabilityMap type and reuse it in the module augmentation below.
-export const OPENAI_CAPABILITIES = [
+export const CAPABILITIES = [
   textGenerationCapability,
   imageGenerationCapability,
   multiModalImageGenerationCapability,
@@ -55,5 +55,5 @@ export const OPENAI_CAPABILITIES = [
 // Use the CapabilityMap helper to augment ICapabilities with all OpenAI capabilities.
 declare module "@maiar-ai/core" {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface ICapabilities extends CapabilityMap<typeof OPENAI_CAPABILITIES> {}
+  interface ICapabilities extends CapabilityMap<typeof CAPABILITIES> {}
 }

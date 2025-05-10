@@ -16,9 +16,12 @@ export const multiModalImageGenerationCapability = defineCapability({
   description: "Generate images from text prompts and other images",
   input: z.object({
     prompt: z.string(),
-    images: z.array(z.string()).optional()
+    urls: z.array(z.string()).optional()
   }),
-  output: z.array(z.string())
+  output: z.array(z.string()),
+  config: z.object({
+    number: z.number().int().positive().default(1)
+  })
 });
 
 // Group all capabilities for this provider into a readonly tuple so we can derive

@@ -15,6 +15,9 @@ import {
   textGenerationCapability
 } from "./capabiliites";
 import {
+  DESCRIPTION,
+  GENERATE_TEXT_MULTIMODAL_TEMPLATE,
+  GENERATE_TEXT_TEMPLATE,
   generateChatResponseTemplate,
   generateTextMultimodalTemplate,
   generateTextTemplate
@@ -30,7 +33,7 @@ export class TextGenerationPlugin extends Plugin {
     super({
       id: "plugin-text",
       name: "Text Generation",
-      description: "Provides text generation capabilities",
+      description: DESCRIPTION,
       requiredCapabilities: [
         textGenerationCapability.id,
         multiModalTextGenerationCapability.id
@@ -40,18 +43,18 @@ export class TextGenerationPlugin extends Plugin {
     this.executors = [
       {
         name: "generate_text",
-        description: "Generates text in response to a prompt",
+        description: GENERATE_TEXT_TEMPLATE,
         fn: this.generateText.bind(this)
       },
       {
         name: "generate_text_multimodal",
-        description:
-          "Generates text in response to a prompt and images. Use this tool when you need to understand any images that are in your context chain that are relevant to the prompt. You should run this tool when you are presented with a list of images that you should label. That way you can reference specific ones later.",
+        description: GENERATE_TEXT_MULTIMODAL_TEMPLATE,
         fn: this.generateTextMultimodal.bind(this)
       },
       {
         name: "send_chat_response",
-        description: "Sends a chat response to the user",
+        description:
+          "Delivers the formatted chat response (already computed earlier in the Context Chain) back to the end-user via the platform's HTTP channel.",
         fn: this.sendChatResponse.bind(this)
       }
     ];

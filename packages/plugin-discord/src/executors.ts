@@ -102,6 +102,7 @@ export const sendMessageExecutor = discordExecutorFactory(
       ) as Map<string, BaseGuildTextChannel>;
 
       if (textChannels.size === 0) {
+        service.isProcessing = false;
         return {
           success: false,
           error: "No text channels available to send message to"
@@ -143,6 +144,7 @@ export const sendMessageExecutor = discordExecutorFactory(
 
       const selectedChannel = textChannels.get(channelSelection.channelId);
       if (!selectedChannel) {
+        service.isProcessing = false;
         return {
           success: false,
           error: "Selected channel not found"
@@ -165,6 +167,9 @@ export const sendMessageExecutor = discordExecutorFactory(
           files.push(img);
         }
       }
+
+      service.isProcessing = false;
+      service.stopTypingIndicator(selectedChannel.id);
 
       await selectedChannel.send({
         content,
@@ -191,6 +196,8 @@ export const sendMessageExecutor = discordExecutorFactory(
         success: false,
         error: error instanceof Error ? error.message : String(error)
       };
+    } finally {
+      service.isProcessing = false;
     }
   }
 );
@@ -266,6 +273,8 @@ export const replyMessageExecutor = discordExecutorFactory(
         success: false,
         error: error instanceof Error ? error.message : String(error)
       };
+    } finally {
+      service.isProcessing = false;
     }
   }
 );

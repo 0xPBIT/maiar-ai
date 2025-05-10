@@ -4,7 +4,13 @@ import {
   imageGenerationCapability,
   multiModalImageGenerationCapability
 } from "./capabilities";
-import { multimodalToImageTemplate, textToImageTemplate } from "./templates";
+import {
+  DESCRIPTION,
+  GENERATE_IMAGE_TEMPLATE,
+  GENERATE_IMAGE_WITH_IMAGES_TEMPLATE,
+  multimodalToImageTemplate,
+  textToImageTemplate
+} from "./templates";
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
@@ -12,7 +18,7 @@ export class ImageGenerationPlugin extends Plugin {
     super({
       id: "plugin-image-generation",
       name: "image",
-      description: "Generate images from text descriptions using GetImg.ai API",
+      description: DESCRIPTION,
       requiredCapabilities: [
         imageGenerationCapability.id,
         multiModalImageGenerationCapability.id
@@ -22,13 +28,12 @@ export class ImageGenerationPlugin extends Plugin {
     this.executors = [
       {
         name: "generate_image",
-        description: "Generate an image based on a text prompt",
+        description: GENERATE_IMAGE_TEMPLATE,
         fn: this.generateImage.bind(this)
       },
       {
         name: "generate_image_with_images",
-        description:
-          "Generate an image based on a text prompt and other images",
+        description: GENERATE_IMAGE_WITH_IMAGES_TEMPLATE,
         fn: this.generateImageWithImages.bind(this)
       }
     ];
@@ -81,7 +86,7 @@ export class ImageGenerationPlugin extends Plugin {
         multiModalImageGenerationCapability.id,
         {
           prompt,
-          images
+          urls: images
         }
       );
 

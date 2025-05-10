@@ -79,7 +79,7 @@ export const postListenerTrigger: DiscordTriggerFactory = (
         // store the message in memory as a task so it can be used as a related memory
         await runtime.memory.storeMemory(messageTask);
 
-        logger.info("skipping message - not intended for agent", {
+        logger.info("skipping message - currently processing another message", {
           type: "discord.message.skipped",
           content: message.content,
           channelId: message.channelId,
@@ -101,6 +101,7 @@ export const postListenerTrigger: DiscordTriggerFactory = (
         author: message.author.username,
         channelId: message.channelId,
         isMention: isMentioned,
+        mentions: discordService.clientId,
         isReply: !!message.reference?.messageId
       });
 

@@ -430,7 +430,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       mime:
-        specifier: ^4.0.7
+        specifier: 4.0.7
         version: 4.0.7
       openai:
         specifier: 4.97.0

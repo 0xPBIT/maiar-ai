@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { config } from "dotenv";
+import { readFileSync } from "fs";
 import { join, resolve } from "path";
 import { z } from "zod";
 
@@ -37,6 +38,8 @@ import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
+
+import { CharacterPlugin } from "../../../packages/plugin-character/dist";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -90,10 +93,10 @@ async function main() {
       token: process.env.TELEGRAM_BOT_TOKEN as string,
       pollingTimeout: 10000,
       dropPendingUpdates: true
+    }),
+    new CharacterPlugin({
+      character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     })
-    // new CharacterPlugin({
-    //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
-    // })
   ];
 
   const capabilityAliases: CapabilityAliasGroup[] = [

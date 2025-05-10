@@ -61,7 +61,7 @@ export function textToImageTemplate(context: string): string {
     Return a JSON object with a single "prompt" field containing the composed prompt.
     Example:
     {
-        "prompt": "A serene 3D render of a glass lighthouse on a cliff at dusk, soft purple sky, volumetric fog, octane render, --ar 16:9 --no text watermark"
+        "prompt": "A serene 3D render of a glass lighthouse on a cliff at dusk, soft purple sky, volumetric fog, octane render, --ar 16:9"
     }
     `;
 }

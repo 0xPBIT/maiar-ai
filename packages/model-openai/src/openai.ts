@@ -232,7 +232,7 @@ export class OpenAIModelProvider extends ModelProvider {
       NonNullable<typeof multiModalImageGenerationCapability.config>
     >
   ): Promise<z.infer<typeof multiModalImageGenerationCapability.output>> {
-    this.logger.warn("openai.model.capability.execution.input", {
+    this.logger.debug("openai.model.capability.execution.input", {
       type: "openai.model.capability.execution.input",
       modelId: this.id,
       capabilityId: "multi-modal-image-generation",
@@ -382,7 +382,7 @@ export class OpenAIModelProvider extends ModelProvider {
         throw new Error("No valid edited image data to save");
       }
 
-      this.logger.warn("openai.model.capability.execution.output", {
+      this.logger.debug("openai.model.capability.execution.output", {
         type: "openai.model.capability.execution.output",
         modelId: this.id,
         capabilityId: "multi-modal-image-generation",

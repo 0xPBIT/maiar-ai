@@ -33,7 +33,6 @@ import {
   ImageGenerationPlugin,
   multiModalImageGenerationCapability as pluginImageGenMM
 } from "@maiar-ai/plugin-image";
-import { MCPPlugin } from "@maiar-ai/plugin-mcp";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
@@ -76,10 +75,6 @@ async function main() {
     //new SearchPermissionPlugin(["0xPBIT"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
-    }),
-    new MCPPlugin({
-      name: "solcopilot",
-      url: "https://solcopilot.com/api/mcp/f93d71fc23b61cc95172ef1842fd7d78ae3357b26a4733b41bc6a913c5a78285"
     }),
     new ImageGenerationPlugin(),
     new DiscordPlugin({

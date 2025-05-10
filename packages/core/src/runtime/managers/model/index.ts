@@ -197,7 +197,7 @@ export class ModelManager {
     config?: unknown,
     modelId?: string
   ): Promise<ICapabilities[K]["output"]> {
-    // [alias-transform] begin resolve alias and transform
+    // begin resolve alias and transform shape
     let aliasMeta = this.capabilityAliasTransforms.get(capabilityId as string);
 
     const resolvedCapabilityId =
@@ -212,7 +212,7 @@ export class ModelManager {
         resolvedCapabilityId as string
       );
     }
-    // [alias-transform] end resolve alias and transform
+    // end resolve alias and transform shapes
 
     // Get the effective model to use
     const effectiveModelId =
@@ -242,7 +242,7 @@ export class ModelManager {
       );
     }
 
-    // [alias-transform] begin schema transform logic (new grouped design)
+    // begin schema transform logic for the capability
     let entry: CapabilityTransformEntry | undefined = undefined;
     if (aliasMeta) {
       // Try to find an entry whose plugin-side schemas accept the provided data
@@ -260,7 +260,6 @@ export class ModelManager {
             if (!cfgResult.success) return false;
           }
 
-          // Optionally we could verify output compatibility here, but input/config is enough
           return true;
         }) || aliasMeta.entries[0]; // Fallback to the first entry
     }

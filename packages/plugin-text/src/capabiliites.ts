@@ -13,7 +13,7 @@ export const textGenerationCapability = defineCapability({
 export const multiModalTextGenerationCapability = defineCapability({
   id: "multi-modal-text-generation",
   name: "multi-modal-text-generation",
-  description: "Generate text from text prompts and other text",
+  description: "Generate text from text prompts and images",
   input: z.object({
     prompt: z.string(),
     images: z.array(z.string()).optional()

@@ -81,13 +81,13 @@ export function generateChatResponseTemplate(context: string): string {
 //************************************************** */
 
 export const DESCRIPTION = `
-  Comprehensive text-processing suite. Use this plugin to synthesise, summarise, translate, rewrite, classify, and reason over textual or multimodal context. It excels at turning raw user prompts, documents, tables, code snippets, or referenced images into clear, textual outputs.
+  Comprehensive text-processing suite. Use this plugin to synthesise, summarize, translate, rewrite, classify, and reason over textual or multimodal context. It excels at turning raw user prompts, documents, tables, code snippets, or referenced images into clear, textual outputs.
 `;
 
 export const GENERATE_TEXT_TEMPLATE = `
   General-purpose text engine.
 
-  Run this tool when you need to draft, expand, summarise, translate, reorganise, or otherwise transform pure textual information found in the Context Chain into a coherent response.
+  Run this tool when you need to draft, expand, summarize, translate, reorganise, or otherwise transform pure textual information found in the Context Chain into a coherent response.
 `;
 
 export const GENERATE_TEXT_MULTIMODAL_TEMPLATE = `

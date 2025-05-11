@@ -102,22 +102,30 @@ async function main() {
           config: {
             plugin: pluginImageGenMM.config!,
             provider: openaiImageGenMM.config!,
-            transform: (data: unknown) => {
+            transform: (
+              d
+            ): z.infer<NonNullable<typeof openaiImageGenMM.config>> => {
+              const data = d as z.infer<
+                NonNullable<typeof pluginImageGenMM.config>
+              >;
               return {
-                ...(data as z.infer<
-                  NonNullable<typeof pluginImageGenMM.config>
-                >),
-                images: (data as { urls: string[] }).urls
+                ...data,
+                n: data.number
               };
             }
           },
           input: {
             plugin: pluginImageGenMM.input,
             provider: openaiImageGenMM.input,
-            transform: (data: unknown) => {
+            transform: (
+              d
+            ): z.infer<NonNullable<typeof openaiImageGenMM.input>> => {
+              const data = d as z.infer<
+                NonNullable<typeof pluginImageGenMM.input>
+              >;
               return {
-                ...(data as z.infer<typeof pluginImageGenMM.input>),
-                images: (data as { urls: string[] }).urls
+                ...data,
+                images: data.urls
               };
             }
           }

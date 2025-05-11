@@ -205,8 +205,7 @@ export class ModelManager {
       this.capabilityAliases.get(capabilityId as string) ||
       capabilityId;
 
-    // If no meta was found for the alias itself, try the canonical id. This covers the
-    // case where the alias == canonical (we still registered transforms keyed by the canonical id).
+    // If no meta was found for the alias itself, try the canonical id. This covers the case where the alias == canonical (we still registered transforms keyed by the canonical id).
     if (!aliasMeta) {
       aliasMeta = this.capabilityAliasTransforms.get(
         resolvedCapabilityId as string
@@ -243,7 +242,7 @@ export class ModelManager {
     }
 
     // begin schema transform logic for the capability
-    let entry: CapabilityTransformEntry | undefined = undefined;
+    let entry: CapabilityTransformEntry | undefined;
     if (aliasMeta) {
       // Try to find an entry whose plugin-side schemas accept the provided data
       entry =
@@ -305,14 +304,34 @@ export class ModelManager {
       validatedInput.data,
       validatedConfig
     );
-    const finalOutput = entry?.output
+    // Validate the provider's raw output against the provider-side schema
+    const providerOutputSchema = entry?.output?.provider ?? capability.output;
+    const providerParsedOutput = providerOutputSchema.safeParse(rawResult);
+    if (!providerParsedOutput.success) {
+      throw new Error(
+        `Invalid output from provider for capability ${resolvedCapabilityId}: ${providerParsedOutput.error}`
+      );
+    }
+
+    // Transform the output from provider shape → plugin shape (if transform is defined)
+    const transformedOutput = entry?.output
       ? entry.output.transform(
-          rawResult,
+          providerParsedOutput.data,
           entry.output.provider,
           entry.output.plugin
         )
-      : rawResult;
-    return finalOutput as ICapabilities[K]["output"];
+      : providerParsedOutput.data;
+
+    // Validate the transformed output against the plugin-side schema
+    const pluginOutputSchema = entry?.output?.plugin ?? capability.output;
+    const pluginParsedOutput = pluginOutputSchema.safeParse(transformedOutput);
+    if (!pluginParsedOutput.success) {
+      throw new Error(
+        `Invalid output for capability ${resolvedCapabilityId}: ${pluginParsedOutput.error}`
+      );
+    }
+
+    return pluginParsedOutput.data as ICapabilities[K]["output"];
   }
 
   /**

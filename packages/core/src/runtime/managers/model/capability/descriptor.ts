@@ -15,16 +15,17 @@ export interface CapabilityDescriptor<
   readonly config?: ZodType<C>;
 }
 
-//
-// Why use defineCapability function?
-// ------------------------
-// This function is not a runtime utility, but a type inference helper. By passing your
-// capability descriptor object through this function, TypeScript preserves literal types
-// (e.g., the exact string value of `id`) and infers the most specific types for input/output schemas.
-// This enables strong type inference and compile-time safety when building utilities like CapabilityMap,
-// and prevents accidental widening of types (e.g., from 'text-generation' to string).
-//
-// It also provides a single place to add future runtime hooks, validation, or metadata if needed.
+/**
+ * Why use defineCapability function?
+ * ------------------------
+ * This function is not a runtime utility, but a type inference helper. By passing your
+ * capability descriptor object through this function, TypeScript preserves literal types
+ * (e.g., the exact string value of `id`) and infers the most specific types for input/output schemas.
+ * This enables strong type inference and compile-time safety when building utilities like CapabilityMap,
+ * and prevents accidental widening of types (e.g., from 'text-generation' to string).
+ *
+ * It also provides a single place to add future runtime hooks, validation, or metadata if needed.
+ */
 
 /**
  * Capability inference helper

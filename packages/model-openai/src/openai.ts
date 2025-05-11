@@ -155,7 +155,7 @@ export class OpenAIModelProvider extends ModelProvider {
       throw new Error("Unexpected number of images generated");
     }
 
-    const urls = response.data!.map((image) => image.url).filter(Boolean);
+    const urls = response.data.map((image) => image.url).filter(Boolean);
     const filteredUrls = urls.filter((url) => url !== undefined);
 
     if (filteredUrls.length === 0) {
@@ -236,44 +236,42 @@ export class OpenAIModelProvider extends ModelProvider {
       type: "openai.model.capability.execution.input",
       modelId: this.id,
       capabilityId: "multi-modal-image-generation",
-      metadata: {
-        input
-      }
+      input
     });
 
     // If no images are provided, call the create method
     if (!input.images || input.images?.length === 0) {
-      const n = config?.n ?? 1;
+      const n = config?.n || 1;
       const response = await this.client.images.generate({
         prompt: input.prompt,
         n,
         size: "1024x1024",
         model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m))
       });
-
       const filePaths: string[] = [];
-      for (let i = 0; i < (response.data ?? []).length; i++) {
-        const image = (response.data ?? [])[i];
-        if (image) {
-          if (image.url) {
-            const tempFilePath = await this.saveImageFromUrl(
-              image.url,
-              `generated_image_${Date.now()}_${i}`
-            );
-            filePaths.push(tempFilePath);
-          } else if (image.b64_json) {
-            const tempFilePath = await this.saveImageFromBase64(
-              image.b64_json,
-              `generated_image_${Date.now()}_${i}`
-            );
-            filePaths.push(tempFilePath);
-          }
+      // Use a re-usable variable with || operator for cleaner access to response data
+      const responseData = response.data || [];
+      for (let i = 0; i < responseData.length; i++) {
+        const image = responseData[i];
+        if (!image) throw new Error("No image data returned from OpenAI");
+
+        if (image.url) {
+          const tempFilePath = await this.saveImageFromUrl(
+            image.url,
+            `generated_image_${Date.now()}_${i}`
+          );
+          filePaths.push(tempFilePath);
+        } else if (image.b64_json) {
+          const tempFilePath = await this.saveImageFromBase64(
+            image.b64_json,
+            `generated_image_${Date.now()}_${i}`
+          );
+          filePaths.push(tempFilePath);
         }
       }
 
-      if (filePaths.length === 0) {
+      if (filePaths.length === 0)
         throw new Error("No valid image data to save");
-      }
 
       return filePaths;
     }
@@ -302,12 +300,18 @@ export class OpenAIModelProvider extends ModelProvider {
               urlParts[urlParts.length - 1]?.toLowerCase() || "";
             if (["png", "jpg", "jpeg", "webp"].includes(extension)) {
               fileName += `.${extension}`;
-              mimeType =
-                extension === "png"
-                  ? "image/png"
-                  : extension === "webp"
-                    ? "image/webp"
-                    : "image/jpeg";
+              // Use switch statement for better readability when mapping extensions to MIME types
+              switch (extension) {
+                case "png":
+                  mimeType = "image/png";
+                  break;
+                case "webp":
+                  mimeType = "image/webp";
+                  break;
+                default:
+                  mimeType = "image/jpeg";
+                  break;
+              }
             }
           } else {
             // Handle local file path
@@ -321,53 +325,62 @@ export class OpenAIModelProvider extends ModelProvider {
               );
             }
             fileName += fileExtension ? `.${fileExtension}` : ".png";
-            mimeType =
-              fileExtension === "png"
-                ? "image/png"
-                : fileExtension === "webp"
-                  ? "image/webp"
-                  : fileExtension === "jpg" || fileExtension === "jpeg"
-                    ? "image/jpeg"
-                    : "image/png";
+            // Use switch statement for better readability when mapping extensions to MIME types
+            switch (fileExtension) {
+              case "png":
+                mimeType = "image/png";
+                break;
+              case "webp":
+                mimeType = "image/webp";
+                break;
+              case "jpg":
+              case "jpeg":
+                mimeType = "image/jpeg";
+                break;
+              default:
+                mimeType = "image/png";
+                break;
+            }
             imageData = fs.createReadStream(image);
           }
           const uploadableImage = await toFile(imageData, fileName, {
             type: mimeType
           });
-
-          const editResponse = await this.client.images
-            .edit({
+          // Use try/catch for error handling instead of .catch() for better readability and consistency
+          let editResponse;
+          try {
+            editResponse = await this.client.images.edit({
               prompt: input.prompt,
-              n: 1,
+              n: config?.n || 1,
               size: "1024x1024",
               image: uploadableImage,
               model: this.models.find((m) => MULTI_MODAL_IMAGE_MODELS.has(m))
-            })
-            .catch((err) => {
-              throw new Error(
-                `API error during image edit for ${image}: ${err.message || err}`
-              );
             });
-
-          if (!editResponse.data) {
-            continue;
+          } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            throw new Error(
+              `API error during image edit for ${image}: ${error.message}`
+            );
           }
+
+          if (!editResponse.data) continue;
+
           for (let i = 0; i < editResponse.data.length; i++) {
             const editedImage = editResponse.data[i];
-            if (editedImage) {
-              if (editedImage.url) {
-                const tempFilePath = await this.saveImageFromUrl(
-                  editedImage.url,
-                  `edited_image_${Date.now()}_${results.length}_${i}`
-                );
-                results.push(tempFilePath);
-              } else if (editedImage.b64_json) {
-                const tempFilePath = await this.saveImageFromBase64(
-                  editedImage.b64_json,
-                  `edited_image_${Date.now()}_${results.length}_${i}`
-                );
-                results.push(tempFilePath);
-              }
+            if (!editedImage) continue;
+
+            if (editedImage.url) {
+              const tempFilePath = await this.saveImageFromUrl(
+                editedImage.url,
+                `edited_image_${Date.now()}_${results.length}_${i}`
+              );
+              results.push(tempFilePath);
+            } else if (editedImage.b64_json) {
+              const tempFilePath = await this.saveImageFromBase64(
+                editedImage.b64_json,
+                `edited_image_${Date.now()}_${results.length}_${i}`
+              );
+              results.push(tempFilePath);
             }
           }
         } catch (error: unknown) {
@@ -378,17 +391,14 @@ export class OpenAIModelProvider extends ModelProvider {
         }
       }
 
-      if (results.length === 0) {
+      if (results.length === 0)
         throw new Error("No valid edited image data to save");
-      }
 
       this.logger.debug("openai.model.capability.execution.output", {
         type: "openai.model.capability.execution.output",
         modelId: this.id,
         capabilityId: "multi-modal-image-generation",
-        metadata: {
-          results
-        }
+        results
       });
       return results;
     }
@@ -407,30 +417,33 @@ export class OpenAIModelProvider extends ModelProvider {
     const model = this.models.find((m) => MULTI_MODAL_TEXT_MODELS.has(m));
     if (!model) throw new Error("No multimodal text model configured");
 
-    const imageParts = input.images
-      ? await Promise.all(
-          input.images.map(
-            async (image): Promise<OpenAI.ChatCompletionContentPartImage> => {
-              if (image.startsWith("http://") || image.startsWith("https://")) {
-                return {
-                  type: "image_url",
-                  image_url: { url: image }
-                };
-              } else {
-                // Local file: read and convert to base64
-                const fileBuffer = fs.readFileSync(image);
-                const ext = image.split(".").pop() || "png";
-                const mimeType = mime.getType(ext) || "image/png";
-                const base64 = fileBuffer.toString("base64");
-                return {
-                  type: "image_url",
-                  image_url: { url: `data:${mimeType};base64,${base64}` }
-                };
-              }
+    let imageParts: OpenAI.ChatCompletionContentPartImage[] = [];
+    if (!input.images || input.images.length === 0) {
+      imageParts = [];
+    } else {
+      imageParts = await Promise.all(
+        input.images.map(
+          async (image): Promise<OpenAI.ChatCompletionContentPartImage> => {
+            if (image.startsWith("http://") || image.startsWith("https://")) {
+              return {
+                type: "image_url",
+                image_url: { url: image }
+              };
+            } else {
+              // Local file: read and convert to base64
+              const fileBuffer = fs.readFileSync(image);
+              const ext = image.split(".").pop() || "png";
+              const mimeType = mime.getType(ext) || "image/png";
+              const base64 = fileBuffer.toString("base64");
+              return {
+                type: "image_url",
+                image_url: { url: `data:${mimeType};base64,${base64}` }
+              };
             }
-          )
+          }
         )
-      : [];
+      );
+    }
 
     const response = await this.client.chat.completions.create({
       model,
@@ -442,7 +455,7 @@ export class OpenAIModelProvider extends ModelProvider {
       ]
     });
 
-    return response.choices[0]?.message?.content ?? "";
+    return response.choices[0]?.message?.content || "";
   }
 
   /**

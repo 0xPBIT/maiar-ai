@@ -157,6 +157,7 @@ async function main() {
 if (require.main === module) {
   (async () => {
     try {
+      console.log("Starting agent...");
       await main();
     } catch (error) {
       console.error("Failed to start agent");

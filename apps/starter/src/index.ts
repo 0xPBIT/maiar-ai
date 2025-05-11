@@ -105,12 +105,12 @@ async function main() {
             transform: (
               d
             ): z.infer<NonNullable<typeof openaiImageGenMM.config>> => {
-              const data = d as z.infer<
+              const config = d as z.infer<
                 NonNullable<typeof pluginImageGenMM.config>
               >;
               return {
-                ...data,
-                n: data.number
+                ...config,
+                n: config.number
               };
             }
           },
@@ -120,12 +120,12 @@ async function main() {
             transform: (
               d
             ): z.infer<NonNullable<typeof openaiImageGenMM.input>> => {
-              const data = d as z.infer<
+              const input = d as z.infer<
                 NonNullable<typeof pluginImageGenMM.input>
               >;
               return {
-                ...data,
-                images: data.urls
+                ...input,
+                images: input.urls
               };
             }
           }

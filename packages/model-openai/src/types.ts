@@ -15,8 +15,8 @@ export enum OpenAIMultiModalTextGenerationModel {
 }
 
 export enum OpenAIImageGenerationModel {
-  DALLE2 = "dall-e-2",
-  DALLE3 = "dall-e-3",
+  DALLE_2 = "dall-e-2",
+  DALLE_3 = "dall-e-3",
   GPT_IMAGE_1 = "gpt-image-1"
 }
 

@@ -104,13 +104,16 @@ async function main() {
             provider: openaiImageGenMM.config!,
             transform: (
               d
-            ): z.infer<NonNullable<typeof openaiImageGenMM.config>> => {
+            ):
+              | z.infer<NonNullable<typeof openaiImageGenMM.config>>
+              | undefined => {
+              if (!d) return undefined;
+
               const config = d as z.infer<
                 NonNullable<typeof pluginImageGenMM.config>
               >;
               return {
-                ...config,
-                n: config.number
+                n: config.number || 1
               };
             }
           },

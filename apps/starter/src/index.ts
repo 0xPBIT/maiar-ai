@@ -141,7 +141,7 @@ async function main() {
     capabilityAliases,
     options: {
       logger: {
-        level: "warn",
+        level: "debug",
         transports: [stdout, websocket({ path: "/monitor" })]
       },
       server: {

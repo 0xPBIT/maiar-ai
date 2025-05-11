@@ -28,13 +28,13 @@ export interface CapabilityDescriptor<
 
 /**
  * Capability inference helper
- * @param def - Capability descriptor
+ * @param descriptor - Capability descriptor
  * @returns Capability descriptor
  */
 export function defineCapability<I, O, Id extends string = string, C = unknown>(
-  def: CapabilityDescriptor<I, O, Id, C>
+  descriptor: CapabilityDescriptor<I, O, Id, C>
 ) {
-  return def;
+  return descriptor;
 }
 
 export type CapabilityMap<

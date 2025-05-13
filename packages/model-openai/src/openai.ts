@@ -270,8 +270,9 @@ export class OpenAIModelProvider extends ModelProvider {
         }
       }
 
-      if (filePaths.length === 0)
+      if (filePaths.length === 0) {
         throw new Error("No valid image data to save");
+      }
 
       return filePaths;
     }

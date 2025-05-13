@@ -418,9 +418,7 @@ export class OpenAIModelProvider extends ModelProvider {
     if (!model) throw new Error("No multimodal text model configured");
 
     let imageParts: OpenAI.ChatCompletionContentPartImage[] = [];
-    if (!input.images || input.images.length === 0) {
-      imageParts = [];
-    } else {
+    if (input.images && input.images.length !== 0) {
       imageParts = await Promise.all(
         input.images.map(
           async (image): Promise<OpenAI.ChatCompletionContentPartImage> => {
@@ -429,17 +427,17 @@ export class OpenAIModelProvider extends ModelProvider {
                 type: "image_url",
                 image_url: { url: image }
               };
-            } else {
-              // Local file: read and convert to base64
-              const fileBuffer = fs.readFileSync(image);
-              const ext = image.split(".").pop() || "png";
-              const mimeType = mime.getType(ext) || "image/png";
-              const base64 = fileBuffer.toString("base64");
-              return {
-                type: "image_url",
-                image_url: { url: `data:${mimeType};base64,${base64}` }
-              };
             }
+
+            // Local file: read and convert to base64
+            const fileBuffer = fs.readFileSync(image);
+            const ext = image.split(".").pop() || "png";
+            const mimeType = mime.getType(ext) || "image/png";
+            const base64 = fileBuffer.toString("base64");
+            return {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${base64}` }
+            };
           }
         )
       );

@@ -103,13 +103,13 @@ async function main() {
             plugin: pluginImageGenMM.config!,
             provider: openaiImageGenMM.config!,
             transform: (
-              d
+              cfg: unknown
             ):
               | z.infer<NonNullable<typeof openaiImageGenMM.config>>
               | undefined => {
-              if (!d) return undefined;
+              if (!cfg) return undefined;
 
-              const config = d as z.infer<
+              const config = cfg as z.infer<
                 NonNullable<typeof pluginImageGenMM.config>
               >;
               return {
@@ -121,13 +121,13 @@ async function main() {
             plugin: pluginImageGenMM.input,
             provider: openaiImageGenMM.input,
             transform: (
-              d
+              i: unknown
             ): z.infer<NonNullable<typeof openaiImageGenMM.input>> => {
-              const input = d as z.infer<
+              const input = i as z.infer<
                 NonNullable<typeof pluginImageGenMM.input>
               >;
               return {
-                ...input,
+                prompt: input.prompt,
                 images: input.urls
               };
             }

@@ -5,5 +5,5 @@ export interface SearchPluginConfig {
 }
 
 export const PerplexityQueryResponseSchema = z.object({
-  query: z.string()
+  query: z.string().describe("The query that was used to search the web")
 });

@@ -18,9 +18,17 @@ export function formatZodSchema<T>(schema: z.ZodType<T>): string {
     const shape = schema._def.shape();
     const fields = Object.entries(shape)
       .map(([key, value]) => {
-        const fieldType = getSchemaType(value as z.ZodType<unknown>);
         const isOptional = value instanceof z.ZodOptional;
-        return `  ${key}${isOptional ? "?" : ""}: ${fieldType}`;
+        // If the field is optional, its actual schema is in _def.innerType
+        const innerSchema = isOptional
+          ? (value as z.ZodOptional<z.ZodTypeAny>)._def.innerType
+          : (value as z.ZodTypeAny);
+
+        const fieldType = getSchemaType(innerSchema as z.ZodTypeAny);
+        const fieldDescription =
+          (innerSchema as z.ZodTypeAny).description || "";
+
+        return `  ${key}${isOptional ? "?" : ""}: ${fieldType}${fieldDescription ? ` - ${fieldDescription}` : ""}`;
       })
       .join("\n");
 

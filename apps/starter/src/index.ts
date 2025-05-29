@@ -141,6 +141,9 @@ async function main() {
     memoryProvider,
     plugins,
     capabilityAliases,
+    templates: () => {
+      // Starter can register prompt overrides/extensions here.
+    },
     options: {
       logger: {
         level: "debug",

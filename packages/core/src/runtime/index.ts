@@ -1,5 +1,7 @@
 import cors from "cors";
+import fs from "fs";
 import { Server } from "http";
+import path from "path";
 import { Logger, LoggerOptions } from "winston";
 import Transport from "winston-transport";
 import { z } from "zod";
@@ -12,19 +14,15 @@ import { TEXT_GENERATION_CAPABILITY } from "./managers/model/capability/constant
 import { CapabilityAliasGroup } from "./managers/model/capability/transform";
 import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
+import { PromptRegistry } from "./managers/prompt";
 import { ServerManager } from "./managers/server";
 import { AgentTask, Scheduler } from "./pipeline";
 import { formatZodSchema } from "./pipeline/operations";
-import {
-  cleanJsonString,
-  extractJson,
-  generateObjectTemplate,
-  generateRetryTemplate
-} from "./pipeline/templates";
 import { GetObjectConfig } from "./pipeline/types";
 import { MemoryProvider } from "./providers/memory";
 import { ModelProvider } from "./providers/model";
 import { Plugin } from "./providers/plugin";
+import { cleanJsonString, extractJson } from "./utils/json";
 
 const REQUIRED_CAPABILITIES = [TEXT_GENERATION_CAPABILITY];
 
@@ -89,12 +87,14 @@ export class Runtime {
     memoryProvider,
     plugins,
     capabilityAliases,
+    templates,
     options
   }: {
     modelProviders: ModelProvider[];
     memoryProvider: MemoryProvider;
     plugins: Plugin[];
     capabilityAliases: CapabilityAliasGroup[];
+    templates?: (registry: PromptRegistry) => void;
     options?: {
       logger?: LoggerOptions;
       server?: {
@@ -129,6 +129,35 @@ export class Runtime {
       );
     }
 
+    // Initialize prompt registry and locate the bundled core Liquid templates.
+    // The relative location of the compiled file differs between the source tree
+    // (src/runtime/index.ts → ../../prompts) and the compiled bundle that lives
+    // under `dist` (dist/index.js → ../prompts). We therefore probe both
+    // potential locations and pick the first one that exists.
+
+    const candidateCorePromptDirs = [
+      path.resolve(__dirname, "../prompts"), // when running from the compiled bundle
+      path.resolve(__dirname, "../../prompts") // when running from the TypeScript source
+    ];
+
+    const corePromptsDir = candidateCorePromptDirs.find((dir) =>
+      fs.existsSync(dir)
+    );
+
+    if (!corePromptsDir) {
+      this.logger.error("Unable to locate core prompt templates", {
+        type: "runtime.prompts.core.notfound",
+        searched: candidateCorePromptDirs
+      });
+      throw new Error(
+        "Core prompts directory not found – ensure build pipeline copies prompts"
+      );
+    }
+
+    const promptRegistry = new PromptRegistry([corePromptsDir]);
+    // Register core prompt directory under namespace 'core'
+    promptRegistry.registerDirectory(corePromptsDir, "core");
+
     const modelManager = new ModelManager();
     for (const modelProvider of modelProviders) {
       await modelManager.registerModel(modelProvider);
@@ -138,9 +167,30 @@ export class Runtime {
     await memoryManager.registerMemoryProvider(memoryProvider);
 
     const pluginRegistry = new PluginRegistry();
-    await pluginRegistry.registerPlugin(memoryProvider.getPlugin());
+
+    // Register the core memory plugin only once
+    const memoryPlugin = memoryProvider.getPlugin();
+    await pluginRegistry.registerPlugin(memoryPlugin);
+
+    // Register any prompts provided by the internal memory plugin
+    if (
+      (memoryPlugin as unknown as { promptsDir?: string | string[] }).promptsDir
+    ) {
+      promptRegistry.registerDirectory(
+        (memoryPlugin as unknown as { promptsDir?: string | string[] })
+          .promptsDir as string | string[],
+        memoryPlugin.id
+      );
+    }
+
     for (const plugin of plugins) {
       await pluginRegistry.registerPlugin(plugin);
+
+      // Auto-register prompt directories if supplied by the plugin
+      const dir = plugin.promptsDir;
+      if (dir) {
+        promptRegistry.registerDirectory(dir, plugin.id);
+      }
     }
 
     // Add capability aliases to the model manager
@@ -232,12 +282,20 @@ export class Runtime {
       }))
     });
 
+    // Allow host application to programmatically customise prompts after all plugin directories registered
+    if (templates) {
+      templates(promptRegistry);
+    }
+
     const runtime = new Runtime(
       modelManager,
       memoryManager,
       pluginRegistry,
       serverManager
     );
+
+    // Expose template registry on runtime instance
+    runtime.templates = promptRegistry;
 
     process.on("SIGINT", async () => {
       console.log();
@@ -480,19 +538,24 @@ export class Runtime {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        // Generate prompt using template
-        const fullPrompt: string =
+        // Generate prompt using Liquid templates via the registry
+        const templateId =
+          attempt === 0 ? "core/object_template" : "core/retry_template";
+
+        const ctx =
           attempt === 0
-            ? generateObjectTemplate({
+            ? {
                 schema: formatZodSchema(schema),
                 prompt
-              })
-            : generateRetryTemplate({
+              }
+            : {
                 schema: formatZodSchema(schema),
                 prompt,
                 lastResponse: lastResponse!,
-                error: lastError!.message
-              });
+                error: (lastError as Error).message
+              };
+
+        const fullPrompt: string = await this.templates.render(templateId, ctx);
         const response = await this.modelManager.executeCapability(
           "text-generation",
           fullPrompt
@@ -555,4 +618,9 @@ export class Runtime {
      
       by Uranium Corporation`);
   }
+
+  /**
+   * Access to the template registry so plugins / host code can render prompts.
+   */
+  public templates!: PromptRegistry;
 }

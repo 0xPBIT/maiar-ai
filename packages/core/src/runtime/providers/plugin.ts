@@ -64,17 +64,20 @@ export abstract class Plugin {
    * @param {string} params.name - Human-readable name of the plugin.
    * @param {string} params.description - Description of the plugin.
    * @param {(keyof ICapabilities)[]} params.requiredCapabilities - Capabilities required by the plugin.
+   * @param {string | string[]} [params.promptsDir] - Optional absolute path(s) to a directory containing Liquid prompt templates.
    */
   constructor({
     id,
     name,
     description,
-    requiredCapabilities
+    requiredCapabilities,
+    promptsDir
   }: {
     id: string;
     name: Resolvable<string>;
     description: Resolvable<string>;
     requiredCapabilities: (keyof ICapabilities)[];
+    promptsDir?: string | string[];
   }) {
     this.id = id;
     this.name = name;
@@ -84,6 +87,9 @@ export abstract class Plugin {
     this.triggers = [];
     this._requiredCapabilities = requiredCapabilities;
     this._runtime = undefined;
+
+    // Store optional prompts directory/directories for automatic prompt registration
+    this.promptsDir = promptsDir;
   }
 
   /**
@@ -122,4 +128,9 @@ export abstract class Plugin {
     }
     return field as T;
   }
+  /**
+   * Optional absolute path(s) to a directory containing Liquid prompt templates.
+   * These will be auto-registered by the Runtime when the plugin is registered.
+   */
+  public readonly promptsDir?: string | string[];
 }

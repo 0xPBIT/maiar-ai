@@ -4,7 +4,8 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "prompts"
   ],
   "exports": {
     ".": {
@@ -56,6 +57,8 @@
   "dependencies": {
     "cors": "2.8.5",
     "express": "4.21.2",
+    "fast-glob": "^3.3.3",
+    "liquidjs": "^10.21.1",
     "openai": "4.82.0",
     "rxjs": "7.8.1",
     "winston": "3.17.0",
@@ -69,6 +72,7 @@
     "@types/node": "22.13.1",
     "@types/ws": "8.18.1",
     "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "fs-extra": "11.2.0"
   }
 }

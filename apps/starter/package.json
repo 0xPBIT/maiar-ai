@@ -4,7 +4,7 @@
   "private": true,
   "main": "./dist/index.js",
   "scripts": {
-    "dev": "chokidar '../.build-complete' 'src/**/*.ts' --initial --verbose -c 'pnpm build && pnpm run restart'",
+    "dev": "chokidar '../../.build-complete' 'src/**/*.ts' --initial --verbose -c 'pnpm build && pnpm run restart'",
     "restart": "node ../../restart.js",
     "build": "tsc --project tsconfig.json",
     "clean": "rm -rf data",

@@ -1,3 +1,5 @@
+import fs from "fs-extra";
+import path from "path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -10,5 +12,10 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  target: "es2020"
+  target: "es2020",
+  onSuccess: async () => {
+    const src = path.resolve(__dirname, "prompts");
+    const dest = path.resolve(__dirname, "dist/prompts");
+    await fs.copy(src, dest);
+  }
 });

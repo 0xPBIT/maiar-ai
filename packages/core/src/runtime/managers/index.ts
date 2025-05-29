@@ -5,3 +5,4 @@ export * from "./model/capability/types";
 export * from "./memory";
 export * from "./plugin";
 export * from "./server";
+export * from "./prompt";

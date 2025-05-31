@@ -65,16 +65,18 @@ export class Processor {
     });
 
     // Get all available executors from plugins
-    const availablePlugins = this.pluginRegistry.plugins.map(
-      (plugin: Plugin) => ({
+    const availablePlugins = await Promise.all(
+      this.pluginRegistry.plugins.map(async (plugin: Plugin) => ({
         id: plugin.id,
-        name: plugin.name,
-        description: plugin.description,
-        executors: plugin.executors.map((e) => ({
-          name: e.name,
-          description: e.description
-        }))
-      })
+        name: await plugin.resolveField(plugin.name),
+        description: await plugin.resolveField(plugin.description),
+        executors: await Promise.all(
+          plugin.executors.map(async (e) => ({
+            name: e.name,
+            description: await plugin.resolveField(e.description)
+          }))
+        )
+      }))
     );
 
     // Get related memories from the space search
@@ -331,15 +333,19 @@ export class Processor {
     pipeline: PipelineStep[];
     modification: PipelineModification;
   }> {
-    const availablePlugins = this.pluginRegistry.plugins.map((plugin) => ({
-      id: plugin.id,
-      name: plugin.name,
-      description: plugin.description,
-      executors: plugin.executors.map((e) => ({
-        name: e.name,
-        description: e.description
+    const availablePlugins = await Promise.all(
+      this.pluginRegistry.plugins.map(async (plugin) => ({
+        id: plugin.id,
+        name: await plugin.resolveField(plugin.name),
+        description: await plugin.resolveField(plugin.description),
+        executors: await Promise.all(
+          plugin.executors.map(async (e) => ({
+            name: e.name,
+            description: await plugin.resolveField(e.description)
+          }))
+        )
       }))
-    }));
+    );
 
     const availablePluginsString = JSON.stringify(availablePlugins);
 

@@ -12,6 +12,10 @@ export interface PluginResult {
   data?: any;
 }
 
+// Generic "resolvable" value – either a direct value or a factory returning
+// it (sync or async)
+export type Resolvable<T> = T | (() => T | Promise<T>);
+
 /**
  * Implementation of an executor for a plugin.
  */
@@ -24,7 +28,7 @@ export interface Executor {
   /**
    * Human-readable description of what the executor does.
    */
-  description: string;
+  description: Resolvable<string>;
 
   /**
    * Executes the plugin logic with the given agent task.

@@ -11,8 +11,10 @@ export class SearchPlugin extends Plugin {
     super({
       id: "plugin-search",
       name: "Search",
-      description:
-        "Provides a way for the agent to get real time information from the web and to search for information on a given topic.",
+      description: () => {
+        // this demonstrates description is now a function that can be resolved at runtime
+        return `Provides a way for the agent to get real time information from the web and to search for information on a given topic.`;
+      },
       requiredCapabilities: []
     });
 
@@ -21,8 +23,10 @@ export class SearchPlugin extends Plugin {
     this.executors = [
       {
         name: "search",
-        description:
-          "Agent uses this plugin to search the web for information. Use this to find detailed up-to-date information on a given topic. Use this when the agent thinks it doesn't know something.",
+        description: () => {
+          // this demonstrates description is now a function that can be resolved at runtime
+          return "Agent uses this plugin to search the web for information. Use this to find detailed up-to-date information on a given topic. Use this when the agent thinks it doesn't know something.";
+        },
         fn: this.search.bind(this)
       }
     ];

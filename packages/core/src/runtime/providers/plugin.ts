@@ -3,7 +3,7 @@ import { Logger } from "winston";
 import { Runtime } from "../";
 import logger from "../../lib/logger";
 import { ICapabilities } from "../managers/model/capability/types";
-import { Executor, Trigger } from "./plugin.types";
+import { Executor, Resolvable, Trigger } from "./plugin.types";
 
 /**
  * Abstract base class for defining a plugin.
@@ -14,10 +14,10 @@ export abstract class Plugin {
   public readonly id: string;
 
   /** Human-readable name of the plugin. */
-  public readonly name: string;
+  public readonly name: Resolvable<string>;
 
   /** Description of what the plugin does. */
-  public readonly description: string;
+  public readonly description: Resolvable<string>;
 
   /** List of required capabilities the plugin depends on. */
   private _requiredCapabilities: (keyof ICapabilities)[];
@@ -72,8 +72,8 @@ export abstract class Plugin {
     requiredCapabilities
   }: {
     id: string;
-    name: string;
-    description: string;
+    name: Resolvable<string>;
+    description: Resolvable<string>;
     requiredCapabilities: (keyof ICapabilities)[];
   }) {
     this.id = id;
@@ -104,5 +104,22 @@ export abstract class Plugin {
    */
   public __setRuntime(runtime: Runtime): void {
     this._runtime = runtime;
+  }
+
+  /**
+   * Resolve a lazy-evaluated field into a concrete string.
+   * If the value is a function it will be invoked with the plugin instance as
+   * `this`, allowing access to runtime or other instance members.
+   *
+   * The function may return a string synchronously or a Promise<string>.
+   *
+   * @param field The lazy string (static or function) to resolve.
+   * @returns The resolved string value.
+   */
+  public async resolveField<T>(field: Resolvable<T>): Promise<T> {
+    if (typeof field === "function") {
+      return (await (field as () => T | Promise<T>).call(this)) as T;
+    }
+    return field as T;
   }
 }

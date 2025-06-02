@@ -7,11 +7,6 @@ import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { DiscordService } from "./services";
 import {
-  discordImageListTemplate,
-  generateChannelSelectionTemplate,
-  generateResponseTemplate
-} from "./templates";
-import {
   ChannelInfo,
   DiscordChannelSelectionSchema,
   DiscordExecutorFactory,
@@ -61,17 +56,27 @@ export const sendMessageExecutor = discordExecutorFactory(
     logger: maiarLogger.Logger
   ): Promise<PluginResult> => {
     try {
+      const responsePrompt = await runtime.templates.render(
+        `${service.pluginId}/response`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const response = await runtime.getObject(
         DiscordSendSchema,
-        generateResponseTemplate(JSON.stringify(task))
+        responsePrompt
       );
 
       // Extract images from context chain using DiscordImageListSchema and template
       let images: string[] = [];
       try {
+        const imagePrompt = await runtime.templates.render(
+          `${service.pluginId}/image_list`,
+          { context: JSON.stringify(task, null, 2) }
+        );
+
         const imageList = await runtime.getObject(
           DiscordImageListSchema,
-          discordImageListTemplate(JSON.stringify(task))
+          imagePrompt
         );
         images = imageList.images || [];
       } catch {
@@ -137,9 +142,17 @@ export const sendMessageExecutor = discordExecutorFactory(
       });
 
       // Let the AI pick the most appropriate channel
+      const channelPrompt = await runtime.templates.render(
+        `${service.pluginId}/channel_selection`,
+        {
+          targetDescription: response.channelName,
+          availableChannels: JSON.stringify(channelInfo)
+        }
+      );
+
       const channelSelection = await runtime.getObject(
         DiscordChannelSelectionSchema,
-        generateChannelSelectionTemplate(response.channelName, channelInfo)
+        channelPrompt
       );
 
       const selectedChannel = textChannels.get(channelSelection.channelId);
@@ -228,9 +241,14 @@ export const replyMessageExecutor = discordExecutorFactory(
     const channelId = task.trigger.metadata.channelId as string;
 
     try {
+      const responsePrompt = await runtime.templates.render(
+        `${service.pluginId}/response`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const response = await runtime.getObject(
         DiscordReplySchema,
-        generateResponseTemplate(JSON.stringify(task))
+        responsePrompt
       );
 
       const channel = await service.client.channels.fetch(channelId);

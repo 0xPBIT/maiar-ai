@@ -1,7 +1,7 @@
 import { AgentTask, Executor, PluginResult, Runtime } from "@maiar-ai/core";
+import { Resolvable } from "@maiar-ai/core";
 
 import { XService } from "./services";
-import { generateTweetTemplate } from "./templates";
 import { PostTweetSchema, TweetOptions, XExecutorFactory } from "./types";
 
 /**
@@ -10,7 +10,7 @@ import { PostTweetSchema, TweetOptions, XExecutorFactory } from "./types";
  */
 export function xExecutorFactory(
   name: string,
-  description: string,
+  description: Resolvable<string>,
   execute: (
     task: AgentTask,
     service: XService,
@@ -40,7 +40,9 @@ export const createPostExecutor = xExecutorFactory(
     runtime: Runtime
   ): Promise<PluginResult> => {
     try {
-      const tweetTemplate = generateTweetTemplate(JSON.stringify(task));
+      const tweetTemplate = await runtime.templates.render(`plugin-x/tweet`, {
+        context: JSON.stringify(task, null, 2)
+      });
       const params = await runtime.getObject(PostTweetSchema, tweetTemplate);
       const message = params.tweetText;
       // Post the tweet

@@ -1,3 +1,5 @@
+import path from "path";
+
 import { Plugin, PluginResult } from "@maiar-ai/core";
 
 export class TimePlugin extends Plugin {
@@ -5,14 +7,27 @@ export class TimePlugin extends Plugin {
     super({
       id: "plugin-time",
       name: "Time",
-      description: "Provides current time information",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.executors = [
       {
         name: "get_current_time",
-        description: "Gets the current localized date and time",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/get_current_time_description`,
+              {}
+            )
+          ).trim(),
         fn: this.getCurrentTime.bind(this)
       }
     ];

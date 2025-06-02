@@ -1,0 +1,14 @@
+Prepare a text prompt AND list of reference images for a multimodal image engine.
+
+From context chain extract any image URLs/paths; preserve order. If implied images are missing, invent placeholders.
+
+Compose the prompt following the same guidelines as text_to_image.
+
+Context chain:
+{{ context }}
+
+Return ONLY:
+{
+  "prompt": string,
+  "images": string[]
+} 

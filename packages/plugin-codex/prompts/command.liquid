@@ -1,0 +1,16 @@
+Extract the Codex CLI command details from the context chain below. Return ONLY a JSON object with the following schema:
+{
+  "prompt": string,               // prompt or command for Codex
+  "approvalMode": "suggest" | "auto-edit" | "full-auto" | null,
+  "flags": string[] | null         // extra CLI flags
+}
+
+Context chain:
+{{ context }}
+
+Example:
+{
+  "prompt": "Create a React component that renders a button",
+  "approvalMode": "suggest",
+  "flags": ["--max-diff", "200"]
+} 

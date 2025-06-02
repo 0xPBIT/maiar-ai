@@ -9,7 +9,6 @@ import { AgentTask, Context, Runtime, Space } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { DiscordService } from "./services";
-import { generateMessageIntentTemplate } from "./templates";
 import { DiscordTriggerFactory, MessageIntentSchema } from "./types";
 
 /**
@@ -113,19 +112,19 @@ export const postListenerTrigger: DiscordTriggerFactory = (
         limit: 10
       });
 
-      const intentTemplate = generateMessageIntentTemplate(
-        message.content,
-        isMentioned,
-        !!message.reference?.messageId,
-        discordService.clientId,
-        discordService.commandPrefix,
-        JSON.stringify(recentHistory)
+      const intentPrompt = await runtime.templates.render(
+        `${discordService.pluginId}/message_intent`,
+        {
+          message: message.content,
+          isMention: isMentioned,
+          isReply: !!message.reference?.messageId,
+          botId: discordService.clientId,
+          commandPrefix: discordService.commandPrefix,
+          recentHistory: JSON.stringify(recentHistory)
+        }
       );
 
-      const intent = await runtime.getObject(
-        MessageIntentSchema,
-        intentTemplate
-      );
+      const intent = await runtime.getObject(MessageIntentSchema, intentPrompt);
 
       logger.info("intent analysis result", {
         type: "discord.message.intent",

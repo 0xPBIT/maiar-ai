@@ -17,8 +17,15 @@ export class XPlugin extends Plugin {
     super({
       id: "plugin-x",
       name: "X",
-      description: "Handles X (Twitter) requests for the Maiar agent",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     // Initialize token storage in the data directory

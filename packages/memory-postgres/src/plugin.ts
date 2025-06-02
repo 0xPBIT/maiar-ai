@@ -1,12 +1,9 @@
+import path from "path";
 import { Pool } from "pg";
 
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { PostgresDatabase } from "./database";
-import {
-  generateQueryTemplate,
-  generateUploadDocumentTemplate
-} from "./templates";
 import { PostgresMemoryUploadSchema, PostgresQuerySchema } from "./types";
 
 export class PostgresMemoryPlugin extends Plugin {
@@ -16,28 +13,50 @@ export class PostgresMemoryPlugin extends Plugin {
     super({
       id: "plugin-postgres-memory",
       name: "Postgres Memory Plugin",
-      description:
-        "Memory extension that allows for runtime operations to control a sandbox table",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.pool = PostgresDatabase.getInstance().getPool();
     this.executors = [
       {
         name: "memory:add_document",
-        description:
-          "Add a peice of context from the context chain into the sandboxed database",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/memory_add_document_description`,
+              {}
+            )
+          ).trim(),
         fn: this.addDocument.bind(this)
       },
       {
         name: "memory:remove_document",
-        description: "Remove a piece of information from the sandbox database",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/memory_remove_document_description`,
+              {}
+            )
+          ).trim(),
         fn: this.removeDocument.bind(this)
       },
       {
         name: "memory:query",
-        description:
-          "Query the sandbox database for documents that match the user or plugin requests",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/memory_query_description`,
+              {}
+            )
+          ).trim(),
         fn: this.query.bind(this)
       }
     ];
@@ -46,10 +65,18 @@ export class PostgresMemoryPlugin extends Plugin {
   private async removeDocument(task: AgentTask): Promise<PluginResult> {
     const client = await this.pool.connect();
     try {
-      // Construct query for document ids
+      // Construct query for document ids via Liquid template
+      const queryPrompt = await this.runtime.templates.render(
+        `${this.id}/query`,
+        {
+          context: JSON.stringify(task, null, 2),
+          properties: "id"
+        }
+      );
+
       const queryFormattedResponse = await this.runtime.getObject(
         PostgresQuerySchema,
-        generateQueryTemplate(JSON.stringify(task))
+        queryPrompt
       );
 
       // First find matching documents
@@ -94,10 +121,17 @@ export class PostgresMemoryPlugin extends Plugin {
     const timestamp = Date.now();
     const documentId = `doc_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Get data to store in database from context chain
+    // Render upload prompt via Liquid
+    const uploadPrompt = await this.runtime.templates.render(
+      `${this.id}/upload_document`,
+      {
+        context: JSON.stringify(task, null, 2)
+      }
+    );
+
     const formattedResponse = await this.runtime.getObject(
       PostgresMemoryUploadSchema,
-      generateUploadDocumentTemplate(JSON.stringify(task))
+      uploadPrompt
     );
 
     const client = await this.pool.connect();
@@ -130,10 +164,18 @@ export class PostgresMemoryPlugin extends Plugin {
   private async query(task: AgentTask): Promise<PluginResult> {
     const client = await this.pool.connect();
     try {
-      // Construct query from context
+      // Construct query from context via Liquid
+      const queryPrompt = await this.runtime.templates.render(
+        `${this.id}/query`,
+        {
+          context: JSON.stringify(task, null, 2),
+          properties: ["id", "content"]
+        }
+      );
+
       const queryFormattedResponse = await this.runtime.getObject(
         PostgresQuerySchema,
-        generateQueryTemplate(JSON.stringify(task), ["id", "content"])
+        queryPrompt
       );
 
       const queryResults = await client.query(queryFormattedResponse.query);

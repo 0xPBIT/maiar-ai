@@ -1,10 +1,10 @@
 import { Client as MCPClient } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import path from "path";
 import { z, ZodType } from "zod";
 
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
-import { generateArgumentTemplate } from "./templates";
 import { buildTransport } from "./transports";
 import { ServerConfig } from "./types";
 
@@ -22,9 +22,15 @@ export class MCPPlugin extends Plugin {
     super({
       id: "plugin-mcp",
       name: "MCP",
-      description:
-        "Collection of executors that perform various functions, actions, and tasks, prefixed by their application name, followed by the tool name.",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     // Accept both single object and array → normalise to array
@@ -112,11 +118,14 @@ export class MCPPlugin extends Plugin {
       name: executorName,
       description: tool.description ?? "",
       fn: async (task: AgentTask): Promise<PluginResult> => {
-        const prompt = generateArgumentTemplate({
-          executorName,
-          description: tool.description,
-          task: JSON.stringify(task)
-        });
+        const prompt = await this.runtime.templates.render(
+          `${this.id}/argument`,
+          {
+            executorName,
+            description: tool.description ?? "",
+            task: JSON.stringify(task, null, 2)
+          }
+        );
 
         // Find the correct MCP client based on the prefix by matching with clientName in configs
         const clientConfig = this.configs.find((c) => c.name === prefix);

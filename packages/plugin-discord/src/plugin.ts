@@ -1,3 +1,5 @@
+import path from "path";
+
 import { Plugin } from "@maiar-ai/core";
 
 import { DiscordService } from "./services";
@@ -24,9 +26,15 @@ export class DiscordPlugin extends Plugin {
     super({
       id: "plugin-discord",
       name: "Discord",
-      description:
-        "Enables agent to send and recieve messages from Discord. Send messages in specific channels and interact using the Discord platform. When asked to send a message, the agent will select the most appropriate channel based on the channel description.",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.token = config.token;

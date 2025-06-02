@@ -1,0 +1,12 @@
+Generate a response based on the context chain. Your response should be a JSON object with a single "query" field containing a valid SQL query on the sandbox table.
+The query should return document values {{ properties }}.
+
+IMPORTANT: Output MUST be valid JSON; no extra text.
+
+Context chain:
+{{ context }}
+
+Example:
+{
+  "query": "SELECT id FROM sandbox WHERE content LIKE '%birthday%'"
+} 

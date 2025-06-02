@@ -1,0 +1,14 @@
+Determine if the following Discord message is intended for the agent.
+
+Message: {{ message }}
+Is mention: {{ isMention }}
+Is reply: {{ isReply }}
+Bot ID: {{ botId }}
+Command prefix: {{ commandPrefix }}
+Recent history: {{ recentHistory }}
+
+Return ONLY:
+{
+  "isIntendedForAgent": boolean,
+  "reason": string
+} 

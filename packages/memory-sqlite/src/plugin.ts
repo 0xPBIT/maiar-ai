@@ -1,12 +1,9 @@
 import Database from "better-sqlite3";
+import path from "path";
 
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { SQLiteDatabase } from "./database";
-import {
-  generateQueryTemplate,
-  generateUploadDocumentTemplate
-} from "./templates";
 import { SQLiteMemoryUploadSchema, SQLiteQuerySchema } from "./types";
 
 export class SQLiteMemoryPlugin extends Plugin {
@@ -16,9 +13,15 @@ export class SQLiteMemoryPlugin extends Plugin {
     super({
       id: "plugin-sqlite-memory",
       name: "SQLite Memory Plugin",
-      description:
-        "These are the tools you use to save, remove, and query information from the database. You should use this for planning long term goals, recalling information, facts, opinions you have learned, etc.",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     // Get database connection instance
@@ -27,20 +30,35 @@ export class SQLiteMemoryPlugin extends Plugin {
     this.executors = [
       {
         name: "save_memory",
-        description:
-          "You should invoke this executor when you want to save a piece of information you might want to recall later",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/save_memory_description`,
+              {}
+            )
+          ).trim(),
         fn: this.addDocument.bind(this)
       },
       {
         name: "remove_memory",
-        description:
-          "You should invoke this executor when you want to remove a piece of information from the database",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/remove_memory_description`,
+              {}
+            )
+          ).trim(),
         fn: this.removeDocument.bind(this)
       },
       {
         name: "query_memory",
-        description:
-          "You should invoke this executor when you want to query the database for information that you saved earlier. This could be useful for recalling information from a previous conversation, or goals you might have set for yourself.",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/query_memory_description`,
+              {}
+            )
+          ).trim(),
         fn: this.query.bind(this)
       }
     ];
@@ -56,9 +74,16 @@ export class SQLiteMemoryPlugin extends Plugin {
     const documentId = `doc_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get data to store in database from context chain
+    const uploadPrompt = await this.runtime.templates.render(
+      `${this.id}/upload_document`,
+      {
+        context: JSON.stringify(task, null, 2)
+      }
+    );
+
     const formattedResponse = await this.runtime.getObject(
       SQLiteMemoryUploadSchema,
-      generateUploadDocumentTemplate(JSON.stringify(task))
+      uploadPrompt
     );
 
     // Get conversation ID from context
@@ -80,9 +105,17 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async removeDocument(task: AgentTask): Promise<PluginResult> {
     // Construct query for document ids
+    const queryPrompt = await this.runtime.templates.render(
+      `${this.id}/query`,
+      {
+        context: JSON.stringify(task, null, 2),
+        properties: "id"
+      }
+    );
+
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(JSON.stringify(task))
+      queryPrompt
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
     const queryResults = queryStmt.all() as { id: string }[];
@@ -118,9 +151,17 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async query(task: AgentTask): Promise<PluginResult> {
     // Construct query from context
+    const queryPrompt2 = await this.runtime.templates.render(
+      `${this.id}/query`,
+      {
+        context: JSON.stringify(task, null, 2),
+        properties: ["id", "content"]
+      }
+    );
+
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      generateQueryTemplate(JSON.stringify(task), ["id", "content"])
+      queryPrompt2
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
     const results = queryStmt.all() as { id: string; content: string }[];

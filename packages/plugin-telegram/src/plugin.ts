@@ -1,3 +1,4 @@
+import path from "path";
 import { Telegraf, Context as TelegramContext } from "telegraf";
 
 import {
@@ -8,7 +9,6 @@ import {
   Space
 } from "@maiar-ai/core";
 
-import { generateResponseTemplate } from "./templates";
 import { TelegramPluginConfig, TelegramResponseSchema } from "./types";
 
 export class TelegramPlugin extends Plugin {
@@ -18,8 +18,15 @@ export class TelegramPlugin extends Plugin {
     super({
       id: "plugin-telegram",
       name: "Telegram",
-      description: "Handles Telegram bot interactions using long polling",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     if (!config.token) {
@@ -31,7 +38,13 @@ export class TelegramPlugin extends Plugin {
     this.executors = [
       {
         name: "send_response",
-        description: "Send a response to a Telegram chat",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/send_response_description`,
+              {}
+            )
+          ).trim(),
         fn: this.handleSendMessage.bind(this)
       }
     ];
@@ -60,9 +73,14 @@ export class TelegramPlugin extends Plugin {
 
     try {
       // Format the response based on the context chain
+      const responsePrompt = await this.runtime.templates.render(
+        `${this.id}/response`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const formattedResponse = await this.runtime.getObject(
         TelegramResponseSchema,
-        generateResponseTemplate(JSON.stringify(task))
+        responsePrompt
       );
 
       // Use the main bot instance to send the reply

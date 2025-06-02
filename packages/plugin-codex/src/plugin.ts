@@ -3,7 +3,6 @@ import path from "path";
 
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
-import { generateCodexCommandTemplate } from "./templates";
 import { CodexCommandSchema } from "./types";
 
 export class CodexPlugin extends Plugin {
@@ -15,21 +14,40 @@ export class CodexPlugin extends Plugin {
     super({
       id: "plugin-codex",
       name: "Codex CLI",
-      description: "Run CLI commands and write code on behalf of the user",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.executors = [
       {
         name: "run_codex_command",
-        description:
-          "this command will write code on request and behalf of the user. coding related requesets should invoke this command.",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/run_codex_command_description`,
+              {}
+            )
+          ).trim(),
         fn: async (task: AgentTask): Promise<PluginResult> => {
           try {
             // Extract command details from context
+            const commandPrompt = await this.runtime.templates.render(
+              `${this.id}/command`,
+              {
+                context: JSON.stringify(task, null, 2)
+              }
+            );
+
             const commandDetails = await this.runtime.getObject(
               CodexCommandSchema,
-              generateCodexCommandTemplate(JSON.stringify(task))
+              commandPrompt
             );
 
             // Resolve the path to the Codex CLI binary

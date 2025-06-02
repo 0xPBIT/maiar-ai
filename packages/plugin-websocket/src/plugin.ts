@@ -1,3 +1,4 @@
+import * as nodePath from "path";
 import WebSocket, { WebSocketServer } from "ws";
 import { RawData } from "ws";
 
@@ -22,8 +23,15 @@ export class WebSocketPlugin extends Plugin {
     super({
       id: "plugin-websocket",
       name: "WebSocket Plugin",
-      description: "Enables communication via WebSocket",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: nodePath.resolve(__dirname, "../prompts")
     });
 
     this.path = path;
@@ -31,7 +39,13 @@ export class WebSocketPlugin extends Plugin {
     this.executors = [
       {
         name: "send_message",
-        description: "Send a message to the WebSocket client",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/send_message_description`,
+              {}
+            )
+          ).trim(),
         fn: this.sendMessage.bind(this)
       }
     ];

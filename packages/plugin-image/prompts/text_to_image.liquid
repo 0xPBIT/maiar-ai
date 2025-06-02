@@ -1,0 +1,12 @@
+You are preparing a single PROMPT STRING for an image-generation engine.
+
+Guidelines:
+• Analyse the context chain and derive the user's intent.
+• Compose prompt parts in order: subject, descriptors, environment, style tags, technical cues.
+• If any "avoid" instructions appear, append a minimal negative clause starting with --no.
+• No explanation.
+
+Context chain:
+{{ context }}
+
+Return ONLY: { "prompt": string } 

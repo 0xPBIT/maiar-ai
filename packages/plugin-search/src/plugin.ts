@@ -1,7 +1,8 @@
+import path from "path";
+
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import { PerplexityService } from "./perplexity";
-import { generateQueryTemplate } from "./templates";
 import { PerplexityQueryResponseSchema, SearchPluginConfig } from "./types";
 
 export class SearchPlugin extends Plugin {
@@ -11,9 +12,15 @@ export class SearchPlugin extends Plugin {
     super({
       id: "plugin-search",
       name: "Search",
-      description:
-        "Provides a way for the agent to get real time information from the web and to search for information on a given topic.",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.service = new PerplexityService(config.apiKey);
@@ -21,17 +28,29 @@ export class SearchPlugin extends Plugin {
     this.executors = [
       {
         name: "search",
-        description:
-          "Agent uses this plugin to search the web for information. Use this to find detailed up-to-date information on a given topic. Use this when the agent thinks it doesn't know something.",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/search_description`,
+              {}
+            )
+          ).trim(),
         fn: this.search.bind(this)
       }
     ];
   }
 
   private async search(task: AgentTask): Promise<PluginResult> {
+    const queryPrompt = await this.runtime.templates.render(
+      `${this.id}/query`,
+      {
+        context: JSON.stringify(task, null, 2)
+      }
+    );
+
     const params = await this.runtime.getObject(
       PerplexityQueryResponseSchema,
-      generateQueryTemplate(JSON.stringify(task))
+      queryPrompt
     );
 
     const query = params.query;

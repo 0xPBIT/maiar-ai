@@ -2,7 +2,6 @@ import { Context, Runtime, Space, Trigger } from "@maiar-ai/core";
 import * as maiarLogger from "@maiar-ai/core/dist/logger";
 
 import { XService } from "./services";
-import { xPostTemplate } from "./templates";
 import { TriggerConfig, XTriggerFactory } from "./types";
 
 const logger = maiarLogger.default.child({
@@ -15,34 +14,26 @@ const logger = maiarLogger.default.child({
  */
 
 /**
- * Creates a trigger with a bound XService instance
- * @param factory Factory function that takes an XService and returns a trigger implementation
- * @returns A function that will receive the XService instance from the plugin
- */
-export function createXTrigger(factory: XTriggerFactory): XTriggerFactory {
-  return factory;
-}
-
-/**
  * Trigger that periodically invokes the agent to create and post to X
  * This trigger creates a new context chain with instructions for the agent to create a post
  */
-export const periodicPostTrigger = createXTrigger(
-  (
-    xService: XService,
-    getRuntime: () => Runtime,
-    config?: TriggerConfig
-  ): Trigger => {
-    // Hardcoded values for posting every 6 hours with 3 hours of randomization
-    const baseIntervalMinutes = 360; // 6 hours
-    const randomizationMinutes = 180; // 3 hours
+export const periodicPostTrigger: XTriggerFactory = (
+  xService: XService,
+  getRuntime: () => Runtime,
+  config?: TriggerConfig
+): Trigger => {
+  const baseIntervalMinutes = 360; // 6 hours
+  const randomizationMinutes = 180; // 3 hours
 
-    // Use custom template if provided, otherwise use default
-    const postTemplate = config?.postTemplate || xPostTemplate;
+  return {
+    name: "x_periodic_post",
+    start: (): void => {
+      (async () => {
+        const runtime = getRuntime();
+        const postTemplate =
+          config?.postTemplate ||
+          (await runtime.templates.render("plugin-x/post_template", {}));
 
-    return {
-      name: "x_periodic_post",
-      start: (): void => {
         logger.info(`starting x periodic post trigger`, {
           type: "plugin-x.trigger.start",
           interval: `${baseIntervalMinutes} mins`,
@@ -55,7 +46,6 @@ export const periodicPostTrigger = createXTrigger(
 
         const scheduleNextPost = async () => {
           try {
-            const runtime = getRuntime();
             // Calculate random interval
             const randomIntervalMinutes =
               baseIntervalMinutes + Math.random() * randomizationMinutes;
@@ -155,7 +145,12 @@ export const periodicPostTrigger = createXTrigger(
 
         // Start the first scheduling
         scheduleNextPost();
-      }
-    };
-  }
-);
+      })().catch((err) =>
+        logger.error("x periodic post trigger error", {
+          type: "plugin-x.trigger.error",
+          error: err instanceof Error ? err.message : String(err)
+        })
+      );
+    }
+  };
+};

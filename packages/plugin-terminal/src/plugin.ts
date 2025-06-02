@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as net from "net";
+import path from "path";
 
 import {
   AgentTask,
@@ -10,7 +11,6 @@ import {
 } from "@maiar-ai/core";
 
 import { CHAT_SOCKET_PATH } from "./index";
-import { generateResponseTemplate } from "./templates";
 import { TerminalPluginConfig, TerminalResponseSchema } from "./types";
 
 interface TerminalPlatformContext {
@@ -25,9 +25,15 @@ export class TerminalPlugin extends Plugin {
     super({
       id: "plugin-terminal",
       name: "Terminal Plugin",
-      description:
-        "Handles terminal-based chat interaction. This plugin is used to receive messages from the user over terminal. All messages recieved over terminal must be sent to the user in the terminal as the very last action you perform. It is called send_response under the plugin-terminal namespace. You must make this your last action if the incoming message is from the terminal plugin.",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
     this.config = config;
 
@@ -39,7 +45,13 @@ export class TerminalPlugin extends Plugin {
     this.executors = [
       {
         name: "send_response",
-        description: "Send a response to connected terminal clients",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/send_response_description`,
+              {}
+            )
+          ).trim(),
         fn: this.sendResponse.bind(this)
       }
     ];
@@ -65,9 +77,14 @@ export class TerminalPlugin extends Plugin {
 
     try {
       // Format the response based on the context chain
+      const responsePrompt = await this.runtime.templates.render(
+        `${this.id}/response`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const formattedResponse = await this.runtime.getObject(
         TerminalResponseSchema,
-        generateResponseTemplate(JSON.stringify(task))
+        responsePrompt
       );
 
       await platformContext.responseHandler(formattedResponse.message);

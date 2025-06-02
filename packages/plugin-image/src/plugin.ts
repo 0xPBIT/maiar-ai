@@ -1,16 +1,11 @@
+import path from "path";
+
 import { AgentTask, Plugin, PluginResult } from "@maiar-ai/core";
 
 import {
   imageGenerationCapability,
   multiModalImageGenerationCapability
 } from "./capabilities";
-import {
-  DESCRIPTION,
-  GENERATE_IMAGE_TEMPLATE,
-  GENERATE_IMAGE_WITH_IMAGES_TEMPLATE,
-  multimodalToImageTemplate,
-  textToImageTemplate
-} from "./templates";
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
@@ -18,22 +13,41 @@ export class ImageGenerationPlugin extends Plugin {
     super({
       id: "plugin-image-generation",
       name: "image",
-      description: DESCRIPTION,
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
       requiredCapabilities: [
         imageGenerationCapability.id,
         multiModalImageGenerationCapability.id
-      ]
+      ],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
 
     this.executors = [
       {
         name: "generate_image",
-        description: GENERATE_IMAGE_TEMPLATE,
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/generate_image_description`,
+              {}
+            )
+          ).trim(),
         fn: this.generateImage.bind(this)
       },
       {
         name: "generate_image_with_images",
-        description: GENERATE_IMAGE_WITH_IMAGES_TEMPLATE,
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/generate_image_with_images_description`,
+              {}
+            )
+          ).trim(),
         fn: this.generateImageWithImages.bind(this)
       }
     ];
@@ -41,9 +55,14 @@ export class ImageGenerationPlugin extends Plugin {
 
   private async generateImage(task: AgentTask): Promise<PluginResult> {
     try {
+      const promptTemplate = await this.runtime.templates.render(
+        `${this.id}/text_to_image`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const promptResponse = await this.runtime.getObject(
         PromptResponseSchema,
-        textToImageTemplate(JSON.stringify(task))
+        promptTemplate
       );
 
       const prompt = promptResponse.prompt;
@@ -74,9 +93,14 @@ export class ImageGenerationPlugin extends Plugin {
     task: AgentTask
   ): Promise<PluginResult> {
     try {
+      const promptTemplate = await this.runtime.templates.render(
+        `${this.id}/multimodal_to_image`,
+        { context: JSON.stringify(task, null, 2) }
+      );
+
       const promptResponse = await this.runtime.getObject(
         MultimodalPromptResponseSchema,
-        multimodalToImageTemplate(JSON.stringify(task))
+        promptTemplate
       );
 
       const prompt = promptResponse.prompt;

@@ -1,3 +1,5 @@
+import path from "path";
+
 import { Plugin, PluginResult } from "@maiar-ai/core";
 
 import { CharacterPluginConfig } from "./types";
@@ -9,16 +11,28 @@ export class CharacterPlugin extends Plugin {
     super({
       id: "plugin-character",
       name: "Character",
-      description: "Handles character related context injection for the agent",
-      requiredCapabilities: []
+      description: async () =>
+        (
+          await this.runtime.templates.render(
+            `${this.id}/plugin_description`,
+            {}
+          )
+        ).trim(),
+      requiredCapabilities: [],
+      promptsDir: path.resolve(__dirname, "../prompts")
     });
     this.character = config.character;
 
     this.executors = [
       {
         name: "inject_character",
-        description:
-          "Inject the character information into the context. This plugin must be run first every single time a pipeline is constructed no matter what. The purpose is to inform you on how you should respond by acting like the agent based on the character instructions.",
+        description: async () =>
+          (
+            await this.runtime.templates.render(
+              `${this.id}/inject_character_description`,
+              {}
+            )
+          ).trim(),
         fn: this.injectCharacter.bind(this)
       }
     ];

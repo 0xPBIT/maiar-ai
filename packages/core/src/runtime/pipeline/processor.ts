@@ -111,17 +111,12 @@ export class Processor {
     let generatePipelineContext = "";
 
     try {
-      // Build dynamic pieces for the Liquid template
-      const mergedContext = {
-        ...pipelineContext.currentContext,
-        trigger: pipelineContext.trigger
-      };
-
       generatePipelineContext = await this.runtime.templates.render(
         "core/pipeline_generate",
         {
           availablePlugins,
-          mergedContext
+          relatedMemories: relatedMemoriesContext,
+          trigger: pipelineContext.trigger
         }
       );
 

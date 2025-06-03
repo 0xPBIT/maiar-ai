@@ -10,6 +10,7 @@ import { ContextChain } from "./components/ContextChain";
 import { Events } from "./components/Events";
 import { GridLayout } from "./components/GridLayout";
 import { Pipeline } from "./components/Pipeline";
+import { PromptList } from "./components/PromptList";
 import { MonitorProvider } from "./contexts/MonitorProvider";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
@@ -90,7 +91,8 @@ function AppContent() {
           pipeline: <Pipeline />,
           contextChain: <ContextChain />,
           chat: <Chat />,
-          events: <Events />
+          events: <Events />,
+          prompts: <PromptList />
         }}
         onResetLayout={setResetFn}
       />

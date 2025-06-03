@@ -10,25 +10,19 @@ import path from "path";
  *    register them under a namespaced ID (e.g. "plugin-text/generate_text").
  *  • Render a template by ID, performing Liquid interpolation with the supplied context.
  *  • Allow host applications to add post-render extensions or full overrides.
- *
- * Extension strategy:
- *  – override(id, fn) replaces the rendered string entirely.
- *  – extend(id, fn) receives the rendered string and can mutate/append it.
  */
+
+const env = process.env.NODE_ENV;
+
 export class PromptRegistry {
   private engine: Liquid;
   private files = new Map<string, string>();
-  private overrides = new Map<string, (ctx: unknown) => string>();
-  private extensions = new Map<
-    string,
-    ((ctx: unknown, html: string) => string)[]
-  >();
 
   constructor(initialRoots: string[] = []) {
     this.engine = new Liquid({
       root: [...initialRoots],
       extname: ".liquid",
-      cache: false, // we want hot reload during dev
+      cache: env === "development" ? false : true, // we want hot reload during dev
       strictVariables: false
     });
   }
@@ -55,27 +49,10 @@ export class PromptRegistry {
     }
   }
 
-  /** Fully replace a prompt's rendered output. */
-  public override(id: string, fn: (ctx: unknown) => string): void {
-    this.overrides.set(id, fn);
-  }
-
-  /** Mutate/append the rendered output. Executed in registration order. */
-  public extend(id: string, fn: (ctx: unknown, html: string) => string): void {
-    const arr = this.extensions.get(id) ?? [];
-    arr.push(fn);
-    this.extensions.set(id, arr);
-  }
-
   public async render<
     T extends Record<string, unknown> = Record<string, unknown>
-  >(id: string, ctx: T): Promise<string> {
-    // First, if the prompt is overridden programmatically, just use that.
-    if (this.overrides.has(id)) {
-      return this.overrides.get(id)!(ctx);
-    }
-
-    // Otherwise, make sure we know about the file.
+  >(id: string, ctx: T = {} as T): Promise<string> {
+    // Make sure we know about the file.
     if (!this.files.has(id)) {
       throw new Error(`Prompt "${id}" not found in registry`);
     }
@@ -90,8 +67,7 @@ export class PromptRegistry {
     // with arbitrary IDs that really do live under a namespaced folder.
     const rendered = await this.engine.renderFile(filePath ?? id, ctx);
 
-    const extFns = this.extensions.get(id) ?? [];
-    return extFns.reduce((acc, fn) => fn(ctx, acc), rendered);
+    return rendered;
   }
 
   /**

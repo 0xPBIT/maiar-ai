@@ -1,6 +1,7 @@
 import cors from "cors";
 import fs from "fs";
 import { Server } from "http";
+import fsPromises from "node:fs/promises";
 import path from "path";
 import { Logger, LoggerOptions } from "winston";
 import Transport from "winston-transport";
@@ -22,7 +23,6 @@ import { GetObjectConfig } from "./pipeline/types";
 import { MemoryProvider } from "./providers/memory";
 import { ModelProvider } from "./providers/model";
 import { Plugin } from "./providers/plugin";
-import { cleanJsonString, extractJson } from "./utils/json";
 
 const REQUIRED_CAPABILITIES = [TEXT_GENERATION_CAPABILITY];
 
@@ -34,6 +34,7 @@ export class Runtime {
   private modelManager: ModelManager;
   private memoryManager: MemoryManager;
   private pluginRegistry: PluginRegistry;
+  private promptRegistry: PromptRegistry;
 
   private scheduler: Scheduler;
 
@@ -72,12 +73,14 @@ export class Runtime {
     modelManager: ModelManager,
     memoryManager: MemoryManager,
     pluginRegistry: PluginRegistry,
-    serverManager: ServerManager
+    serverManager: ServerManager,
+    promptRegistry: PromptRegistry
   ) {
     this.modelManager = modelManager;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
     this.serverManager = serverManager;
+    this.promptRegistry = promptRegistry;
 
     this.scheduler = new Scheduler(this, memoryManager, pluginRegistry);
   }
@@ -87,14 +90,12 @@ export class Runtime {
     memoryProvider,
     plugins,
     capabilityAliases,
-    templates,
     options
   }: {
     modelProviders: ModelProvider[];
     memoryProvider: MemoryProvider;
     plugins: Plugin[];
     capabilityAliases: CapabilityAliasGroup[];
-    templates?: (registry: PromptRegistry) => void;
     options?: {
       logger?: LoggerOptions;
       server?: {
@@ -173,12 +174,9 @@ export class Runtime {
     await pluginRegistry.registerPlugin(memoryPlugin);
 
     // Register any prompts provided by the internal memory plugin
-    if (
-      (memoryPlugin as unknown as { promptsDir?: string | string[] }).promptsDir
-    ) {
+    if (memoryPlugin.promptsDir) {
       promptRegistry.registerDirectory(
-        (memoryPlugin as unknown as { promptsDir?: string | string[] })
-          .promptsDir as string | string[],
+        memoryPlugin.promptsDir,
         memoryPlugin.id
       );
     }
@@ -192,6 +190,41 @@ export class Runtime {
         promptRegistry.registerDirectory(dir, plugin.id);
       }
     }
+
+    // mount the prompts routes
+    serverManager.registerRoute("/prompts", "get", (_req, res) => {
+      res.json(promptRegistry.list());
+    });
+
+    serverManager.registerRoute("/prompts/:id", "get", async (req, res) => {
+      const { id } = req.params as { id: string };
+      const entry = promptRegistry.list().find((p) => p.id === id);
+      if (!entry) {
+        res.status(404).json({ error: "Prompt not found" });
+        return;
+      }
+      try {
+        const template = await fsPromises.readFile(entry.path, "utf8");
+        res.json({ ...entry, template });
+      } catch {
+        res.status(500).json({ error: "Failed to load prompt" });
+      }
+    });
+
+    serverManager.registerRoute("/prompts-all", "get", async (_req, res) => {
+      try {
+        const all = await Promise.all(
+          promptRegistry.list().map(async ({ id, path }) => ({
+            id,
+            path,
+            template: await fsPromises.readFile(path, "utf8")
+          }))
+        );
+        res.json(all);
+      } catch {
+        res.status(500).json({ error: "Failed to load prompts" });
+      }
+    });
 
     // Add capability aliases to the model manager
     for (const group of capabilityAliases) {
@@ -282,20 +315,16 @@ export class Runtime {
       }))
     });
 
-    // Allow host application to programmatically customise prompts after all plugin directories registered
-    if (templates) {
-      templates(promptRegistry);
-    }
-
     const runtime = new Runtime(
       modelManager,
       memoryManager,
       pluginRegistry,
-      serverManager
+      serverManager,
+      promptRegistry
     );
 
     // Expose template registry on runtime instance
-    runtime.templates = promptRegistry;
+    runtime.promptRegistry = promptRegistry;
 
     process.on("SIGINT", async () => {
       console.log();
@@ -342,6 +371,13 @@ export class Runtime {
   }
 
   /**
+   * Access to the prompt registry for plugins
+   */
+  public get templates(): PromptRegistry {
+    return this.promptRegistry;
+  }
+
+  /**
    * Start the runtime
    */
   public async start(): Promise<void> {
@@ -365,6 +401,7 @@ export class Runtime {
         if (trigger.route) {
           this.serverManager.registerRoute(
             trigger.route.path,
+            "post",
             trigger.route.handler,
             trigger.route.middleware
           );
@@ -563,7 +600,7 @@ export class Runtime {
         lastResponse = response;
 
         // Extract JSON from the response, handling code blocks and extra text
-        const jsonString = cleanJsonString(extractJson(response));
+        const jsonString = Runtime.extractJson(response);
 
         try {
           const parsed = JSON.parse(jsonString);
@@ -619,8 +656,12 @@ export class Runtime {
       by Uranium Corporation`);
   }
 
-  /**
-   * Access to the template registry so plugins / host code can render prompts.
-   */
-  public templates!: PromptRegistry;
+  private static extractJson(str: string): string {
+    // Remove markdown code blocks
+    str = str.replace(/```(?:\w*\s*)\n?/g, "").replace(/```/g, "");
+
+    const matches = str.match(/\{[\s\S]*\}|\[[\s\S]*\]/g);
+    if (!matches) throw new Error("No JSON-like structure found in response");
+    return (matches[matches.length - 1] ?? "").trim();
+  }
 }

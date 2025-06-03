@@ -61,7 +61,17 @@ Example 4 - User mentions the agent account on X (formerly Twitter):
 </rules>
 
 <context>
-{{ mergedContext | json }}
+
+  <relatedMemories>
+      Here are your related memories. Use the information here to assist in your decision modificationCheckInProgress
+      {{ relatedMemories }}
+  </relatedMemories>
+
+  <taskTrigger>
+    Here is the object that describes your invocation. Use this to assist in your action execution, planning, reasong, and other useful insights you might find from this.
+    {{ trigger }}
+  </taskTrigger>
+
 </context>
 
 <task>

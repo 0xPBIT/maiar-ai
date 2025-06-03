@@ -315,10 +315,10 @@ importers:
         specifier: 4.21.2
         version: 4.21.2
       fast-glob:
-        specifier: ^3.3.3
+        specifier: 3.3.3
         version: 3.3.3
       liquidjs:
-        specifier: ^10.21.1
+        specifier: 10.21.1
         version: 10.21.1
       openai:
         specifier: 4.82.0

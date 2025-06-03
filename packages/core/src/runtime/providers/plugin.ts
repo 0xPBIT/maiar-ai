@@ -28,6 +28,12 @@ export abstract class Plugin {
   /** Executors associated with the plugin. */
   public executors: Executor[];
 
+  /**
+   * Optional absolute path(s) to a directory containing Liquid prompt templates.
+   * These will be auto-registered by the Runtime when the plugin is registered.
+   */
+  public readonly promptsDir?: string | string[];
+
   /** The runtime instance assigned to the plugin. */
   private _runtime: Runtime | undefined;
 
@@ -128,9 +134,4 @@ export abstract class Plugin {
     }
     return field as T;
   }
-  /**
-   * Optional absolute path(s) to a directory containing Liquid prompt templates.
-   * These will be auto-registered by the Runtime when the plugin is registered.
-   */
-  public readonly promptsDir?: string | string[];
 }

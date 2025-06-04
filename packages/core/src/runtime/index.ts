@@ -336,10 +336,29 @@ export class Runtime {
     const plugins = [...this.pluginRegistry.plugins];
     const modelProviders = [...this.modelManager.modelProviders];
 
+    // shut down the websocket transport
+    for (const transport of (logger as unknown as { transports: Transport[] })
+      .transports) {
+      if (transport instanceof WebSocketTransport) {
+        try {
+          transport.close();
+          this.logger.info("closed WebSocket transport");
+        } catch (err) {
+          this.logger.warn("error while closing WebSocket transport", { err });
+        }
+      }
+    }
+
     // shut down the server manager
     this.logger.info("stopping server manager...");
     try {
-      await this.serverManager.stop();
+      // Prevent indefinite hang if some connection refuses to close.
+      await Promise.race([
+        this.serverManager.stop(),
+        new Promise((_resolve, reject) =>
+          setTimeout(() => reject(new Error("server.stop timeout")), 5_000)
+        )
+      ]);
       this.logger.info("server manager stopped");
     } catch (error) {
       this.logger.error("failed to stop server manager", { error });
@@ -359,7 +378,6 @@ export class Runtime {
             setTimeout(() => reject(new Error("shutdown timeout")), 5_000)
           )
         ]);
-        this.logger.info(`plugin "${plugin.id}" shut down`);
       } catch (error) {
         this.logger.error(
           `plugin "${plugin.id}" shutdown failed – continuing`,
@@ -374,7 +392,6 @@ export class Runtime {
     this.logger.info("unregistering memory provider...");
     try {
       await this.memoryManager.unregisterMemoryProvider();
-      this.logger.info("memory provider unregistered");
     } catch (error) {
       this.logger.error("failed to unregister memory provider", { error });
     }
@@ -384,7 +401,6 @@ export class Runtime {
       this.logger.info(`unregistering model provider "${provider.id}"...`);
       try {
         await this.modelManager.unregisterModel(provider);
-        this.logger.info(`model provider "${provider.id}" unregistered`);
       } catch (error) {
         this.logger.error(
           `model provider "${provider.id}" unregister failed – continuing`,
@@ -393,18 +409,20 @@ export class Runtime {
       }
     }
 
-    this.logger.info("shutdown complete. closing transports...");
+    this.logger.info("runtime stop complete. closing transports...");
 
-    // close the transports
+    // shut down the transports
     for (const transport of logger.transports) {
       if (typeof transport.close === "function") {
         try {
-          transport.close();
+          (transport as unknown as { close?: () => void }).close?.();
         } catch {
           /* ignore */
         }
       }
     }
+
+    console.log("shutdown complete");
   }
 
   /**

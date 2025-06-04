@@ -7,6 +7,7 @@ import express, {
   Router
 } from "express";
 import { Server } from "http";
+import { Socket } from "net";
 
 export interface ServerManagerConfig {
   port: number;
@@ -19,6 +20,7 @@ export class ServerManager {
   private _server: Server | undefined;
   private port: number;
   private cors: cors.CorsOptions;
+  private sockets: Set<Socket> = new Set();
 
   constructor({ port, cors }: ServerManagerConfig) {
     this.app = express();
@@ -102,9 +104,28 @@ export class ServerManager {
     this.app.use("/", this.router);
 
     this._server = this.app.listen(this.port);
+
+    // Track sockets to ensure graceful shutdown
+    this._server.on("connection", (socket: Socket) => {
+      this.sockets.add(socket);
+      socket.on("close", () => this.sockets.delete(socket));
+    });
   }
 
   public async stop(): Promise<void> {
+    // create a shallow copy of the sockets since they mutate while they are being destroyed
+    const sockets = Array.from(this.sockets);
+
+    // Destroy any remaining sockets to unblock server.close()
+    for (const socket of sockets) {
+      try {
+        socket.destroy();
+      } catch {
+        // ignore
+      }
+    }
+    this.sockets.clear();
+
     await new Promise((resolve) => this.server.close(resolve));
   }
 }

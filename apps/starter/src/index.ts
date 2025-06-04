@@ -23,6 +23,7 @@ import { multiModalImageGenerationCapability as openaiImageGenMM } from "@maiar-
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
+import { CharacterPlugin } from "@maiar-ai/plugin-character";
 import {
   DiscordPlugin,
   postListenerTrigger,
@@ -37,8 +38,6 @@ import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
 import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 import { TimePlugin } from "@maiar-ai/plugin-time";
-
-import { CharacterPlugin } from "../../../packages/plugin-character/dist";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");

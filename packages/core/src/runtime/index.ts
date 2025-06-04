@@ -328,16 +328,82 @@ export class Runtime {
       }
     );
 
-    await this.serverManager.stop();
+    /**
+     * Create a shallow copy of the plugin and model provider arrays so that we
+     * can safely iterate over them while they are being mutated (each
+     * unregister call removes the element from the original collection).
+     */
+    const plugins = [...this.pluginRegistry.plugins];
+    const modelProviders = [...this.modelManager.modelProviders];
 
-    for (const plugin of this.pluginRegistry.plugins) {
-      await this.pluginRegistry.unregisterPlugin(plugin);
+    // shut down the server manager
+    this.logger.info("stopping server manager...");
+    try {
+      await this.serverManager.stop();
+      this.logger.info("server manager stopped");
+    } catch (error) {
+      this.logger.error("failed to stop server manager", { error });
     }
 
-    await this.memoryManager.unregisterMemoryProvider();
+    // shut down the plugins
+    for (const plugin of plugins) {
+      this.logger.info(`shutting down plugin "${plugin.id}"...`);
+      try {
+        /**
+         * Each plugin shutdown is raced with a timeout so that a single hanging
+         * plugin cannot block the overall process shutdown.
+         */
+        await Promise.race([
+          this.pluginRegistry.unregisterPlugin(plugin),
+          new Promise((_resolve, reject) =>
+            setTimeout(() => reject(new Error("shutdown timeout")), 5_000)
+          )
+        ]);
+        this.logger.info(`plugin "${plugin.id}" shut down`);
+      } catch (error) {
+        this.logger.error(
+          `plugin "${plugin.id}" shutdown failed – continuing`,
+          {
+            error
+          }
+        );
+      }
+    }
 
-    for (const modelProvider of this.modelManager.modelProviders) {
-      await this.modelManager.unregisterModel(modelProvider);
+    // shut down the memory provider
+    this.logger.info("unregistering memory provider...");
+    try {
+      await this.memoryManager.unregisterMemoryProvider();
+      this.logger.info("memory provider unregistered");
+    } catch (error) {
+      this.logger.error("failed to unregister memory provider", { error });
+    }
+
+    // shut down the model providers
+    for (const provider of modelProviders) {
+      this.logger.info(`unregistering model provider "${provider.id}"...`);
+      try {
+        await this.modelManager.unregisterModel(provider);
+        this.logger.info(`model provider "${provider.id}" unregistered`);
+      } catch (error) {
+        this.logger.error(
+          `model provider "${provider.id}" unregister failed – continuing`,
+          { error }
+        );
+      }
+    }
+
+    this.logger.info("shutdown complete. closing transports...");
+
+    // close the transports
+    for (const transport of logger.transports) {
+      if (typeof transport.close === "function") {
+        try {
+          transport.close();
+        } catch {
+          /* ignore */
+        }
+      }
     }
   }
 

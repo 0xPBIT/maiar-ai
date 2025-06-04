@@ -42,6 +42,11 @@ export class WebSocketTransport extends Transport {
       }
     });
 
+    // When the underlying server is closed, close the WebSocket server
+    server.on("close", () => {
+      this.close();
+    });
+
     this.wss.on("connection", (ws) => {
       this.clients.add(ws);
 
@@ -73,6 +78,26 @@ export class WebSocketTransport extends Transport {
     }
 
     next();
+  }
+
+  /** Gracefully closes all clients *and* the server */
+  public close(): void {
+    if (!this.wss) return;
+    for (const client of this.clients) {
+      try {
+        client.terminate();
+      } catch {
+        /* ignore */
+      }
+    }
+    // Close the WS server itself
+    try {
+      this.wss.close();
+    } catch {
+      /* ignore */
+    }
+    this.wss = null;
+    this.clients.clear();
   }
 }
 

@@ -123,7 +123,7 @@ export abstract class Plugin {
    * If the value is a function it will be invoked with the plugin instance as
    * `this`, allowing access to runtime or other instance members.
    *
-   * The function may return a string synchronously or a Promise<string>.
+   * The function may return a string synchronously or a promise that resolves to a string.
    *
    * @param field The lazy string (static or function) to resolve.
    * @returns The resolved string value.

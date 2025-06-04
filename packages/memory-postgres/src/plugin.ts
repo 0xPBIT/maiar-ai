@@ -15,10 +15,7 @@ export class PostgresMemoryPlugin extends Plugin {
       name: "Postgres Memory Plugin",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -31,8 +28,7 @@ export class PostgresMemoryPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/memory_add_document_description`,
-              {}
+              `${this.id}/memory_add_document_description`
             )
           ).trim(),
         fn: this.addDocument.bind(this)

@@ -15,10 +15,7 @@ export class SQLiteMemoryPlugin extends Plugin {
       name: "SQLite Memory Plugin",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -33,8 +30,7 @@ export class SQLiteMemoryPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/save_memory_description`,
-              {}
+              `${this.id}/save_memory_description`
             )
           ).trim(),
         fn: this.addDocument.bind(this)
@@ -44,8 +40,7 @@ export class SQLiteMemoryPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/remove_memory_description`,
-              {}
+              `${this.id}/remove_memory_description`
             )
           ).trim(),
         fn: this.removeDocument.bind(this)
@@ -55,8 +50,7 @@ export class SQLiteMemoryPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/query_memory_description`,
-              {}
+              `${this.id}/query_memory_description`
             )
           ).trim(),
         fn: this.query.bind(this)

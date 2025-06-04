@@ -14,10 +14,7 @@ export class SearchPlugin extends Plugin {
       name: "Search",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -30,10 +27,7 @@ export class SearchPlugin extends Plugin {
         name: "search",
         description: async () =>
           (
-            await this.runtime.templates.render(
-              `${this.id}/search_description`,
-              {}
-            )
+            await this.runtime.templates.render(`${this.id}/search_description`)
           ).trim(),
         fn: this.search.bind(this)
       }

@@ -25,10 +25,7 @@ export class WebSocketPlugin extends Plugin {
       name: "WebSocket Plugin",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: nodePath.resolve(__dirname, "../prompts")
@@ -42,8 +39,7 @@ export class WebSocketPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/send_message_description`,
-              {}
+              `${this.id}/send_message_description`
             )
           ).trim(),
         fn: this.sendMessage.bind(this)

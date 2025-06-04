@@ -28,10 +28,7 @@ export class TextGenerationPlugin extends Plugin {
       name: "Text Generation",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [
         textGenerationCapability.id,
@@ -46,8 +43,7 @@ export class TextGenerationPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/generate_text_description`,
-              {}
+              `${this.id}/generate_text_description`
             )
           ).trim(),
         fn: this.generateText.bind(this)
@@ -57,8 +53,7 @@ export class TextGenerationPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/generate_text_multimodal_description`,
-              {}
+              `${this.id}/generate_text_multimodal_description`
             )
           ).trim(),
         fn: this.generateTextMultimodal.bind(this)

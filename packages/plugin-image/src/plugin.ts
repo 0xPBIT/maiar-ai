@@ -15,10 +15,7 @@ export class ImageGenerationPlugin extends Plugin {
       name: "image",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [
         imageGenerationCapability.id,
@@ -33,8 +30,7 @@ export class ImageGenerationPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/generate_image_description`,
-              {}
+              `${this.id}/generate_image_description`
             )
           ).trim(),
         fn: this.generateImage.bind(this)
@@ -44,8 +40,7 @@ export class ImageGenerationPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/generate_image_with_images_description`,
-              {}
+              `${this.id}/generate_image_with_images_description`
             )
           ).trim(),
         fn: this.generateImageWithImages.bind(this)

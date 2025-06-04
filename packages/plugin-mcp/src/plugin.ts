@@ -24,10 +24,7 @@ export class MCPPlugin extends Plugin {
       name: "MCP",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")

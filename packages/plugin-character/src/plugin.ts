@@ -13,10 +13,7 @@ export class CharacterPlugin extends Plugin {
       name: "Character",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -29,8 +26,7 @@ export class CharacterPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/inject_character_description`,
-              {}
+              `${this.id}/inject_character_description`
             )
           ).trim(),
         fn: this.injectCharacter.bind(this)

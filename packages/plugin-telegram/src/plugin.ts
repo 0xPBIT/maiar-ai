@@ -20,10 +20,7 @@ export class TelegramPlugin extends Plugin {
       name: "Telegram",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -41,8 +38,7 @@ export class TelegramPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/send_response_description`,
-              {}
+              `${this.id}/send_response_description`
             )
           ).trim(),
         fn: this.handleSendMessage.bind(this)

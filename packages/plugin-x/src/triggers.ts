@@ -32,7 +32,7 @@ export const periodicPostTrigger: XTriggerFactory = (
         const runtime = getRuntime();
         const postTemplate =
           config?.postTemplate ||
-          (await runtime.templates.render("plugin-x/post_template", {}));
+          (await runtime.templates.render("plugin-x/post_template"));
 
         logger.info(`starting x periodic post trigger`, {
           type: "plugin-x.trigger.start",

@@ -27,10 +27,7 @@ export class TerminalPlugin extends Plugin {
       name: "Terminal Plugin",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -48,8 +45,7 @@ export class TerminalPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/send_response_description`,
-              {}
+              `${this.id}/send_response_description`
             )
           ).trim(),
         fn: this.sendResponse.bind(this)

@@ -9,10 +9,7 @@ export class TimePlugin extends Plugin {
       name: "Time",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -24,8 +21,7 @@ export class TimePlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/get_current_time_description`,
-              {}
+              `${this.id}/get_current_time_description`
             )
           ).trim(),
         fn: this.getCurrentTime.bind(this)

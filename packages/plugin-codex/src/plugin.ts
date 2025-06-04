@@ -16,10 +16,7 @@ export class CodexPlugin extends Plugin {
       name: "Codex CLI",
       description: async () =>
         (
-          await this.runtime.templates.render(
-            `${this.id}/plugin_description`,
-            {}
-          )
+          await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
       promptsDir: path.resolve(__dirname, "../prompts")
@@ -31,8 +28,7 @@ export class CodexPlugin extends Plugin {
         description: async () =>
           (
             await this.runtime.templates.render(
-              `${this.id}/run_codex_command_description`,
-              {}
+              `${this.id}/run_codex_command_description`
             )
           ).trim(),
         fn: async (task: AgentTask): Promise<PluginResult> => {

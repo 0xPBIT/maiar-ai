@@ -337,10 +337,10 @@ export class Runtime {
     const modelProviders = [...this.modelManager.modelProviders];
 
     // shut down the websocket transport
-    this.logger.info("closing WebSocket transport...");
     for (const transport of (logger as unknown as { transports: Transport[] })
       .transports) {
       if (transport instanceof WebSocketTransport) {
+        this.logger.info("closing WebSocket transport...");
         try {
           transport.close();
           this.logger.info("closed WebSocket transport");

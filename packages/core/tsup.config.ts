@@ -1,4 +1,4 @@
-import fs from "fs-extra";
+import fs from "fs/promises";
 import path from "path";
 import { defineConfig } from "tsup";
 
@@ -16,6 +16,6 @@ export default defineConfig({
   onSuccess: async () => {
     const src = path.resolve(__dirname, "prompts");
     const dest = path.resolve(__dirname, "dist/prompts");
-    await fs.copy(src, dest);
+    await fs.cp(src, dest, { recursive: true });
   }
 });

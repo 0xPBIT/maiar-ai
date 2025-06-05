@@ -351,9 +351,6 @@ importers:
       '@types/ws':
         specifier: 8.18.1
         version: 8.18.1
-      fs-extra:
-        specifier: 11.2.0
-        version: 11.2.0
       tsup:
         specifier: 8.3.6
         version: 8.3.6(@swc/core@1.5.7)(typescript@5.7.3)
@@ -10129,6 +10126,7 @@ packages:
       graceful-fs: 4.2.11
       jsonfile: 6.1.0
       universalify: 2.0.1
+    dev: false
 
   /fs-extra@11.3.0:
     resolution: {integrity: sha512-Z4XaCL6dUDHfP/jT25jJKMmtxvuwbkrD1vNSMFlo9lNLY2c5FHYSQgHPRZUjAB26TpDEoW9HCOgplrdbaPV/ew==}

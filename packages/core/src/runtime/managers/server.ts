@@ -121,7 +121,7 @@ export class ServerManager {
       try {
         socket.destroy();
       } catch {
-        // ignore
+        /* ignore */
       }
     }
     this.sockets.clear();

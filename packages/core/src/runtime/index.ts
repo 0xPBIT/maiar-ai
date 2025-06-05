@@ -337,6 +337,7 @@ export class Runtime {
     const modelProviders = [...this.modelManager.modelProviders];
 
     // shut down the websocket transport
+    this.logger.info("closing WebSocket transport...");
     for (const transport of (logger as unknown as { transports: Transport[] })
       .transports) {
       if (transport instanceof WebSocketTransport) {
@@ -364,29 +365,31 @@ export class Runtime {
       this.logger.error("failed to stop server manager", { error });
     }
 
-    // shut down the plugins
-    for (const plugin of plugins) {
-      this.logger.info(`shutting down plugin "${plugin.id}"...`);
-      try {
-        /**
-         * Each plugin shutdown is raced with a timeout so that a single hanging
-         * plugin cannot block the overall process shutdown.
-         */
-        await Promise.race([
-          this.pluginRegistry.unregisterPlugin(plugin),
-          new Promise((_resolve, reject) =>
-            setTimeout(() => reject(new Error("shutdown timeout")), 5_000)
-          )
-        ]);
-      } catch (error) {
-        this.logger.error(
-          `plugin "${plugin.id}" shutdown failed – continuing`,
-          {
-            error
-          }
-        );
-      }
-    }
+    // shut down the plugins in parallel
+    await Promise.all(
+      plugins.map(async (plugin) => {
+        this.logger.info(`shutting down plugin "${plugin.id}"...`);
+        try {
+          /**
+           * Each plugin shutdown is raced with a timeout so that a single hanging
+           * plugin cannot block the overall process shutdown.
+           */
+          await Promise.race([
+            this.pluginRegistry.unregisterPlugin(plugin),
+            new Promise((_resolve, reject) =>
+              setTimeout(() => reject(new Error("shutdown timeout")), 5_000)
+            )
+          ]);
+        } catch (error) {
+          this.logger.error(
+            `plugin "${plugin.id}" shutdown failed – continuing`,
+            {
+              error
+            }
+          );
+        }
+      })
+    );
 
     // shut down the memory provider
     this.logger.info("unregistering memory provider...");
@@ -422,7 +425,7 @@ export class Runtime {
       }
     }
 
-    console.log("shutdown complete");
+    console.log("✅ shutdown complete");
   }
 
   /**

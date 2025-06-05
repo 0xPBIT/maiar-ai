@@ -80,7 +80,10 @@ export class WebSocketTransport extends Transport {
     next();
   }
 
-  /** Gracefully closes all clients *and* the server */
+  /**
+   * Gracefully closes all clients *and* the server.
+   * This is called by the Runtime when the server is shutting down.
+   */
   public close(): void {
     if (!this.wss) return;
     for (const client of this.clients) {
@@ -90,6 +93,7 @@ export class WebSocketTransport extends Transport {
         /* ignore */
       }
     }
+
     // Close the WS server itself
     try {
       this.wss.close();

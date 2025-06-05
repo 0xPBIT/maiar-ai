@@ -27,8 +27,8 @@ export const periodicPostTrigger: XTriggerFactory = (
 
   return {
     name: "x_periodic_post",
-    start: (): void => {
-      (async () => {
+    start: async (): Promise<void> => {
+      try {
         const runtime = getRuntime();
         const postTemplate =
           config?.postTemplate ||
@@ -145,12 +145,12 @@ export const periodicPostTrigger: XTriggerFactory = (
 
         // Start the first scheduling
         scheduleNextPost();
-      })().catch((err) =>
+      } catch (err) {
         logger.error("x periodic post trigger error", {
           type: "plugin-x.trigger.error",
           error: err instanceof Error ? err.message : String(err)
-        })
-      );
+        });
+      }
     }
   };
 };

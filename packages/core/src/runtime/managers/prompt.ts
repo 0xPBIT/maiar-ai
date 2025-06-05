@@ -2,6 +2,8 @@ import glob from "fast-glob";
 import { Liquid } from "liquidjs";
 import path from "path";
 
+import config from "../../config";
+
 /**
  * A lightweight registry that manages Liquid prompt templates.
  *
@@ -12,17 +14,15 @@ import path from "path";
  *  • Allow host applications to add post-render extensions or full overrides.
  */
 
-const env = process.env.NODE_ENV;
-
 export class PromptRegistry {
   private engine: Liquid;
   private files = new Map<string, string>();
 
-  constructor(initialRoots: string[] = []) {
+  constructor(initialRoots: string[]) {
     this.engine = new Liquid({
-      root: [...initialRoots],
+      root: initialRoots,
       extname: ".liquid",
-      cache: env === "development" ? false : true, // we want hot reload during dev
+      cache: config.NODE_ENV === "development" ? false : true, // we want hot reload during dev
       strictVariables: false
     });
   }

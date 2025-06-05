@@ -42,8 +42,8 @@ export class ServerManager {
    * @param middleware - The middleware functions for the route
    */
   public registerRoute(
-    path: string,
     method: "get" | "post",
+    path: string,
     handler: (req: Request, res: Response) => Promise<void> | void,
     middleware?: RequestHandler | RequestHandler[]
   ): void {

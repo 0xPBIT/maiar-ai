@@ -192,11 +192,11 @@ export class Runtime {
     }
 
     // mount the prompts routes
-    serverManager.registerRoute("/prompts", "get", (_req, res) => {
+    serverManager.registerRoute("get", "/prompts", (_req, res) => {
       res.json(promptRegistry.list());
     });
 
-    serverManager.registerRoute("/prompts/:id", "get", async (req, res) => {
+    serverManager.registerRoute("get", "/prompts/:id", async (req, res) => {
       const { id } = req.params as { id: string };
       const entry = promptRegistry.list().find((p) => p.id === id);
       if (!entry) {
@@ -211,7 +211,7 @@ export class Runtime {
       }
     });
 
-    serverManager.registerRoute("/prompts-all", "get", async (_req, res) => {
+    serverManager.registerRoute("get", "/prompts-all", async (_req, res) => {
       try {
         const all = await Promise.all(
           promptRegistry.list().map(async ({ id, path }) => ({
@@ -400,8 +400,8 @@ export class Runtime {
 
         if (trigger.route) {
           this.serverManager.registerRoute(
-            trigger.route.path,
             "post",
+            trigger.route.path,
             trigger.route.handler,
             trigger.route.middleware
           );

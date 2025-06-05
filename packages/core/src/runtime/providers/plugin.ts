@@ -89,13 +89,13 @@ export abstract class Plugin {
     this.name = name;
     this.description = description;
 
+    // Store optional prompts directory/directories for automatic prompt registration
+    this.promptsDir = promptsDir;
+
     this.executors = [];
     this.triggers = [];
     this._requiredCapabilities = requiredCapabilities;
     this._runtime = undefined;
-
-    // Store optional prompts directory/directories for automatic prompt registration
-    this.promptsDir = promptsDir;
   }
 
   /**

@@ -27,7 +27,6 @@ export function formatZodSchema<T>(schema: z.ZodType<T>): string {
         const fieldType = getSchemaType(innerSchema as z.ZodTypeAny);
         const fieldDescription =
           (innerSchema as z.ZodTypeAny).description || "";
-
         return `  ${key}${isOptional ? "?" : ""}: ${fieldType}${fieldDescription ? ` - ${fieldDescription}` : ""}`;
       })
       .join("\n");

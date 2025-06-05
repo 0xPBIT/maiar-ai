@@ -145,7 +145,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
   private async query(task: AgentTask): Promise<PluginResult> {
     // Construct query from context
-    const queryPrompt2 = await this.runtime.templates.render(
+    const queryPrompt = await this.runtime.templates.render(
       `${this.id}/query`,
       {
         context: JSON.stringify(task, null, 2),
@@ -155,7 +155,7 @@ export class SQLiteMemoryPlugin extends Plugin {
 
     const queryFormattedResponse = await this.runtime.getObject(
       SQLiteQuerySchema,
-      queryPrompt2
+      queryPrompt
     );
     const queryStmt = this.db.prepare(queryFormattedResponse.query);
     const results = queryStmt.all() as { id: string; content: string }[];

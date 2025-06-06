@@ -33,19 +33,22 @@ export default function Home(): JSX.Element {
             /* ---- Navigation ---- */
             .nav{position:absolute;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:1.25rem 2rem;z-index:10;}
             .logo{font-size:3rem;font-weight:1000;letter-spacing:0.05em;text-transform:uppercase;color:#fff;text-decoration:none;}
-            .nav-links{display:flex;gap:1.5rem;font-size:1.2rem;font-weight:700;letter-spacing:0.075em;text-transform:uppercase;}
+            .nav-links{display:flex;gap:1.5rem;font-size:0.8rem;font-weight:700;letter-spacing:0.075em;text-transform:uppercase;}
             .nav-links a{color:#fff;text-decoration:none;opacity:0.9;transition:opacity .25s ease;}
             .nav-links a:hover{opacity:1;}
 
             /* ---- Hero text ---- */
-            .hero-content{max-width:52rem;z-index:5;}
+            .hero-content{max-width:52rem;z-index:5;transform:translateY(1vmin);}
             .hero-content h1{font-size:clamp(2.25rem,4vw+1rem,3.5rem);font-weight:700;margin:0 auto 1rem;line-height:1.15;}
             .subheading{font-size:1rem;opacity:0.85;margin-bottom:2.25rem;line-height:1.5;}
 
+            /* ---- Demo image ---- */
+            .hero-image{width:100%;max-width:900px;margin:2.5rem auto 0;display:block;border-radius:0.5rem;box-shadow:0 0 40px rgba(0,255,0,0.05);}
+
             /* ---- CTA buttons ---- */
             .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
-            .btn{display:inline-block;padding:0.85rem 1.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.05em;transition:background .25s ease,color .25s ease,border-color .25s ease;}
-            .btn.primary{background:#fff;color:#000;box-shadow:0 0 20px 0 rgba(255,255,255,0.75);}
+            .btn{display:inline-block;padding:0.5rem 1.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.05em;transition:background .25s ease,color .25s ease,border-color .25s ease;}
+            .btn.primary{background:#F3FFE5;color:#0E4500;box-shadow:0 0 10px 0 rgba(255,255,255,0.5);}
             .btn.primary:hover{background:#e2e2e2;}
             .btn.secondary{background:rgba(255,255,255,0.1);color:#fff;border:2px solid #fff;}
             .btn.secondary:hover{background:rgba(255,255,255,0.2);}
@@ -54,11 +57,11 @@ export default function Home(): JSX.Element {
             .blur-bg{pointer-events:none;position:absolute;inset:0;overflow:hidden;z-index:1;}
             .blob{position:absolute;border-radius:50%;filter:blur(100px) saturate(110%);mix-blend-mode:screen;will-change:transform;}
 
-            /* top-left cluster – two slim tilted ellipses */
+            /* top-left cluster - two slim tilted ellipses */
             .blob-1{width:22vmax;height:44vmax;top:-6vmax;left:13vmax;background:var(--blob-color-1);opacity:0.5;animation:blob1Drift 90s ease-in-out infinite alternate;}
             .blob-2{width:24vmax;height:46vmax;top:-4vmax;left:16vmax;background:var(--blob-color-2);opacity:0.5;animation:blob2Drift 100s ease-in-out infinite alternate-reverse;}
 
-            /* top-right cluster – two overlapping greens */
+            /* top-right cluster -s two overlapping greens */
             .blob-3{width:26vmax;height:38vmax;top:4vmax;right:-5vmax;background:var(--blob-color-3);opacity:0.5;animation:blob3Drift 110s linear infinite;}
             .blob-4{width:24vmax;height:26vmax;top:0;right:-2vmax;background:var(--blob-color-4);opacity:0.5;animation:blob4Drift 95s ease-in-out infinite alternate;}
 
@@ -111,7 +114,9 @@ export default function Home(): JSX.Element {
               GITHUB
             </Link>
             <Link to="/plugins">PLUGINS</Link>
-            <Link href="#">TOKEN</Link>
+            <Link href="https://www.geckoterminal.com/solana/pools/9NtsQ8GprqrhZMzTK8Jhu2AoAqPnHEmZiUTLVfWeEDLP">
+              TOKEN
+            </Link>
           </div>
         </nav>
 
@@ -132,15 +137,19 @@ export default function Home(): JSX.Element {
             </Link>
             <Link
               className="btn secondary"
-              href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+              href="https://x.com/maiar_ai/status/1902235957560013069"
             >
               Watch Demo
             </Link>
           </div>
-        </main>
 
-        {/* Triangular glow accent */}
-        <div className="triangle" />
+          {/* Demo image */}
+          <img
+            src="/img/demo.png"
+            alt="MAIAR demo screenshot"
+            className="hero-image"
+          />
+        </main>
       </header>
     </>
   );

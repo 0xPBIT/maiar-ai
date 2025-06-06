@@ -2,8 +2,72 @@ import React, { useEffect, useState } from "react";
 
 import Layout from "@theme/Layout";
 import clsx from "clsx";
+import { Plug } from "lucide-react";
 
 import styles from "../css/plugins.module.css";
+
+/* --------------------- */
+/* Inline SVG Icons      */
+/* --------------------- */
+const StarIcon = ({ className, ...rest }: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    className={clsx(styles.icon, className)}
+    {...rest}
+  >
+    <defs>
+      <linearGradient id="gradStar" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F3FFE5" />
+        <stop offset="100%" stopColor="#C2FF66" />
+      </linearGradient>
+    </defs>
+    <path
+      fill="url(#gradStar)"
+      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+    />
+  </svg>
+);
+
+const GitHubIcon = ({ className, ...rest }: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    className={clsx(styles.icon, className)}
+    {...rest}
+  >
+    <defs>
+      <linearGradient id="gradGithub" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F3FFE5" />
+        <stop offset="100%" stopColor="#C2FF66" />
+      </linearGradient>
+    </defs>
+    <path
+      fill="url(#gradGithub)"
+      d="M12 .296C5.373.296 0 5.67 0 12.296c0 5.292 3.438 9.787 8.207 11.387.6.11.793-.26.793-.577 0-.285-.01-1.04-.016-2.04-3.338.726-4.042-1.608-4.042-1.608-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.082-.729.082-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.835 2.809 1.306 3.495.998.108-.775.418-1.306.762-1.606-2.665-.303-5.466-1.332-5.466-5.931 0-1.31.467-2.381 1.236-3.221-.124-.303-.536-1.524.117-3.176 0 0 1.008-.323 3.301 1.23.957-.266 1.983-.399 3.003-.403 1.02.004 2.047.137 3.006.404 2.291-1.554 3.297-1.23 3.297-1.23.655 1.653.243 2.874.12 3.176.77.84 1.235 1.912 1.235 3.221 0 4.61-2.804 5.625-5.476 5.922.43.372.815 1.104.815 2.226 0 1.606-.015 2.902-.015 3.293 0 .319.192.694.801.576C20.565 22.08 24 17.587 24 12.296 24 5.67 18.627.296 12 .296z"
+    />
+  </svg>
+);
+
+const PackageIcon = ({ className, ...rest }: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    className={clsx(styles.icon, className)}
+    {...rest}
+  >
+    <defs>
+      <linearGradient id="gradPkg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F3FFE5" />
+        <stop offset="100%" stopColor="#C2FF66" />
+      </linearGradient>
+    </defs>
+    <path
+      fill="url(#gradPkg)"
+      d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM12 3.15L18.26 7 12 10.85 5.74 7 12 3.15zM5 9.47l6 3.4v6.92l-6-3.43V9.47zm8 10.32v-6.92l6-3.4v6.9l-6 3.42z"
+    />
+  </svg>
+);
 
 interface Plugin {
   name: string;
@@ -117,7 +181,7 @@ export default function Plugins(): React.JSX.Element {
               repository: `${repoData.html_url}/tree/main/packages/${dir.name}`,
               version: npmLatestVersion,
               tags: [
-                "🟩 official",
+                "official",
                 dir.name.startsWith("plugin-")
                   ? "plugin"
                   : dir.name.startsWith("memory-")
@@ -250,7 +314,8 @@ export default function Plugins(): React.JSX.Element {
               rel="noopener noreferrer"
               className={styles.registerPluginLink}
             >
-              🔌 Register your plugin
+              <Plug strokeWidth={2} className={styles.icon} /> Register your
+              plugin
             </a>
           </div>
           {error && <div className={styles.errorMessage}>{error}</div>}
@@ -267,19 +332,19 @@ export default function Plugins(): React.JSX.Element {
               <div key={plugin.name} className={styles.pluginItem}>
                 <div className={styles.pluginHeader}>
                   <div className={styles.pluginNameVersion}>
-                    <a
-                      href={plugin.repository}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.pluginName}
-                    >
-                      {plugin.name}
-                    </a>
-                    <p className={styles.versionLabel}>
-                      ⭐ Starred {plugin.stars}
-                    </p>
-                  </div>
-                  <div className={styles.metadataContainer}>
+                    <div className={styles.nameLine}>
+                      <a
+                        href={plugin.repository}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.pluginName}
+                      >
+                        {plugin.name}
+                      </a>
+                      <span className={styles.versionNumber}>
+                        {plugin.version}
+                      </span>
+                    </div>
                     <div className={styles.authorInfo}>
                       <a
                         href={`https://github.com/${plugin.author}`}
@@ -298,18 +363,21 @@ export default function Plugins(): React.JSX.Element {
                         rel="noopener noreferrer"
                         className={styles.authorLink}
                       >
-                        Author: {plugin.author}
+                        {plugin.author}
                       </a>
                     </div>
-                    <div className={styles.metaInfo}>
-                      <span className={styles.versionInfo}>
-                        Version: {plugin.version}
-                      </span>
-                      <span className={styles.publishInfo}>
-                        Last Published:{" "}
-                        {new Date(plugin.lastPublished).toLocaleDateString()}
-                      </span>
-                    </div>
+                  </div>
+                  <div className={styles.metadataContainer}>
+                    <span className={styles.publishInfo}>
+                      updated –{" "}
+                      {new Date(plugin.lastPublished).toLocaleDateString()}
+                    </span>
+                    <p className={styles.versionLabel}>
+                      <StarIcon
+                        style={{ marginLeft: "0.5rem", marginRight: "0.25rem" }}
+                      />
+                      {plugin.stars}
+                    </p>
                   </div>
                 </div>
                 <p className={styles.pluginDescription}>{plugin.description}</p>
@@ -327,8 +395,10 @@ export default function Plugins(): React.JSX.Element {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={styles.pluginLink}
+                      aria-label="View Repository on GitHub"
+                      title="View Repository"
                     >
-                      View Repository
+                      <GitHubIcon />
                     </a>
                     <a
                       href={
@@ -339,8 +409,10 @@ export default function Plugins(): React.JSX.Element {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={styles.pluginLink}
+                      aria-label="View Package on npm"
+                      title="View Package"
                     >
-                      View Package
+                      <PackageIcon />
                     </a>
                   </div>
                 </div>

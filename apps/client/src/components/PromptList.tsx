@@ -32,7 +32,7 @@ export function PromptList() {
       setError(null);
 
       const base = new URL(DEFAULT_URLS.CHAT_API).origin;
-      const res = await fetch(`${base}/prompts-all`);
+      const res = await fetch(`${base}/prompts`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as PromptInfo[];
       setPrompts(data);

@@ -192,26 +192,7 @@ export class Runtime {
     }
 
     // mount the prompts routes
-    serverManager.registerRoute("get", "/prompts", (_req, res) => {
-      res.json(promptRegistry.list());
-    });
-
-    serverManager.registerRoute("get", "/prompts/:id", async (req, res) => {
-      const { id } = req.params as { id: string };
-      const entry = promptRegistry.list().find((p) => p.id === id);
-      if (!entry) {
-        res.status(404).json({ error: "Prompt not found" });
-        return;
-      }
-      try {
-        const template = await fsPromises.readFile(entry.path, "utf8");
-        res.json({ ...entry, template });
-      } catch {
-        res.status(500).json({ error: "Failed to load prompt" });
-      }
-    });
-
-    serverManager.registerRoute("get", "/prompts-all", async (_req, res) => {
+    serverManager.registerRoute("get", "/prompts", async (_req, res) => {
       try {
         const all = await Promise.all(
           promptRegistry.list().map(async ({ id, path }) => ({

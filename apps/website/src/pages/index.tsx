@@ -10,13 +10,56 @@ export default function Home(): JSX.Element {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [overlayOpacity, setOverlayOpacity] = useState(0);
 
-  // Update overlay opacity based on scroll position (0 at top, 0.65 at one viewport down)
+  // Store random horizontal shift factors for each blob
+  const blobShiftFactors = useRef<number[]>([]);
+  // Store random rotation factors for yellow blobs (5 and 6)
+  const blobRotationFactors = useRef<number[]>([]);
+
+  // Update overlay opacity and blob positions based on scroll
   useEffect(() => {
+    const blobs = Array.from(
+      document.querySelectorAll(".blob")
+    ) as HTMLElement[];
+
+    // Initialize random horizontal shift factors for each blob
+    if (blobShiftFactors.current.length === 0 && blobs.length > 0) {
+      blobShiftFactors.current = blobs.map((_, i) => {
+        // Alternate directions to ensure variety, with random magnitude
+        const direction = i % 2 === 0 ? 1 : -1;
+        return direction * (Math.random() * 0.5 + 0.5); // Random magnitude: 0.5 to 1.0
+      });
+    }
+
+    // Initialize random rotation factors for yellow blobs (5 and 6)
+    if (blobRotationFactors.current.length === 0 && blobs.length >= 6) {
+      blobRotationFactors.current = [
+        (Math.random() - 0.5) * 2, // blob 5
+        (Math.random() - 0.5) * 2 // blob 6
+      ];
+    }
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const vh = window.innerHeight;
       const ratio = Math.min(scrollY / vh, 1); // 0 -> 1 across first viewport
       setOverlayOpacity(ratio);
+
+      // Move blobs laterally based on scroll
+      const maxShift = vh * 0.3; // Max shift is 30% of viewport height
+      const maxRotation = 180; // Max rotation of 180 degrees
+
+      blobs.forEach((blob, i) => {
+        const shift = ratio * maxShift * (blobShiftFactors.current[i] || 0);
+        blob.style.setProperty(`--scroll-translate-x-${i + 1}`, `${shift}px`);
+
+        // Apply rotation only to blobs 5 and 6
+        if (i === 4 || i === 5) {
+          // Blobs are 0-indexed (4 -> blob-5, 5 -> blob-6)
+          const rotationFactor = blobRotationFactors.current[i - 4] || 0;
+          const rotation = ratio * maxRotation * rotationFactor;
+          blob.style.setProperty(`--scroll-rotate-${i + 1}`, `${rotation}deg`);
+        }
+      });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
@@ -88,17 +131,29 @@ export default function Home(): JSX.Element {
 
             /* Path animations intentionally route through center so blobs intersect */
             @keyframes blob1Drift{
-              0%{transform:translate(0,0) rotate(45deg);}50%{transform:translate(6%,10%) rotate(35deg);}100%{transform:translate(0,0) rotate(30deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-1, 0px)), 0) rotate(45deg);}
+              50%{transform:translate(calc(6% + var(--scroll-translate-x-1, 0px)), 10%) rotate(35deg);}
+              100%{transform:translate(calc(var(--scroll-translate-x-1, 0px)), 0) rotate(30deg);} }
             @keyframes blob2Drift{
-              0%{transform:translate(0,0) rotate(50deg);}50%{transform:translate(-5%,6%) rotate(55deg);}100%{transform:translate(0,0) rotate(50deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-2, 0px)), 0) rotate(50deg);}
+              50%{transform:translate(calc(-5% + var(--scroll-translate-x-2, 0px)), 6%) rotate(55deg);}
+              100%{transform:translate(calc(var(--scroll-translate-x-2, 0px)), 0) rotate(50deg);} }
             @keyframes blob3Drift{
-              0%{transform:translate(0,0) rotate(-40deg);}50%{transform:translate(-6%,4%) rotate(-35deg);}100%{transform:translate(0,0) rotate(-40deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-3, 0px)), 0) rotate(-40deg);}
+              50%{transform:translate(calc(-6% + var(--scroll-translate-x-3, 0px)), 4%) rotate(-35deg);}
+              100%{transform:translate(calc(var(--scroll-translate-x-3, 0px)), 0) rotate(-40deg);} }
             @keyframes blob4Drift{
-              0%{transform:translate(0,0) rotate(-35deg);}50%{transform:translate(4%,6%) rotate(-30deg);}100%{transform:translate(0,0) rotate(-35deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-4, 0px)), 0) rotate(-35deg);}
+              50%{transform:translate(calc(4% + var(--scroll-translate-x-4, 0px)), 6%) rotate(-30deg);}
+              100%{transform:translate(calc(var(--scroll-translate-x-4, 0px)), 0) rotate(-35deg);} }
             @keyframes blob5Drift{
-              0%{transform:translate(0,0) rotate(75deg);}50%{transform:translate(8%,-4%) rotate(234deg);}100%{transform:translate(0,0) rotate(75deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-5, 0px)), 0) rotate(calc(75deg + var(--scroll-rotate-5, 0deg)));}
+              50%{transform:translate(calc(8% + var(--scroll-translate-x-5, 0px)), -4%) rotate(calc(234deg + var(--scroll-rotate-5, 0deg)));}
+              100%{transform:translate(calc(var(--scroll-translate-x-5, 0px)), 0) rotate(calc(75deg + var(--scroll-rotate-5, 0deg)));} }
             @keyframes blob6Drift{
-              0%{transform:translate(0,0) rotate(18deg);}50%{transform:translate(-8%,6%) rotate(23deg);}100%{transform:translate(0,0) rotate(18deg);} }
+              0%{transform:translate(calc(var(--scroll-translate-x-6, 0px)), 0) rotate(calc(18deg + var(--scroll-rotate-6, 0deg)));}
+              50%{transform:translate(calc(-8% + var(--scroll-translate-x-6, 0px)), 6%) rotate(calc(23deg + var(--scroll-rotate-6, 0deg)));}
+              100%{transform:translate(calc(var(--scroll-translate-x-6, 0px)), 0) rotate(calc(18deg + var(--scroll-rotate-6, 0deg)));} }
 
             /* ---- Motion preference ---- */
             @media (prefers-reduced-motion:reduce){

@@ -103,7 +103,15 @@ export default function Home(): JSX.Element {
             .subheading{font-size:1rem;opacity:0.85;margin-bottom:2.25rem;line-height:1.5;}
 
             /* ---- Demo image ---- */
-            .hero-image{width:100%;max-width:900px;margin:2.5rem auto 0;display:block;border-radius:0.5rem;box-shadow:0 0 40px rgba(0,255,0,0.05);}
+            .hero-image {
+              width: 100%;
+              max-width: 900px;
+              margin: 2.5rem auto 0;
+              display: block;
+              border-radius: 0.5rem;
+              box-shadow: 0 0 40px rgba(0, 255, 0, 0.15);
+              border: 1px solid rgba(194, 255, 102, 0.25);
+            }
 
             /* ---- CTA buttons ---- */
             .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
@@ -267,10 +275,13 @@ export default function Home(): JSX.Element {
             </Link>
           </div>
 
-          {/* Demo image */}
-          <img
-            src="/img/demo.png"
-            alt="MAIAR demo screenshot"
+          {/* Demo video */}
+          <video
+            src="/demo.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
             className="hero-image"
           />
         </main>

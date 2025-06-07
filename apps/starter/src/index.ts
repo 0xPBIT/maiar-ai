@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { config } from "dotenv";
-import { readFileSync } from "fs";
+//import { readFileSync } from "fs";
 import { join, resolve } from "path";
 import { z } from "zod";
 
@@ -23,7 +23,7 @@ import { multiModalImageGenerationCapability as openaiImageGenMM } from "@maiar-
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
-import { CharacterPlugin } from "@maiar-ai/plugin-character";
+//import { CharacterPlugin } from "@maiar-ai/plugin-character";
 import {
   DiscordPlugin,
   postListenerTrigger,
@@ -87,10 +87,10 @@ async function main() {
       token: process.env.TELEGRAM_BOT_TOKEN as string,
       pollingTimeout: 10000,
       dropPendingUpdates: true
-    }),
-    new CharacterPlugin({
-      character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
     })
+    // new CharacterPlugin({
+    //   character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")
+    // })
   ];
 
   const capabilityAliases: CapabilityAliasGroup[] = [

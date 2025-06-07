@@ -138,8 +138,9 @@ export default function Home(): JSX.Element {
             .highlights{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
             .highlights h2{font-size:clamp(1.75rem,4vw+1rem,2.75rem);margin-bottom:3rem;letter-spacing:0.03em;font-weight:700;}
             .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:1000px;width:100%;}
-            .card{position:relative;padding:2rem 1.75rem;border-radius:1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);backdrop-filter:blur(12px) saturate(120%);overflow:hidden;}
-            .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(0,255,0,0.15) 0%,rgba(255,255,255,0.05) 100%);mix-blend-mode:screen;pointer-events:none;}
+            .card{position:relative;padding:2rem 1.75rem;border-radius:1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(194,255,102,0.25);backdrop-filter:blur(12px) saturate(120%);overflow:hidden;}
+            .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(243,255,229,0.15) 0%,rgba(194,255,102,0.15) 100%);mix-blend-mode:screen;pointer-events:none;}
+            .card:hover{transform:translateY(-6px);box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 12px rgba(194,255,102,0.25);border-color:rgba(194,255,102,0.4);}
             .card h3{margin:0 0 0.75rem;font-size:1.25rem;font-weight:700;}
             .card p{margin:0;font-size:0.9rem;opacity:0.9;line-height:1.5;}
             @media(max-width:600px){.highlights h2{margin-bottom:2rem;}.cards{gap:1rem;}.card{padding:1.5rem 1.25rem;}}
@@ -234,32 +235,46 @@ export default function Home(): JSX.Element {
         <h2>Why Choose MAIAR?</h2>
         <div className="cards">
           <div className="card">
-            <h3>Modular Plugin Architecture</h3>
+            <h3>Triggers &amp; Actions Architecture</h3>
             <p>
-              Build your agent by composing triggers and actions as standalone
-              plugins—no rigid workflows, just pure flexibility.
+              Separate what starts work (triggers) from what does work
+              (actions), keeping your agent flexible and event-driven.
             </p>
           </div>
           <div className="card">
-            <h3>Model-Agnostic Providers</h3>
+            <h3>Model-Agnostic &amp; Future-Proof</h3>
             <p>
-              Swap between OpenAI, local LLMs or custom providers without
-              touching core logic. MAIAR handles them through a unified
-              interface.
+              Swap between GPT-4, local LLMs, or custom providers with a single
+              line. The unopinionated core ensures you're never locked in.
             </p>
           </div>
           <div className="card">
-            <h3>Persistent Memory</h3>
+            <h3>Declarative Capabilities</h3>
             <p>
-              SQLite, Postgres or any database—plug in the memory provider you
-              need and keep long-term context at your agent's fingertips.
+              Plugins declare their own capabilities and MAIAR's runtime
+              intelligently orchestrates them—less wiring, more building.
             </p>
           </div>
           <div className="card">
-            <h3>Real-time Monitoring</h3>
+            <h3>Community Plugin Registry</h3>
             <p>
-              Built-in websocket logging lets you inspect every step of the
-              execution pipeline for effortless debugging.
+              Discover, share, and integrate community-built plugins from our
+              open GitHub registry to extend your agent in minutes.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Platform Integrations</h3>
+            <p>
+              Connect your agent to the world with official plugins for Discord,
+              X (Twitter), Telegram, and more.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Multimodal Capabilities</h3>
+            <p>
+              Go beyond text. With support for image and audio models, your
+              agent can see, hear, and generate rich content for advanced,
+              real-world tasks.
             </p>
           </div>
         </div>

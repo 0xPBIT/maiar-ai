@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 
 import Head from "@docusaurus/Head";
@@ -8,6 +8,20 @@ import Link from "@docusaurus/Link";
 export default function Home(): JSX.Element {
   // Reference to the scroll container (entire page content)
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [overlayOpacity, setOverlayOpacity] = useState(0);
+
+  // Update overlay opacity based on scroll position (0 at top, 0.65 at one viewport down)
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const vh = window.innerHeight;
+      const ratio = Math.min(scrollY / vh, 1); // 0 -> 1 across first viewport
+      setOverlayOpacity(ratio);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <div ref={scrollRef}>
@@ -57,7 +71,7 @@ export default function Home(): JSX.Element {
             .btn.secondary:hover{background:rgba(255,255,255,0.2);}
 
             /* ---- Moving blurred blobs ---- */
-            .blur-bg{pointer-events:none;position:fixed;inset:0;overflow:hidden;z-index:0;}
+            .blur-bg{pointer-events:none;position:fixed;inset:0;overflow:hidden;z-index:-1;}
             .blob{position:absolute;border-radius:50%;filter:blur(100px) saturate(110%);mix-blend-mode:screen;will-change:transform;}
 
             /* top-left cluster - two slim tilted ellipses */
@@ -129,6 +143,12 @@ export default function Home(): JSX.Element {
             .card h3{margin:0 0 0.75rem;font-size:1.25rem;font-weight:700;}
             .card p{margin:0;font-size:0.9rem;opacity:0.9;line-height:1.5;}
             @media(max-width:600px){.highlights h2{margin-bottom:2rem;}.cards{gap:1rem;}.card{padding:1.5rem 1.25rem;}}
+
+            /* ---- Overlay ---- */
+             .overlay{position:fixed;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity .1s linear;z-index:1;}
+
+            /* Bring main sections above overlay */
+            .hero,.highlights{position:relative;z-index:2;}
           `}
         </style>
       </Head>
@@ -136,6 +156,12 @@ export default function Home(): JSX.Element {
       <header className="hero">
         {/* Animated blurred background */}
         <div className="blur-bg">
+          {/* Darkening overlay (opacity driven by scroll) */}
+          <div
+            className="overlay"
+            style={{ opacity: overlayOpacity * 0.65 }}
+            aria-hidden
+          />
           <span className="blob blob-1" />
           <span className="blob blob-2" />
           <span className="blob blob-3" />

@@ -283,6 +283,9 @@ importers:
       react-glitch-effect:
         specifier: 3.1.0
         version: 3.1.0(react-dom@19.0.0)(react@19.0.0)
+      react-use-scroll-snap:
+        specifier: ^1.0.0
+        version: 1.0.0(react@19.0.0)
     devDependencies:
       '@docusaurus/module-type-aliases':
         specifier: 3.7.0
@@ -15200,6 +15203,15 @@ packages:
       react-dom: 19.0.0(react@19.0.0)
     dev: false
 
+  /react-use-scroll-snap@1.0.0(react@19.0.0):
+    resolution: {integrity: sha512-oUt0+yuRh1qrBfVl2TfugM8pBq/d7mWZnCtSfPJesZmYIjoyWJM5mbMC2MtSWUR+/fT0GURmk49fkLozwmUu5Q==}
+    peerDependencies:
+      react: '>=18.2.0'
+    dependencies:
+      react: 19.0.0
+      tweezer.js: 1.5.0
+    dev: false
+
   /react-virtualized-auto-sizer@1.0.26(react-dom@19.0.0)(react@19.0.0):
     resolution: {integrity: sha512-CblNyiNVw2o+hsa5/49NH2ogGxZ+t+3aweRvNSq7TVjDIlwk7ir4lencEg5HxHeSzwNarSkNkiu0qJSOXtxm5A==}
     peerDependencies:
@@ -16938,6 +16950,10 @@ packages:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
     dev: true
+
+  /tweezer.js@1.5.0:
+    resolution: {integrity: sha512-aSiJz7rGWNAQq7hjMK9ZYDuEawXupcCWgl3woQQSoDP2Oh8O4srWb/uO1PzzHIsrPEOqrjJ2sUb9FERfzuBabQ==}
+    dev: false
 
   /type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import type { JSX } from "react";
 
 import Head from "@docusaurus/Head";
@@ -6,8 +6,11 @@ import Link from "@docusaurus/Link";
 
 // NEW HOMEPAGE IMPLEMENTATION
 export default function Home(): JSX.Element {
+  // Reference to the scroll container (entire page content)
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <>
+    <div ref={scrollRef}>
       <Head>
         <title>MAIAR</title>
         <style>
@@ -33,7 +36,7 @@ export default function Home(): JSX.Element {
             /* ---- Navigation ---- */
             .nav{position:absolute;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:1.25rem 2rem;z-index:10;}
             .logo{font-size:3rem;font-weight:1000;letter-spacing:0.05em;text-transform:uppercase;color:#fff;text-decoration:none;}
-            .nav-links{display:flex;gap:1.5rem;font-size:0.8rem;font-weight:700;letter-spacing:0.075em;text-transform:uppercase;}
+            .nav-links{display:flex;gap:1rem;font-size:0.9rem;font-weight:800;letter-spacing:0.075em;text-transform:uppercase;}
             .nav-links a{color:#fff;text-decoration:none;opacity:0.9;transition:opacity .25s ease;}
             .nav-links a:hover{opacity:1;}
 
@@ -54,7 +57,7 @@ export default function Home(): JSX.Element {
             .btn.secondary:hover{background:rgba(255,255,255,0.2);}
 
             /* ---- Moving blurred blobs ---- */
-            .blur-bg{pointer-events:none;position:absolute;inset:0;overflow:hidden;z-index:1;}
+            .blur-bg{pointer-events:none;position:fixed;inset:0;overflow:hidden;z-index:0;}
             .blob{position:absolute;border-radius:50%;filter:blur(100px) saturate(110%);mix-blend-mode:screen;will-change:transform;}
 
             /* top-left cluster - two slim tilted ellipses */
@@ -87,6 +90,45 @@ export default function Home(): JSX.Element {
             @media (prefers-reduced-motion:reduce){
               .blob{animation:none;}
             }
+
+            /* ---- Mobile adjustments ---- */
+            @media (max-width: 600px) {
+              .nav {
+                flex-direction: column;
+                align-items: center;
+                padding: 1rem 1rem;
+              }
+              .logo {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+              }
+              .nav-links {
+                font-size: 0.75rem;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+              }
+            }
+
+            /* ---- Scroll behaviour & native snap ---- */
+            html{scroll-behavior:smooth;scroll-snap-type:y mandatory;}
+            .hero,.highlights{scroll-snap-align:start;}
+
+            body{margin:0;}
+
+            .scroll-arrow{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:2.25rem;color:#fff;text-decoration:none;opacity:0.8;animation:bounce 2s infinite;z-index:5;}
+            @keyframes bounce{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-10px);}}
+
+            /* ---- Highlights section ---- */
+            .highlights{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
+            .highlights h2{font-size:clamp(1.75rem,4vw+1rem,2.75rem);margin-bottom:3rem;letter-spacing:0.03em;font-weight:700;}
+            .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:1000px;width:100%;}
+            .card{position:relative;padding:2rem 1.75rem;border-radius:1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);backdrop-filter:blur(12px) saturate(120%);overflow:hidden;}
+            .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(0,255,0,0.15) 0%,rgba(255,255,255,0.05) 100%);mix-blend-mode:screen;pointer-events:none;}
+            .card h3{margin:0 0 0.75rem;font-size:1.25rem;font-weight:700;}
+            .card p{margin:0;font-size:0.9rem;opacity:0.9;line-height:1.5;}
+            @media(max-width:600px){.highlights h2{margin-bottom:2rem;}.cards{gap:1rem;}.card{padding:1.5rem 1.25rem;}}
           `}
         </style>
       </Head>
@@ -150,7 +192,52 @@ export default function Home(): JSX.Element {
             className="hero-image"
           />
         </main>
+
+        {/* Scroll arrow */}
+        <a
+          href="#highlights"
+          className="scroll-arrow"
+          aria-label="Scroll to highlights"
+        >
+          &#8595;
+        </a>
       </header>
-    </>
+
+      {/* Highlights Section */}
+      <section id="highlights" className="highlights">
+        <h2>Why Choose MAIAR?</h2>
+        <div className="cards">
+          <div className="card">
+            <h3>Modular Plugin Architecture</h3>
+            <p>
+              Build your agent by composing triggers and actions as standalone
+              plugins—no rigid workflows, just pure flexibility.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Model-Agnostic Providers</h3>
+            <p>
+              Swap between OpenAI, local LLMs or custom providers without
+              touching core logic. MAIAR handles them through a unified
+              interface.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Persistent Memory</h3>
+            <p>
+              SQLite, Postgres or any database—plug in the memory provider you
+              need and keep long-term context at your agent's fingertips.
+            </p>
+          </div>
+          <div className="card">
+            <h3>Real-time Monitoring</h3>
+            <p>
+              Built-in websocket logging lets you inspect every step of the
+              execution pipeline for effortless debugging.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

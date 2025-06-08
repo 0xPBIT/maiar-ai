@@ -82,6 +82,16 @@ export default function Home(): JSX.Element {
     <div ref={scrollRef}>
       <Head>
         <title>MAIAR</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@600;800;900&display=swap"
+          rel="stylesheet"
+        />
         <style>
           {`
             /* ---- Color variables (edit these to change palette) ---- */
@@ -98,7 +108,7 @@ export default function Home(): JSX.Element {
 
             /* ---- Layout ---- */
             html,body{margin:0;padding:0;width:100%;height:100%;}
-            body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#fff;background:#000;}
+            body{font-family:'Inter',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#fff;background:#000;}
 
             .hero{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:100vh;overflow:hidden;padding:0 1.5rem;}
 
@@ -110,14 +120,14 @@ export default function Home(): JSX.Element {
             .nav-links a:hover{opacity:1;}
 
             /* ---- Hero text ---- */
-            .hero-content{max-width:52rem;z-index:5;transform:translateY(1vmin);}
-            .hero-content h1{font-size:clamp(2.25rem,4vw+1rem,3.5rem);font-weight:700;margin:0 auto 1rem;line-height:1.15;}
-            .subheading{font-size:1rem;opacity:0.85;margin-bottom:2.25rem;line-height:1.5;}
+            .hero-content{max-width:70rem;z-index:5;transform:translateY(1vmin);}
+            .hero-content h1{font-size:clamp(1.8rem, 4vw + 1rem, 3.2rem);font-weight:900;margin:0 auto 1.25rem;line-height:1.1;letter-spacing:0.02em;text-transform:uppercase;}
+            .subheading{font-size:1.35rem;opacity:0.9;line-height:1.6;font-weight:600;max-width:70ch;margin:0 auto 2.5rem;}
 
             /* ---- Demo image ---- */
             .hero-image {
               width: 100%;
-              max-width: 900px;
+              max-width: 1000px;
               margin: 2.5rem auto 0;
               display: block;
               border-radius: 0.5rem;
@@ -211,8 +221,8 @@ export default function Home(): JSX.Element {
 
             /* ---- Slide sections ---- */
             .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
-            .slide h2{font-size:clamp(1.75rem,4vw+1rem,2.75rem);margin-bottom:1.5rem;letter-spacing:0.03em;font-weight:900;}
-            .slide p{font-size:1.1rem;max-width:60ch;opacity:0.95;line-height:1.6;margin:0 auto;font-weight:600;}
+            .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
+            .slide p{font-size:1.25rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
             /* Cube visualization styles */
             .cube-container {
@@ -471,13 +481,13 @@ export default function Home(): JSX.Element {
 
             /* ---- Highlights section ---- */
             .highlights{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
-            .highlights h2{font-size:clamp(1.75rem,4vw+1rem,2.75rem);margin-bottom:3rem;letter-spacing:0.03em;font-weight:700;}
-            .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:1000px;width:100%;}
+            .highlights h2{font-size:clamp(2.4rem, 4.5vw + 1rem, 3.4rem);margin-bottom:3rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
+            .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:1100px;width:100%;}
             .card{position:relative;padding:2rem 1.75rem;border-radius:1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(194,255,102,0.25);backdrop-filter:blur(12px) saturate(120%);overflow:hidden;}
             .card::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(243,255,229,0.15) 0%,rgba(194,255,102,0.15) 100%);mix-blend-mode:screen;pointer-events:none;}
             .card:hover{transform:translateY(-6px);box-shadow:0 6px 18px rgba(0,0,0,0.35),0 0 12px rgba(194,255,102,0.25);border-color:rgba(194,255,102,0.4);}
-            .card h3{margin:0 0 0.75rem;font-size:1.25rem;font-weight:700;}
-            .card p{margin:0;font-size:0.9rem;opacity:0.9;line-height:1.5;}
+            .card h3{margin:0 0 0.75rem;font-size:1.25rem;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;}
+            .card p{margin:0;font-size:1.05rem;opacity:0.9;line-height:1.5;font-weight:600;}
             @media(max-width:600px){.highlights h2{margin-bottom:2rem;}.cards{gap:1rem;}.card{padding:1.5rem 1.25rem;}}
 
             /* ---- Overlay ---- */

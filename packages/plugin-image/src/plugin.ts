@@ -21,7 +21,7 @@ export class ImageGenerationPlugin extends Plugin {
         imageGenerationCapability.id,
         multiModalImageGenerationCapability.id
       ],
-      promptsDir: path.resolve(__dirname, "../prompts")
+      promptsDir: path.resolve(__dirname, "prompts")
     });
 
     this.executors = [

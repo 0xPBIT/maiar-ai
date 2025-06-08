@@ -27,7 +27,7 @@ export class MCPPlugin extends Plugin {
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
-      promptsDir: path.resolve(__dirname, "../prompts")
+      promptsDir: path.resolve(__dirname, "prompts")
     });
 
     // Accept both single object and array → normalise to array

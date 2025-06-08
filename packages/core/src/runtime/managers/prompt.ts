@@ -18,9 +18,9 @@ export class PromptRegistry {
   private engine: Liquid;
   private files = new Map<string, string>();
 
-  constructor(initialRoots: string[]) {
+  constructor() {
     this.engine = new Liquid({
-      root: initialRoots,
+      root: [],
       extname: ".liquid",
       cache: config.NODE_ENV === "development" ? false : true, // we want hot reload during dev
       strictVariables: false
@@ -30,7 +30,7 @@ export class PromptRegistry {
   /** Add a directory of .liquid templates.
    *  Each file becomes an ID: `${namespace}/${fileNameWithoutExt}` (slashes normalised).
    */
-  public registerDirectory(dir: string | string[], namespace: string): void {
+  public registerDirectory(namespace: string, dir: string | string[]): void {
     const dirs = Array.isArray(dir) ? dir : [dir];
 
     for (const d of dirs) {

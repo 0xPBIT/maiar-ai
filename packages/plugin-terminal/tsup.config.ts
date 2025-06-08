@@ -1,4 +1,5 @@
-import { chmod } from "fs/promises";
+import { chmod, cp } from "fs/promises";
+import { resolve } from "path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -8,8 +9,15 @@ export default defineConfig({
   },
   format: ["cjs", "esm"],
   dts: true,
+  sourcemap: true,
   clean: true,
-  async onSuccess() {
+  minify: false,
+  target: "es2020",
+  bundle: true,
+  onSuccess: async () => {
+    const src = resolve(__dirname, "src/prompts");
+    const dest = resolve(__dirname, "dist/prompts");
+    await cp(src, dest, { recursive: true });
     await chmod("dist/scripts/chat.js", "755");
   }
 });

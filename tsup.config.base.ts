@@ -1,3 +1,5 @@
+import { existsSync } from "fs";
+import { cp } from "fs/promises";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -7,5 +9,11 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  target: "es2020"
+  target: "es2020",
+  bundle: true,
+  onSuccess: async () => {
+    const src = "src/prompts";
+    const dest = "dist/prompts";
+    if (existsSync(src)) await cp(src, dest, { recursive: true });
+  }
 });

@@ -1,5 +1,4 @@
 import cors from "cors";
-import fs from "fs";
 import { Server } from "http";
 import fsPromises from "node:fs/promises";
 import path from "path";
@@ -130,34 +129,11 @@ export class Runtime {
       );
     }
 
-    // Initialize prompt registry and locate the bundled core Liquid templates.
-    // The relative location of the compiled file differs between the source tree
-    // (src/runtime/index.ts → ../../prompts) and the compiled bundle that lives
-    // under `dist` (dist/index.js → ../prompts). We therefore probe both
-    // potential locations and pick the first one that exists.
+    const promptRegistry = new PromptRegistry();
 
-    const candidateCorePromptDirs = [
-      path.resolve(__dirname, "../prompts"), // when running from the compiled bundle
-      path.resolve(__dirname, "../../prompts") // when running from the TypeScript source
-    ];
-
-    const corePromptsDir = candidateCorePromptDirs.find((dir) =>
-      fs.existsSync(dir)
-    );
-
-    if (!corePromptsDir) {
-      this.logger.error("Unable to locate core prompt templates", {
-        type: "runtime.prompts.core.notfound",
-        searched: candidateCorePromptDirs
-      });
-      throw new Error(
-        "Core prompts directory not found – ensure build pipeline copies prompts"
-      );
-    }
-
-    const promptRegistry = new PromptRegistry([corePromptsDir]);
     // Register core prompt directory under namespace 'core'
-    promptRegistry.registerDirectory(corePromptsDir, "core");
+    const corePromptsDir = path.resolve(__dirname, "prompts");
+    promptRegistry.registerDirectory("core", corePromptsDir);
 
     const modelManager = new ModelManager();
     for (const modelProvider of modelProviders) {
@@ -176,8 +152,8 @@ export class Runtime {
     // Register any prompts provided by the internal memory plugin
     if (memoryPlugin.promptsDir) {
       promptRegistry.registerDirectory(
-        memoryPlugin.promptsDir,
-        memoryPlugin.id
+        memoryPlugin.id,
+        memoryPlugin.promptsDir
       );
     }
 
@@ -186,9 +162,7 @@ export class Runtime {
 
       // Auto-register prompt directories if supplied by the plugin
       const dir = plugin.promptsDir;
-      if (dir) {
-        promptRegistry.registerDirectory(dir, plugin.id);
-      }
+      if (dir) promptRegistry.registerDirectory(plugin.id, dir);
     }
 
     // mount the prompts routes
@@ -198,7 +172,7 @@ export class Runtime {
           promptRegistry.list().map(async ({ id, path }) => ({
             id,
             path,
-            template: await fsPromises.readFile(path, "utf8")
+            template: (await fsPromises.readFile(path, "utf8")).trim()
           }))
         );
         res.json(all);

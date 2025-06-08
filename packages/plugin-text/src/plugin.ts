@@ -34,7 +34,7 @@ export class TextGenerationPlugin extends Plugin {
         textGenerationCapability.id,
         multiModalTextGenerationCapability.id
       ],
-      promptsDir: path.resolve(__dirname, "../prompts")
+      promptsDir: path.resolve(__dirname, "prompts")
     });
 
     this.executors = [

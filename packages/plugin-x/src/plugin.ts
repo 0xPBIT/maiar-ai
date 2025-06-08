@@ -22,7 +22,7 @@ export class XPlugin extends Plugin {
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
-      promptsDir: path.resolve(__dirname, "../prompts")
+      promptsDir: path.resolve(__dirname, "prompts")
     });
 
     // Initialize token storage in the data directory

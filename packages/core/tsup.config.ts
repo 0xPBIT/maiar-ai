@@ -1,5 +1,5 @@
-import fs from "fs/promises";
-import path from "path";
+import { cp } from "fs/promises";
+import { resolve } from "path";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
@@ -13,9 +13,10 @@ export default defineConfig({
   clean: true,
   minify: false,
   target: "es2020",
+  bundle: true,
   onSuccess: async () => {
-    const src = path.resolve(__dirname, "prompts");
-    const dest = path.resolve(__dirname, "dist/prompts");
-    await fs.cp(src, dest, { recursive: true });
+    const src = resolve(__dirname, "src/runtime/managers/prompts");
+    const dest = resolve(__dirname, "dist/prompts");
+    await cp(src, dest, { recursive: true });
   }
 });

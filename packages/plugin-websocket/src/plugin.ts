@@ -28,7 +28,7 @@ export class WebSocketPlugin extends Plugin {
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [],
-      promptsDir: nodePath.resolve(__dirname, "../prompts")
+      promptsDir: nodePath.resolve(__dirname, "prompts")
     });
 
     this.path = path;

@@ -1,8 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
+import Xarrow from "react-xarrows";
+import { Xwrapper } from "react-xarrows";
 
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
+import {
+  BarChart2,
+  Eye,
+  FileText,
+  Music,
+  PenTool,
+  Shapes,
+  Video,
+  Volume2
+} from "lucide-react";
 
 // NEW HOMEPAGE IMPLEMENTATION
 export default function Home(): JSX.Element {
@@ -190,12 +202,272 @@ export default function Home(): JSX.Element {
 
             /* ---- Scroll behaviour & native snap ---- */
             html{scroll-behavior:smooth;scroll-snap-type:y mandatory;}
-            .hero,.highlights{scroll-snap-align:start;}
+            .hero,.slide{scroll-snap-align:start;}
 
             body{margin:0;}
 
             .scroll-arrow{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);font-size:2.25rem;color:#fff;text-decoration:none;opacity:0.8;animation:bounce 2s infinite;z-index:5;}
             @keyframes bounce{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-10px);}}
+
+            /* ---- Slide sections ---- */
+            .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
+            .slide h2{font-size:clamp(1.75rem,4vw+1rem,2.75rem);margin-bottom:1.5rem;letter-spacing:0.03em;font-weight:900;}
+            .slide p{font-size:1.1rem;max-width:60ch;opacity:0.95;line-height:1.6;margin:0 auto;font-weight:600;}
+
+            /* Cube visualization styles */
+            .cube-container {
+              position: relative;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              margin: 3rem 0;
+              width: 100%;
+              max-width: 1000px;
+              padding: 0 2rem;
+              height: 600px;
+            }
+            
+            /* Ensure the cube image always remains perfectly square */
+            .cube-image {
+              width: min(400px, 38vw);
+              height: min(400px, 38vw); /* Force height to match width */
+              object-fit: contain;      /* Prevent any stretching/compression */
+              max-width: 500px;
+              max-height: 500px;
+              position: relative;
+              z-index: 2;
+            }
+            
+            .spline-svg {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              pointer-events: none;
+              z-index: 1;
+            }
+            
+            .spline-path {
+              fill: none;
+              stroke: url(#splineGradient);
+              stroke-width: 2;
+              stroke-dasharray: 200;
+              stroke-dashoffset: 200;
+              animation: drawSpline 3s ease-in-out infinite;
+            }
+            
+            .capability-icon {
+              position: absolute;
+              width: 60px;
+              height: 60px;
+              background: linear-gradient(135deg, 
+                rgba(108, 255, 108, 0.15) 0%, 
+                rgba(247, 255, 0, 0.15) 50%,
+                rgba(153, 255, 0, 0.15) 100%);
+              border: 1px solid rgba(108, 255, 108, 0.3);
+              border-radius: 50%;
+              backdrop-filter: blur(12px) saturate(120%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+              transition: all 0.3s ease;
+              z-index: 3;
+            }
+            
+            .capability-icon:hover {
+              transform: translateY(-2px);
+              box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                0 0 20px rgba(108, 255, 108, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+              border-color: rgba(108, 255, 108, 0.5);
+            }
+            
+            /* Position icons around the cube */
+            .icon-vision {
+              top: -35px;
+              left: 50%;
+              transform: translateX(-50%);
+            }
+            
+            .icon-music {
+              top: 80px;
+              right: 120px;
+              animation-delay: 0.75s;
+            }
+            
+            .icon-audio {
+              right: 40px;
+              top: 50%;
+              transform: translateY(-50%);
+              animation-delay: 1.5s;
+            }
+            
+            .icon-chart {
+              bottom: 80px;
+              right: 120px;
+              animation-delay: 2.25s;
+            }
+            
+            .icon-video {
+              bottom: -35px;
+              left: 50%;
+              transform: translateX(-50%);
+              animation-delay: 3s;
+            }
+            
+            .icon-shapes {
+              bottom: 80px;
+              left: 120px;
+              animation-delay: 3.75s;
+            }
+            
+            .icon-text {
+              left: 40px;
+              top: 50%;
+              transform: translateY(-50%);
+              animation-delay: 4.5s;
+            }
+            
+            .icon-vector {
+              top: 80px;
+              left: 120px;
+              animation-delay: 5.25s;
+            }
+            
+            .capability-icon svg {
+              width: 24px;
+              height: 24px;
+              color: rgba(108, 255, 108, 0.9);
+              filter: drop-shadow(0 0 8px rgba(108, 255, 108, 0.3));
+            }
+            
+            @keyframes drawSpline {
+              0% {
+                stroke-dashoffset: 200;
+                opacity: 0.3;
+              }
+              50% {
+                stroke-dashoffset: 0;
+                opacity: 0.8;
+              }
+              100% {
+                stroke-dashoffset: -200;
+                opacity: 0.3;
+              }
+            }
+            
+            /* Remove floating animation to stabilize icon position */
+            .capability-icon { animation: none; }
+            
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+              .cube-container {
+                height: 400px;
+                margin: 2rem 0;
+              }
+              
+              .cube-image {
+                width: min(250px, 50vw);
+                height: min(250px, 50vw);
+              }
+              
+              .capability-icon {
+                width: 60px;
+                height: 60px;
+              }
+              
+              .capability-icon svg {
+                width: 24px;
+                height: 24px;
+              }
+              
+              .icon-vision, .icon-video {
+                transform: translateX(-50%);
+              }
+              
+              .icon-audio, .icon-text {
+                transform: translateY(-50%);
+              }
+
+              /* Hide splines and bring side icons closer on small screens */
+              .spline-svg {
+                display: none;
+              }
+
+              /* Right-side icons */
+              .icon-audio {
+                right: 20px;
+              }
+              .icon-music {
+                right: 40px;
+                top: 40px;
+              }
+              .icon-chart {
+                right: 40px;
+                bottom: 40px;
+              }
+
+              /* Left-side icons */
+              .icon-text {
+                left: 20px;
+              }
+              .icon-vector {
+                left: 40px;
+                top: 40px;
+              }
+              .icon-shapes {
+                left: 40px;
+                bottom: 40px;
+              }
+
+              /* Reduce container height slightly */
+              .cube-container {
+                height: 320px;
+                max-width: 340px;
+                width: 90vw;
+                margin-top: 3rem;
+                margin-bottom: 3rem;
+              }
+
+              /* Top icon */
+              .icon-vision {
+                top: -40px;
+              }
+              /* Bottom icon */
+              .icon-video {
+                bottom: -40px;
+              }
+
+              /* Side icons closer */
+              .icon-audio {
+                right: -50px;
+              }
+              .icon-text {
+                left: -50px;
+              }
+
+              .icon-music {
+                right: 20px;
+                top: 20px;
+              }
+              .icon-chart {
+                right: 20px;
+                bottom: 20px;
+              }
+              .icon-vector {
+                left: 20px;
+                top: 20px;
+              }
+              .icon-shapes {
+                left: 20px;
+                bottom: 20px;
+              }
+            }
 
             /* ---- Highlights section ---- */
             .highlights{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
@@ -212,7 +484,7 @@ export default function Home(): JSX.Element {
              .overlay{position:fixed;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity .1s linear;z-index:1;}
 
             /* Bring main sections above overlay */
-            .hero,.highlights{position:relative;z-index:2;}
+            .hero,.slide{position:relative;z-index:2;}
           `}
         </style>
       </Head>
@@ -288,62 +560,151 @@ export default function Home(): JSX.Element {
 
         {/* Scroll arrow */}
         <a
-          href="#highlights"
+          href="#slide-1"
           className="scroll-arrow"
-          aria-label="Scroll to highlights"
+          aria-label="Scroll to next section"
         >
           &#8595;
         </a>
       </header>
 
-      {/* Highlights Section */}
-      <section id="highlights" className="highlights">
-        <h2>Why Choose MAIAR?</h2>
-        <div className="cards">
-          <div className="card">
-            <h3>Triggers &amp; Actions Architecture</h3>
-            <p>
-              Separate what starts work (triggers) from what does work
-              (actions), keeping your agent flexible and event-driven.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Model-Agnostic &amp; Future-Proof</h3>
-            <p>
-              Swap between GPT-4, local LLMs, or custom providers with a single
-              line. The unopinionated core ensures you're never locked in.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Declarative Capabilities</h3>
-            <p>
-              Plugins declare their own capabilities and MAIAR's runtime
-              intelligently orchestrates them—less wiring, more building.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Community Plugin Registry</h3>
-            <p>
-              Discover, share, and integrate community-built plugins from our
-              open GitHub registry to extend your agent in minutes.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Platform Integrations</h3>
-            <p>
-              Connect your agent to the world with official plugins for Discord,
-              X (Twitter), Telegram, and more.
-            </p>
-          </div>
-          <div className="card">
-            <h3>Multimodal Capabilities</h3>
-            <p>
-              Go beyond text. With support for image and audio models, your
-              agent can see, hear, and generate rich content for advanced,
-              real-world tasks.
-            </p>
-          </div>
+      {/* Slides Section */}
+      <section id="slide-1" className="slide">
+        <h2>Declarative Multimodal Capabilities</h2>
+        <p>
+          Go beyond text. With support for image and audio models, your agent
+          can see, hear, and generate rich content for advanced, real-world
+          tasks.
+        </p>
+        {/* Cube with capability icons */}
+        <div className="cube-container">
+          <Xwrapper>
+            {/* Arrows */}
+            <Xarrow
+              start="icon-vision"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-music"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-audio"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-chart"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-video"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-shapes"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-text"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+            <Xarrow
+              start="icon-vector"
+              end="cube-center"
+              endAnchor="middle"
+              path="smooth"
+              strokeWidth={2}
+              showHead={false}
+              color="#6CFF6C"
+            />
+
+            {/* Capability icons positioned around cube */}
+            <div id="icon-vision" className="capability-icon icon-vision">
+              <Eye />
+            </div>
+            <div id="icon-music" className="capability-icon icon-music">
+              <Music />
+            </div>
+            <div id="icon-audio" className="capability-icon icon-audio">
+              <Volume2 />
+            </div>
+            <div id="icon-chart" className="capability-icon icon-chart">
+              <BarChart2 />
+            </div>
+            <div id="icon-video" className="capability-icon icon-video">
+              <Video />
+            </div>
+            <div id="icon-shapes" className="capability-icon icon-shapes">
+              <Shapes />
+            </div>
+            <div id="icon-text" className="capability-icon icon-text">
+              <FileText />
+            </div>
+            <div id="icon-vector" className="capability-icon icon-vector">
+              <PenTool />
+            </div>
+
+            {/* Cube image centered */}
+            <img
+              id="cube-center"
+              src="/img/cube.png"
+              alt="Cube illustration"
+              className="cube-image"
+            />
+          </Xwrapper>
         </div>
+      </section>
+
+      <section id="slide-2" className="slide">
+        <h2>Triggers &amp; Executors Architecture</h2>
+        <p>
+          Separate what starts work (triggers) from what does work (executors),
+          keeping your agent flexible and event-driven.
+        </p>
+      </section>
+
+      <section id="slide-3" className="slide">
+        <h2>Community Plugin Registry &amp; Platform Integrations</h2>
+        <p>
+          Discover, share, and integrate community-built plugins from our open
+          GitHub registry, plus official integrations for Discord, X, Telegram,
+          and more.
+        </p>
       </section>
     </div>
   );

@@ -286,6 +286,9 @@ importers:
       react-use-scroll-snap:
         specifier: ^1.0.0
         version: 1.0.0(react@19.0.0)
+      react-xarrows:
+        specifier: ^2.0.2
+        version: 2.0.2(react@19.0.0)
     devDependencies:
       '@docusaurus/module-type-aliases':
         specifier: 3.7.0
@@ -15233,6 +15236,17 @@ packages:
       memoize-one: 5.2.1
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
+    dev: false
+
+  /react-xarrows@2.0.2(react@19.0.0):
+    resolution: {integrity: sha512-tDlAqaxHNmy0vegW/6NdhoWyXJq1LANX/WUAlHyzoHe9BwFVnJPPDghmDjYeVr7XWFmBrVTUrHsrW7GKYI6HtQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+    dependencies:
+      '@types/prop-types': 15.7.14
+      lodash: 4.17.21
+      prop-types: 15.8.1
+      react: 19.0.0
     dev: false
 
   /react@18.3.1:

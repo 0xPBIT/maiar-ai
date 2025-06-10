@@ -285,7 +285,7 @@ export default function Home(): JSX.Element {
             /* ---- Slide sections ---- */
             .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
             .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
-            .slide p{font-size:1.25rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
+            .slide p{font-size:1.5rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
             #slide-1 > h2,
             #slide-1 > p {
@@ -301,7 +301,7 @@ export default function Home(): JSX.Element {
               justify-content: center;
               gap: 2rem;
               width: 100%;
-              max-width: 1500px; /* Adjust to fit cube and code */
+              max-width: 1300px; /* Adjust to fit cube and code */
               margin-top: 0.5rem;
             }
 
@@ -313,7 +313,7 @@ export default function Home(): JSX.Element {
               padding: 1.25rem;
               backdrop-filter: blur(10px);
               width: 100%;
-              max-width: 650px;
+              max-width: 750px;
               box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
               transition: opacity 0.3s ease;
               text-align: left;
@@ -638,7 +638,7 @@ export default function Home(): JSX.Element {
             /* Bring main sections above overlay */
             .hero,.slide{position:relative;z-index:2;}
 
-            @media (max-width: 1100px) {
+            @media (max-width: 1300px) {
               .code-block-container {
                 display: none;
               }
@@ -769,7 +769,7 @@ export default function Home(): JSX.Element {
               }}
               codeTagProps={{
                 style: {
-                  fontSize: "0.8rem",
+                  fontSize: "1rem",
                   fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
                 }
               }}

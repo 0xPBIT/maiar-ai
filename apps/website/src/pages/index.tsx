@@ -127,7 +127,7 @@ export default function Home(): JSX.Element {
             /* ---- Demo image ---- */
             .hero-image {
               width: 100%;
-              max-width: 1000px;
+              max-width: min(1000px, 100vw, 75vh);
               margin: 2.5rem auto 0;
               display: block;
               border-radius: 0.5rem;
@@ -266,37 +266,47 @@ export default function Home(): JSX.Element {
               stroke-dashoffset: 200;
               animation: drawSpline 3s ease-in-out infinite;
             }
-            
+
+
             .capability-icon {
               position: absolute;
               width: 60px;
               height: 60px;
-              background: linear-gradient(135deg, 
-                rgba(108, 255, 108, 0.15) 0%, 
-                rgba(247, 255, 0, 0.15) 50%,
-                rgba(153, 255, 0, 0.15) 100%);
-              border: 1px solid rgba(108, 255, 108, 0.3);
+              background: linear-gradient(
+                135deg,
+                rgba(108, 255, 108, 0.1) 0%,
+                rgba(247, 255, 0, 0.1) 50%,
+                rgba(153, 255, 0, 0.1) 100%
+              );
               border-radius: 50%;
-              backdrop-filter: blur(12px) saturate(120%);
+              /* Increased blur for a more glassy effect */
+              backdrop-filter: blur(40px) saturate(120%);
               display: flex;
               align-items: center;
               justify-content: center;
-              box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
               transition: all 0.3s ease;
               z-index: 3;
+
+              /* 
+                Neon glass effect based on tutorial.
+                Using neon green (108, 255, 108) instead of white.
+                Shadows are layered in order, first on top.
+              */
+              box-shadow:
+                /* 1. Main highlight from top */
+                inset 0 6px 12px rgba(172, 255, 108, 0.4),
+                /* 2. Dark contour for depth from bottom */
+                inset 0 -40px 40px rgba(0, 0, 0, 0.2),
+                /* 3. Highlight from bottom edge */
+                inset 0 -6px 18px rgba(108, 255, 108, 0.4),
+                /* 4. Diffused glow from top */
+                inset 0 40px 40px rgba(108, 255, 108, 0.24),
+                /* 5. Sharp reflection on top edge */
+                inset 0 2px 1px rgba(211, 255, 108, 0.8),
+                /* Outer drop shadow for hierarchy */
+                0 0 20px rgba(0, 0, 0, 0.2);
             }
-            
-            .capability-icon:hover {
-              transform: translateY(-2px);
-              box-shadow: 
-                0 12px 40px rgba(0, 0, 0, 0.15),
-                0 0 20px rgba(108, 255, 108, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-              border-color: rgba(108, 255, 108, 0.5);
-            }
-            
+          
             /* Position icons around the cube */
             .icon-vision {
               top: -35px;

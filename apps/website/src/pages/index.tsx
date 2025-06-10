@@ -193,16 +193,16 @@ export default function Home(): JSX.Element {
             .blob{position:absolute;border-radius:50%;filter:blur(100px) saturate(110%);mix-blend-mode:screen;will-change:transform;}
 
             /* top-left cluster - two slim tilted ellipses */
-            .blob-1{width:22vmax;height:44vmax;top:-6vmax;left:13vmax;background:var(--blob-color-1);opacity:0.5;animation:blob1Drift 90s ease-in-out infinite alternate;}
-            .blob-2{width:24vmax;height:46vmax;top:-4vmax;left:16vmax;background:var(--blob-color-2);opacity:0.5;animation:blob2Drift 100s ease-in-out infinite alternate-reverse;}
+            .blob-1{width:320px;height:630px;top:-85px;left:50%;margin-left:-535px;background:var(--blob-color-1);opacity:0.5;animation:blob1Drift 90s ease-in-out infinite alternate;}
+            .blob-2{width:345px;height:660px;top:-60px;left:50%;margin-left:-490px;background:var(--blob-color-2);opacity:0.5;animation:blob2Drift 100s ease-in-out infinite alternate-reverse;}
 
             /* top-right cluster -s two overlapping greens */
-            .blob-3{width:26vmax;height:38vmax;top:4vmax;right:-5vmax;background:var(--blob-color-3);opacity:0.5;animation:blob3Drift 110s linear infinite;}
-            .blob-4{width:24vmax;height:26vmax;top:0;right:-2vmax;background:var(--blob-color-4);opacity:0.5;animation:blob4Drift 95s ease-in-out infinite alternate;}
+            .blob-3{width:375px;height:550px;top:60px;left:50%;margin-left:415px;background:var(--blob-color-3);opacity:0.5;animation:blob3Drift 110s linear infinite;}
+            .blob-4{width:345px;height:375px;top:0;left:50%;margin-left:405px;background:var(--blob-color-4);opacity:0.5;animation:blob4Drift 95s ease-in-out infinite alternate;}
 
             /* central yellows sweeping across hero */
-            .blob-5{width:10vmax;height:32vmax;top:0vmax;left:32vmax;background:var(--blob-color-5);opacity:0.9;animation:blob5Drift 120s ease-in-out infinite;}
-            .blob-6{width:22vmax;height:37vmax;top:6vmax;left:40vmax;background:var(--blob-color-6);opacity:0.5;animation:blob6Drift 115s ease-in-out infinite alternate-reverse;}
+            .blob-5{width:145px;height:460px;top:0;left:50%;margin-left:-260px;background:var(--blob-color-5);opacity:0.9;animation:blob5Drift 120s ease-in-out infinite;}
+            .blob-6{width:320px;height:530px;top:85px;left:50%;margin-left:-145px;background:var(--blob-color-6);opacity:0.5;animation:blob6Drift 115s ease-in-out infinite alternate-reverse;}
 
             /* Path animations intentionally route through center so blobs intersect */
             @keyframes blob1Drift{

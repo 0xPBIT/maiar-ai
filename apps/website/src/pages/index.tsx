@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Xarrow from "react-xarrows";
 import { Xwrapper } from "react-xarrows";
 
@@ -26,6 +28,16 @@ export default function Home(): JSX.Element {
   const blobShiftFactors = useRef<number[]>([]);
   // Store random rotation factors for yellow blobs (5 and 6)
   const blobRotationFactors = useRef<number[]>([]);
+
+  const codeString = `export const multiModalTextGenerationCapability = defineCapability({
+  id: "multi-modal-text-generation",
+  description: "Generate text completions from prompts and other text",
+  input: z.object({
+    prompt: z.string(),
+    images: z.array(z.string()).optional()
+  }),
+  output: z.string()
+});`;
 
   // Update overlay opacity and blob positions based on scroll
   useEffect(() => {
@@ -224,23 +236,79 @@ export default function Home(): JSX.Element {
             .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
             .slide p{font-size:1.25rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
+            /* Wrapper for cube and code block */
+            .slide-content-wrapper {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 2rem;
+              width: 100%;
+              max-width: 1500px; /* Adjust to fit cube and code */
+              margin-top: 2rem;
+            }
+
+            /* Code block styles */
+            .code-block-container {
+              background: rgba(14, 28, 14, 0.4); /* Dark green tint */
+              border: 1px solid rgba(108, 255, 108, 0.25);
+              border-radius: 0.75rem;
+              padding: 1.25rem;
+              backdrop-filter: blur(10px);
+              width: 100%;
+              max-width: 650px;
+              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+              transition: opacity 0.3s ease;
+              text-align: left;
+            }
+
+            .code-block-container pre {
+              margin: 0;
+              background: transparent !important;
+              white-space: pre-wrap;
+            }
+
+            /* Basic syntax highlighting */
+            .token-comment {
+              color: #5c8d5c;
+            }
+            .token-keyword {
+              color: #6cff6c;
+              font-weight: 600;
+            }
+            .token-function {
+              color: #f7ff00;
+            }
+            .token-string {
+              color: #99ff00;
+            }
+            .token-property {
+              color: #82eefd;
+            }
+            .token-punctuation {
+              color: #888;
+            }
+            .token-type {
+              color: #4ec9b0;
+            }
+            .token-variable {
+              color: #fff;
+            }
+
             /* Cube visualization styles */
             .cube-container {
               position: relative;
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 3rem 0;
-              width: 100%;
-              max-width: 1000px;
-              padding: 0 2rem;
-              height: 600px;
+              width: 440px;
+              height: 380px;
+              flex-shrink: 0;
             }
             
             /* Ensure the cube image always remains perfectly square */
             .cube-image {
-              width: min(400px, 38vw);
-              height: min(400px, 38vw); /* Force height to match width */
+              width: min(200px, 25vw);
+              height: min(200px, 25vw); /* Force height to match width */
               object-fit: contain;      /* Prevent any stretching/compression */
               max-width: 500px;
               max-height: 500px;
@@ -270,8 +338,8 @@ export default function Home(): JSX.Element {
 
             .capability-icon {
               position: absolute;
-              width: 60px;
-              height: 60px;
+              width: 44px;
+              height: 44px;
               background: linear-gradient(
                 135deg,
                 rgba(108, 255, 108, 0.1) 0%,
@@ -302,66 +370,66 @@ export default function Home(): JSX.Element {
                 /* 4. Diffused glow from top */
                 inset 0 40px 40px rgba(108, 255, 108, 0.24),
                 /* 5. Sharp reflection on top edge */
-                inset 0 2px 1px rgba(211, 255, 108, 0.8),
+                inset 0 2px 1px rgba(108, 255, 108, 0.8),
                 /* Outer drop shadow for hierarchy */
                 0 0 20px rgba(0, 0, 0, 0.2);
             }
           
             /* Position icons around the cube */
             .icon-vision {
-              top: -35px;
+              top: 30px;
               left: 50%;
               transform: translateX(-50%);
             }
             
             .icon-music {
-              top: 80px;
-              right: 120px;
+              top: 60px;
+              right: 100px;
               animation-delay: 0.75s;
             }
             
             .icon-audio {
-              right: 40px;
+              right: 80px;
               top: 50%;
               transform: translateY(-50%);
               animation-delay: 1.5s;
             }
             
             .icon-chart {
-              bottom: 80px;
-              right: 120px;
+              bottom: 60px;
+              right: 100px;
               animation-delay: 2.25s;
             }
             
             .icon-video {
-              bottom: -35px;
+              bottom: 30px;
               left: 50%;
               transform: translateX(-50%);
               animation-delay: 3s;
             }
             
             .icon-shapes {
-              bottom: 80px;
-              left: 120px;
+              bottom: 60px;
+              left: 100px;
               animation-delay: 3.75s;
             }
             
             .icon-text {
-              left: 40px;
+              left: 80px;
               top: 50%;
               transform: translateY(-50%);
               animation-delay: 4.5s;
             }
             
             .icon-vector {
-              top: 80px;
-              left: 120px;
+              top: 60px;
+              left: 100px;
               animation-delay: 5.25s;
             }
             
             .capability-icon svg {
-              width: 24px;
-              height: 24px;
+              width: 20px;
+              height: 20px;
               color: rgba(108, 255, 108, 0.9);
               filter: drop-shadow(0 0 8px rgba(108, 255, 108, 0.3));
             }
@@ -505,6 +573,15 @@ export default function Home(): JSX.Element {
 
             /* Bring main sections above overlay */
             .hero,.slide{position:relative;z-index:2;}
+
+            @media (max-width: 1100px) {
+              .code-block-container {
+                display: none;
+              }
+              .slide-content-wrapper {
+                justify-content: center;
+              }
+            }
           `}
         </style>
       </Head>
@@ -551,9 +628,10 @@ export default function Home(): JSX.Element {
             <br /> Plugin-Based AI Agent Framework
           </h1>
           <p className="subheading">
-            A ready-to-use, open framework featuring a plugin
-            ecosystem—customize every piece and launch your AI agents on day
-            one.
+            A ready-to-use, open framework featuring{" "}
+            <b>multimodal capabilities</b>, swappable memory infrastructure, and
+            a <b>plugin ecosystem</b>. Fully customizable to use your models,
+            tools, and system prompts. <b>Launch your agents on day one.</b>
           </p>
           <div className="actions">
             <Link className="btn primary" to="/docs/getting-started">
@@ -592,121 +670,151 @@ export default function Home(): JSX.Element {
       <section id="slide-1" className="slide">
         <h2>Declarative Multimodal Capabilities</h2>
         <p>
-          Go beyond text. With support for image and audio models, your agent
-          can see, hear, and generate rich content for advanced, real-world
-          tasks.
+          MAIAR agents{" "}
+          <a
+            href="https://x.com/maiar_ai/status/1921316119375147283"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#6CFF6C", textDecoration: "underline" }}
+          >
+            natively support multimodal input and output
+          </a>
+          —text, audio, vision, and beyond. The framework abstracts modality
+          handling to a runtime level capability registry, enabling
+          forward-compatible support for the accelerating scope of multimodal
+          model capabilities without patching the core.
         </p>
-        {/* Cube with capability icons */}
-        <div className="cube-container">
-          <Xwrapper>
-            {/* Arrows */}
-            <Xarrow
-              start="icon-vision"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-music"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-audio"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-chart"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-video"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-shapes"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-text"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
-            <Xarrow
-              start="icon-vector"
-              end="cube-center"
-              endAnchor="middle"
-              path="smooth"
-              strokeWidth={2}
-              showHead={false}
-              color="#6CFF6C"
-            />
+        <div className="slide-content-wrapper">
+          {/* Cube with capability icons */}
+          <div className="cube-container">
+            <Xwrapper>
+              {/* Arrows */}
+              <Xarrow
+                start="icon-vision"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-music"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-audio"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-chart"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-video"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-shapes"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-text"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
+              <Xarrow
+                start="icon-vector"
+                end="cube-center"
+                endAnchor="middle"
+                path="smooth"
+                strokeWidth={2}
+                showHead={false}
+                color="#6CFF6C"
+              />
 
-            {/* Capability icons positioned around cube */}
-            <div id="icon-vision" className="capability-icon icon-vision">
-              <Eye />
-            </div>
-            <div id="icon-music" className="capability-icon icon-music">
-              <Music />
-            </div>
-            <div id="icon-audio" className="capability-icon icon-audio">
-              <Volume2 />
-            </div>
-            <div id="icon-chart" className="capability-icon icon-chart">
-              <BarChart2 />
-            </div>
-            <div id="icon-video" className="capability-icon icon-video">
-              <Video />
-            </div>
-            <div id="icon-shapes" className="capability-icon icon-shapes">
-              <Shapes />
-            </div>
-            <div id="icon-text" className="capability-icon icon-text">
-              <FileText />
-            </div>
-            <div id="icon-vector" className="capability-icon icon-vector">
-              <PenTool />
-            </div>
+              {/* Capability icons positioned around cube */}
+              <div id="icon-vision" className="capability-icon icon-vision">
+                <Eye />
+              </div>
+              <div id="icon-music" className="capability-icon icon-music">
+                <Music />
+              </div>
+              <div id="icon-audio" className="capability-icon icon-audio">
+                <Volume2 />
+              </div>
+              <div id="icon-chart" className="capability-icon icon-chart">
+                <BarChart2 />
+              </div>
+              <div id="icon-video" className="capability-icon icon-video">
+                <Video />
+              </div>
+              <div id="icon-shapes" className="capability-icon icon-shapes">
+                <Shapes />
+              </div>
+              <div id="icon-text" className="capability-icon icon-text">
+                <FileText />
+              </div>
+              <div id="icon-vector" className="capability-icon icon-vector">
+                <PenTool />
+              </div>
 
-            {/* Cube image centered */}
-            <img
-              id="cube-center"
-              src="/img/cube.png"
-              alt="Cube illustration"
-              className="cube-image"
-            />
-          </Xwrapper>
+              {/* Cube image centered */}
+              <img
+                id="cube-center"
+                src="/img/cube.png"
+                alt="Cube illustration"
+                className="cube-image"
+              />
+            </Xwrapper>
+          </div>
+          <div className="code-block-container">
+            <SyntaxHighlighter
+              language="typescript"
+              style={vscDarkPlus}
+              customStyle={{
+                background: "transparent",
+                margin: 0
+              }}
+              codeTagProps={{
+                style: {
+                  fontSize: "0.8rem",
+                  fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
+                }
+              }}
+            >
+              {codeString}
+            </SyntaxHighlighter>
+          </div>
         </div>
       </section>
 

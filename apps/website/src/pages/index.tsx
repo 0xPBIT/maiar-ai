@@ -8,6 +8,7 @@ import { Xwrapper } from "react-xarrows";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import {
+  ArrowRight,
   BarChart2,
   Eye,
   FileText,
@@ -131,6 +132,38 @@ export default function Home(): JSX.Element {
             .nav-links a{color:#fff;text-decoration:none;opacity:0.9;transition:opacity .25s ease;}
             .nav-links a:hover{opacity:1;}
 
+            /* ---- Ucorp Callout ---- */
+            .ucorp-callout {
+              position: fixed;
+              bottom: 1.5rem;
+              left: 1.5rem;
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              padding: 0.5rem 1rem;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 999px;
+              backdrop-filter: blur(10px);
+              z-index: 100;
+              transition: all 0.3s ease;
+              text-decoration: none !important;
+            }
+            .ucorp-callout:hover {
+              background: rgba(255, 255, 255, 0.1);
+              transform: translateY(-2px);
+            }
+            .ucorp-callout img {
+              height: 20px;
+              width: 20px;
+            }
+            .ucorp-callout span {
+              font-size: 0.8rem;
+              font-weight: 600;
+              color: rgba(255, 255, 255, 0.8);
+              letter-spacing: 0.02em;
+            }
+
             /* ---- Hero text ---- */
             .hero-content{max-width:70rem;z-index:5;transform:translateY(1vmin);}
             .hero-content h1{font-size:clamp(1.8rem, 4vw + 1rem, 3.2rem);font-weight:900;margin:0 auto 1.25rem;line-height:1.1;letter-spacing:0.02em;text-transform:uppercase;}
@@ -149,7 +182,7 @@ export default function Home(): JSX.Element {
 
             /* ---- CTA buttons ---- */
             .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
-            .btn{display:inline-block;padding:0.5rem 1.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.05em;transition:background .25s ease,color .25s ease,border-color .25s ease;}
+            .btn{display:inline-flex;align-items:center;gap:0.25rem;padding:0.5rem 1.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.05em;transition:background .25s ease,color .25s ease,border-color .25s ease;}
             .btn.primary{background:#F3FFE5;color:#0E4500;box-shadow:0 0 10px 0 rgba(255,255,255,0.5);}
             .btn.primary:hover{background:#e2e2e2;}
             .btn.secondary{background:rgba(255,255,255,0.1);color:#fff;border:2px solid #fff;}
@@ -202,6 +235,17 @@ export default function Home(): JSX.Element {
               .blob{animation:none;}
             }
 
+            @media (max-width: 900px) {
+              .ucorp-callout span{
+                display: none;
+              }
+
+                            .ucorp-callout {
+                gap: 0;
+                padding: 0.5rem;
+              }
+            }
+
             /* ---- Mobile adjustments ---- */
             @media (max-width: 600px) {
               .nav {
@@ -219,6 +263,13 @@ export default function Home(): JSX.Element {
                 flex-wrap: wrap;
                 justify-content: center;
                 text-align: center;
+              }
+              .ucorp-callout span {
+                display: none;
+              }
+              .ucorp-callout {
+                gap: 0;
+                padding: 0.5rem;
               }
             }
 
@@ -599,6 +650,16 @@ export default function Home(): JSX.Element {
         </style>
       </Head>
 
+      <Link
+        href="https://uraniumcube.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="ucorp-callout"
+      >
+        <img src="/img/ucorp.svg" alt="Uranium Corporation Logo" />
+        <span>A Uranium Corporation Product</span>
+      </Link>
+
       <header className="hero">
         {/* Animated blurred background */}
         <div className="blur-bg">
@@ -648,7 +709,7 @@ export default function Home(): JSX.Element {
           </p>
           <div className="actions">
             <Link className="btn primary" to="/docs/getting-started">
-              Get Started
+              Get Started <ArrowRight size={16} />
             </Link>
             <Link
               className="btn secondary"

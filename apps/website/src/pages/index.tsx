@@ -236,6 +236,13 @@ export default function Home(): JSX.Element {
             .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
             .slide p{font-size:1.25rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
+            #slide-1 > h2,
+            #slide-1 > p {
+              width: 100%;
+              max-width: 1300px;
+              text-align: left;
+            }
+
             /* Wrapper for cube and code block */
             .slide-content-wrapper {
               display: flex;
@@ -244,7 +251,7 @@ export default function Home(): JSX.Element {
               gap: 2rem;
               width: 100%;
               max-width: 1500px; /* Adjust to fit cube and code */
-              margin-top: 2rem;
+              margin-top: 0.5rem;
             }
 
             /* Code block styles */
@@ -454,6 +461,12 @@ export default function Home(): JSX.Element {
             
             /* Responsive adjustments */
             @media (max-width: 768px) {
+
+            .slide-content-wrapper {
+              margin-top: 3rem;
+            }
+
+
               .cube-container {
                 height: 400px;
                 margin: 2rem 0;
@@ -516,9 +529,9 @@ export default function Home(): JSX.Element {
               /* Reduce container height slightly */
               .cube-container {
                 height: 320px;
-                max-width: 340px;
-                width: 90vw;
-                margin-top: 3rem;
+                max-width: 300px;
+                width: 80vw;
+                margin-top: 1rem;
                 margin-bottom: 3rem;
               }
 
@@ -685,6 +698,24 @@ export default function Home(): JSX.Element {
           model capabilities without patching the core.
         </p>
         <div className="slide-content-wrapper">
+          <div className="code-block-container">
+            <SyntaxHighlighter
+              language="typescript"
+              style={vscDarkPlus}
+              customStyle={{
+                background: "transparent",
+                margin: 0
+              }}
+              codeTagProps={{
+                style: {
+                  fontSize: "0.8rem",
+                  fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
+                }
+              }}
+            >
+              {codeString}
+            </SyntaxHighlighter>
+          </div>
           {/* Cube with capability icons */}
           <div className="cube-container">
             <Xwrapper>
@@ -796,24 +827,6 @@ export default function Home(): JSX.Element {
                 className="cube-image"
               />
             </Xwrapper>
-          </div>
-          <div className="code-block-container">
-            <SyntaxHighlighter
-              language="typescript"
-              style={vscDarkPlus}
-              customStyle={{
-                background: "transparent",
-                margin: 0
-              }}
-              codeTagProps={{
-                style: {
-                  fontSize: "0.8rem",
-                  fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
-                }
-              }}
-            >
-              {codeString}
-            </SyntaxHighlighter>
           </div>
         </div>
       </section>

@@ -30,6 +30,30 @@ export default function Home(): JSX.Element {
   // Store random rotation factors for yellow blobs (5 and 6)
   const blobRotationFactors = useRef<number[]>([]);
 
+  // ---------------------------------------------------------------------------
+  // Carousel state & responsiveness for the capability section
+  const [isCarousel, setIsCarousel] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  // Determine when to switch to carousel view (≤1300px width)
+  useEffect(() => {
+    const updateMode = () => {
+      setIsCarousel(window.innerWidth <= 1300);
+    };
+    updateMode();
+    window.addEventListener("resize", updateMode);
+    return () => window.removeEventListener("resize", updateMode);
+  }, []);
+
+  // Auto-advance carousel every 5 seconds when active
+  useEffect(() => {
+    if (!isCarousel) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev === 0 ? 1 : 0));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isCarousel]);
+
   const codeString = `export const multiModalTextGenerationCapability = defineCapability({
   id: "multi-modal-text-generation",
   description: "Generate text completions from prompts and other text",
@@ -39,6 +63,142 @@ export default function Home(): JSX.Element {
   }),
   output: z.string()
 });`;
+
+  // Reusable render helpers ---------------------------------------------------
+  const CodeBlockSection: React.FC = () => (
+    <div className="code-block-container">
+      <SyntaxHighlighter
+        language="typescript"
+        style={vscDarkPlus}
+        customStyle={{
+          background: "transparent",
+          margin: 0
+        }}
+        codeTagProps={{
+          style: {
+            fontSize: "1rem",
+            fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
+          }
+        }}
+      >
+        {codeString}
+      </SyntaxHighlighter>
+    </div>
+  );
+
+  const CubeVisualization: React.FC = () => (
+    <div className="cube-container">
+      <Xwrapper>
+        {/* Arrows */}
+        <Xarrow
+          start="icon-vision"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-music"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-audio"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-chart"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-video"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-shapes"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-text"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+        <Xarrow
+          start="icon-vector"
+          end="cube-center"
+          endAnchor="middle"
+          path="smooth"
+          strokeWidth={2}
+          showHead={false}
+          color="#6CFF6C"
+        />
+
+        {/* Capability icons positioned around cube */}
+        <div id="icon-vision" className="capability-icon icon-vision">
+          <Eye />
+        </div>
+        <div id="icon-music" className="capability-icon icon-music">
+          <Music />
+        </div>
+        <div id="icon-audio" className="capability-icon icon-audio">
+          <Volume2 />
+        </div>
+        <div id="icon-chart" className="capability-icon icon-chart">
+          <BarChart2 />
+        </div>
+        <div id="icon-video" className="capability-icon icon-video">
+          <Video />
+        </div>
+        <div id="icon-shapes" className="capability-icon icon-shapes">
+          <Shapes />
+        </div>
+        <div id="icon-text" className="capability-icon icon-text">
+          <FileText />
+        </div>
+        <div id="icon-vector" className="capability-icon icon-vector">
+          <PenTool />
+        </div>
+
+        {/* Cube image centered */}
+        <img
+          id="cube-center"
+          src="/img/cube.png"
+          alt="Cube illustration"
+          className="cube-image"
+        />
+      </Xwrapper>
+    </div>
+  );
 
   // Update overlay opacity and blob positions based on scroll
   useEffect(() => {
@@ -646,6 +806,67 @@ export default function Home(): JSX.Element {
                 justify-content: center;
               }
             }
+
+            /* ------------------------------------------------------------------------ */
+            /* Carousel styles for medium screens (≤1300px) */
+            .carousel {
+              position: relative;
+              width: 100%;
+              max-width: 750px;
+              margin: 2rem auto 0;
+            }
+            .carousel-inner {
+              position: relative;
+              width: 100%;
+              min-height: 380px;
+            }
+            .carousel-item {
+              position: absolute;
+              inset: 0;
+              opacity: 0;
+              transition: opacity 0.45s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .carousel-item.active {
+              opacity: 1;
+              position: relative;
+            }
+            .carousel-dots {
+              display: flex;
+              justify-content: center;
+              gap: 0.5rem;
+              margin-top: 1rem;
+            }
+            .carousel-dot {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: rgba(255, 255, 255, 0.4);
+              cursor: pointer;
+              transition: background 0.25s ease;
+            }
+            .carousel-dot.active {
+              background: #6CFF6C;
+            }
+
+            /* Disable carousel on large screens */
+            @media (min-width: 1301px) {
+              .carousel {
+                display: none;
+              }
+            }
+
+            /* Hide original side-by-side content when carousel is active */
+            @media (max-width: 1300px) {
+              .slide-content-wrapper {
+                display: none;
+              }
+              .carousel .code-block-container {
+                display: block;
+              }
+            }
           `}
         </style>
       </Head>
@@ -758,138 +979,37 @@ export default function Home(): JSX.Element {
           forward-compatible support for the accelerating scope of multimodal
           model capabilities without patching the core.
         </p>
-        <div className="slide-content-wrapper">
-          <div className="code-block-container">
-            <SyntaxHighlighter
-              language="typescript"
-              style={vscDarkPlus}
-              customStyle={{
-                background: "transparent",
-                margin: 0
-              }}
-              codeTagProps={{
-                style: {
-                  fontSize: "1rem",
-                  fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
-                }
-              }}
-            >
-              {codeString}
-            </SyntaxHighlighter>
+        {isCarousel ? (
+          <div className="carousel">
+            <div className="carousel-inner">
+              {activeSlide === 0 && (
+                <div className="carousel-item active">
+                  <CodeBlockSection />
+                </div>
+              )}
+              {activeSlide === 1 && (
+                <div className="carousel-item active">
+                  <CubeVisualization />
+                </div>
+              )}
+            </div>
+            <div className="carousel-dots">
+              <span
+                className={`carousel-dot ${activeSlide === 0 ? "active" : ""}`}
+                onClick={() => setActiveSlide(0)}
+              />
+              <span
+                className={`carousel-dot ${activeSlide === 1 ? "active" : ""}`}
+                onClick={() => setActiveSlide(1)}
+              />
+            </div>
           </div>
-          {/* Cube with capability icons */}
-          <div className="cube-container">
-            <Xwrapper>
-              {/* Arrows */}
-              <Xarrow
-                start="icon-vision"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-music"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-audio"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-chart"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-video"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-shapes"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-text"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-              <Xarrow
-                start="icon-vector"
-                end="cube-center"
-                endAnchor="middle"
-                path="smooth"
-                strokeWidth={2}
-                showHead={false}
-                color="#6CFF6C"
-              />
-
-              {/* Capability icons positioned around cube */}
-              <div id="icon-vision" className="capability-icon icon-vision">
-                <Eye />
-              </div>
-              <div id="icon-music" className="capability-icon icon-music">
-                <Music />
-              </div>
-              <div id="icon-audio" className="capability-icon icon-audio">
-                <Volume2 />
-              </div>
-              <div id="icon-chart" className="capability-icon icon-chart">
-                <BarChart2 />
-              </div>
-              <div id="icon-video" className="capability-icon icon-video">
-                <Video />
-              </div>
-              <div id="icon-shapes" className="capability-icon icon-shapes">
-                <Shapes />
-              </div>
-              <div id="icon-text" className="capability-icon icon-text">
-                <FileText />
-              </div>
-              <div id="icon-vector" className="capability-icon icon-vector">
-                <PenTool />
-              </div>
-
-              {/* Cube image centered */}
-              <img
-                id="cube-center"
-                src="/img/cube.png"
-                alt="Cube illustration"
-                className="cube-image"
-              />
-            </Xwrapper>
+        ) : (
+          <div className="slide-content-wrapper">
+            <CodeBlockSection />
+            <CubeVisualization />
           </div>
-        </div>
+        )}
       </section>
 
       <section id="slide-2" className="slide">

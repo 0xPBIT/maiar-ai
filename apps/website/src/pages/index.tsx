@@ -30,6 +30,9 @@ export default function Home(): JSX.Element {
   // Store random rotation factors for yellow blobs (5 and 6)
   const blobRotationFactors = useRef<number[]>([]);
 
+  // How many additional drifting blobs to create
+  const EXTRA_BLOB_COUNT = 14;
+
   // ---------------------------------------------------------------------------
   // Carousel state & responsiveness for the capability section
   const [isCarousel, setIsCarousel] = useState(false);
@@ -206,6 +209,28 @@ export default function Home(): JSX.Element {
       document.querySelectorAll(".blob")
     ) as HTMLElement[];
 
+    // Randomize initial positions for each blob only once
+    blobs.forEach((blob) => {
+      if (blob.dataset.randomized) return;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const maxX = vw - blob.offsetWidth;
+      const maxY = vh - blob.offsetHeight;
+
+      // Choose a random position within the viewport (allowing slight overflow for natural look)
+      const randomX =
+        Math.random() * (maxX + blob.offsetWidth) - blob.offsetWidth * 0.5;
+      const randomY =
+        Math.random() * (maxY + blob.offsetHeight) - blob.offsetHeight * 0.5;
+
+      blob.style.left = `${randomX}px`;
+      blob.style.top = `${randomY}px`;
+      blob.style.marginLeft = "0"; // Clear preset margin offsets so left positioning works everywhere
+
+      // Mark as randomized so we don't reposition on subsequent effect calls / re-renders
+      blob.dataset.randomized = "true";
+    });
+
     // Initialize random horizontal shift factors for each blob
     if (blobShiftFactors.current.length === 0 && blobs.length > 0) {
       blobShiftFactors.current = blobs.map((_, i) => {
@@ -249,6 +274,109 @@ export default function Home(): JSX.Element {
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Random drifting animation for additional blobs ---------------------------------
+  useEffect(() => {
+    const floatingBlobs = Array.from(
+      document.querySelectorAll(".blob-floating")
+    ) as HTMLElement[];
+
+    if (floatingBlobs.length === 0) return;
+
+    // Initialize state for each blob
+    interface DriftState {
+      x: number;
+      y: number;
+      angle: number;
+      speed: number; // px per millisecond
+      rotation: number;
+      rotationSpeed: number; // deg per millisecond
+    }
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const states: DriftState[] = floatingBlobs.map((blob) => {
+      // Random size and aspect ratio
+      const baseSize = Math.random() * 250 + 150; // 150-400 px
+      const aspect = Math.random() * 0.7 + 0.6; // 0.6-1.3
+      blob.style.width = `${baseSize}px`;
+      blob.style.height = `${baseSize * aspect}px`;
+
+      // Assign random color from palette 1-6
+      const colorIdx = Math.floor(Math.random() * 6) + 1;
+      blob.style.background = `var(--blob-color-${colorIdx})`;
+
+      // Starting position anywhere onscreen (with some overflow)
+      const startX = Math.random() * vw;
+      const startY = Math.random() * vh;
+
+      // Apply initial transform so there's no jump on first frame
+      blob.style.transform = `translate(${startX}px, ${startY}px)`;
+
+      return {
+        x: startX,
+        y: startY,
+        angle: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.05 + 0.02, // px per ms (later scaled by dt)
+        rotation: Math.random() * 360,
+        rotationSpeed: (Math.random() - 0.5) * 0.03 // deg per ms
+      } as DriftState;
+    });
+
+    let frameId: number;
+    let last = performance.now();
+
+    const animate = (now: number) => {
+      const dt = now - last; // elapsed ms
+      last = now;
+
+      const vwDynamic = window.innerWidth;
+      const vhDynamic = window.innerHeight;
+
+      floatingBlobs.forEach((blob, i) => {
+        const state = states[i];
+
+        // Slightly change direction to create meandering path
+        state.angle += (Math.random() - 0.5) * 0.01;
+
+        // Update position
+        state.x += Math.cos(state.angle) * state.speed * dt;
+        state.y += Math.sin(state.angle) * state.speed * dt;
+
+        // Wrap around viewport with buffer
+        const buffer = 200;
+        if (state.x < -buffer) {
+          state.x = -buffer;
+          state.angle = Math.PI - state.angle; // reflect horizontally
+        }
+        if (state.x > vwDynamic + buffer) {
+          state.x = vwDynamic + buffer;
+          state.angle = Math.PI - state.angle;
+        }
+        if (state.y < -buffer) {
+          state.y = -buffer;
+          state.angle = -state.angle; // reflect vertically
+        }
+        if (state.y > vhDynamic + buffer) {
+          state.y = vhDynamic + buffer;
+          state.angle = -state.angle;
+        }
+
+        // Update rotation
+        state.rotation += state.rotationSpeed * dt;
+
+        // Apply transform
+        blob.style.transform = `translate(${state.x}px, ${state.y}px) rotate(${state.rotation}deg)`;
+      });
+
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   return (
@@ -325,9 +453,24 @@ export default function Home(): JSX.Element {
             }
 
             /* ---- Hero text ---- */
-            .hero-content{max-width:70rem;z-index:5;transform:translateY(1vmin);}
-            .hero-content h1{font-size:clamp(1.8rem, 4vw + 1rem, 3.2rem);font-weight:900;margin:0 auto 1.25rem;line-height:1.1;letter-spacing:0.02em;text-transform:uppercase;}
-            .subheading{font-size:1.35rem;opacity:0.9;line-height:1.6;font-weight:600;max-width:70ch;margin:0 auto 2.5rem;}
+            .hero-content{
+              max-width:70rem;
+              z-index:5;
+              transform:translateY(1vmin);
+              text-align: left;
+            }
+            .hero-content h1 {
+              font-size: clamp(1.8rem, 4vw + 1rem, 3.2rem);
+              font-weight: 900;
+              margin: 0 auto 1.25rem;
+              line-height: 1.1;
+              letter-spacing: 0.02em;
+              text-transform: uppercase;
+            }
+            .subheading {
+              font-size: 1.35rem;
+              opacity: 0.9;
+            }
 
             /* ---- Demo image ---- */
             .hero-image {
@@ -341,15 +484,54 @@ export default function Home(): JSX.Element {
             }
 
             /* ---- CTA buttons ---- */
-            .actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
-            .btn{display:inline-flex;align-items:center;gap:0.25rem;padding:0.5rem 1.75rem;border-radius:9999px;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.05em;transition:background .25s ease,color .25s ease,border-color .25s ease;}
-            .btn.primary{background:#F3FFE5;color:#0E4500;box-shadow:0 0 10px 0 rgba(255,255,255,0.5);}
-            .btn.primary:hover{background:#e2e2e2;}
-            .btn.secondary{background:rgba(255,255,255,0.1);color:#fff;border:2px solid #fff;}
-            .btn.secondary:hover{background:rgba(255,255,255,0.2);}
+            .actions {
+              display: flex;
+              gap: 1rem;
+              justify-content: left;
+              flex-wrap: wrap;
+            }
+
+            .btn{
+              display:inline-flex;
+              align-items:center;
+              gap:0.25rem;
+              padding:0.5rem 1.75rem;
+              border-radius:9999px;
+              font-size:0.875rem;
+              font-weight:600;
+              text-decoration:none;
+              letter-spacing:0.05em;
+              transition:background .25s ease,color .25s ease,border-color .25s ease;
+            }
+            
+            .btn.primary {
+              background: #f3ffe5;
+              color: #0e4500;
+              box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.5);
+            }
+
+            .btn.primary:hover {
+              background:#e2e2e2;
+            }
+
+            .btn.secondary {
+              background:rgba(255,255,255,0.1);
+              color:#fff;
+              border:2px solid #fff;
+            }
+
+            .btn.secondary:hover {
+              background:rgba(255,255,255,0.2);
+            }
 
             /* ---- Moving blurred blobs ---- */
-            .blur-bg{pointer-events:none;position:fixed;inset:0;overflow:hidden;z-index:-1;}
+            .blur-bg {
+              pointer-events:none;
+              position:fixed;
+              inset:0;
+              overflow:hidden;
+              z-index:-1;
+            }
             .blob{position:absolute;border-radius:50%;filter:blur(100px) saturate(110%);mix-blend-mode:screen;will-change:transform;}
 
             /* top-left cluster - two slim tilted ellipses */
@@ -400,7 +582,7 @@ export default function Home(): JSX.Element {
                 display: none;
               }
 
-                            .ucorp-callout {
+            .ucorp-callout {
                 gap: 0;
                 padding: 0.5rem;
               }
@@ -443,7 +625,7 @@ export default function Home(): JSX.Element {
             @keyframes bounce{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-10px);}}
 
             /* ---- Slide sections ---- */
-            .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 1.5rem;background:transparent;}
+            .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1rem 3rem;background:transparent;}
             .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
             .slide p{font-size:1.5rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
@@ -483,33 +665,6 @@ export default function Home(): JSX.Element {
               margin: 0;
               background: transparent !important;
               white-space: pre-wrap;
-            }
-
-            /* Basic syntax highlighting */
-            .token-comment {
-              color: #5c8d5c;
-            }
-            .token-keyword {
-              color: #6cff6c;
-              font-weight: 600;
-            }
-            .token-function {
-              color: #f7ff00;
-            }
-            .token-string {
-              color: #99ff00;
-            }
-            .token-property {
-              color: #82eefd;
-            }
-            .token-punctuation {
-              color: #888;
-            }
-            .token-type {
-              color: #4ec9b0;
-            }
-            .token-variable {
-              color: #fff;
             }
 
             /* Cube visualization styles */
@@ -670,6 +825,9 @@ export default function Home(): JSX.Element {
             /* Remove floating animation to stabilize icon position */
             .capability-icon { animation: none; }
             
+            /* Floating blobs added at runtime have their motion handled via JS */
+            .blob-floating { animation: none; }
+            
             /* Responsive adjustments */
             @media (max-width: 768px) {
 
@@ -798,15 +956,6 @@ export default function Home(): JSX.Element {
             /* Bring main sections above overlay */
             .hero,.slide{position:relative;z-index:2;}
 
-            @media (max-width: 1300px) {
-              .code-block-container {
-                display: none;
-              }
-              .slide-content-wrapper {
-                justify-content: center;
-              }
-            }
-
             /* ------------------------------------------------------------------------ */
             /* Carousel styles for medium screens (≤1300px) */
             .carousel {
@@ -896,6 +1045,11 @@ export default function Home(): JSX.Element {
           <span className="blob blob-4" />
           <span className="blob blob-5" />
           <span className="blob blob-6" />
+
+          {/* Dynamically generated drifting blobs */}
+          {Array.from({ length: EXTRA_BLOB_COUNT }).map((_, idx) => (
+            <span key={`blob-drift-${idx}`} className="blob blob-floating" />
+          ))}
         </div>
 
         {/* Navigation bar */}

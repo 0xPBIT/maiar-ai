@@ -143,8 +143,6 @@ export class OpenAIModelProvider extends ModelProvider {
   ): Promise<z.infer<typeof imageGenerationCapability.output>> {
     const response = await this.client.images.generate({
       model: this.models.find((m) => IMAGE_MODELS.has(m)) ?? "dall-e-3",
-      moderation: "low",
-      quality: "high",
       prompt: input,
       n: config?.n ?? 1,
       size: config?.size ?? "1024x1024"
@@ -491,9 +489,9 @@ export class OpenAIModelProvider extends ModelProvider {
     imageData: (OpenAI.Image | undefined)[],
     baseFileName: string = "image"
   ): Promise<string[]> {
-    const dataUris: string[] = [];
+    const filePaths: string[] = [];
     if (!imageData || imageData.length === 0) {
-      return dataUris;
+      return filePaths;
     }
 
     for (let i = 0; i < imageData.length; i++) {
@@ -507,39 +505,25 @@ export class OpenAIModelProvider extends ModelProvider {
       }
 
       if (image.url) {
-        try {
-          const response = await fetch(image.url);
-          if (!response.ok) {
-            this.logger.error(
-              `Failed to fetch image from OpenAI URL: ${image.url}`,
-              {
-                status: response.status,
-                statusText: response.statusText,
-                baseFileName
-              }
-            );
-            continue;
-          }
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const base64String = buffer.toString("base64");
-          const mimeType = response.headers.get("content-type") || "image/png"; // Default to image/png
-          dataUris.push(`data:${mimeType};base64,${base64String}`);
-        } catch (error: unknown) {
-          this.logger.error(
-            `Error fetching or processing image from URL: ${image.url}`,
-            {
-              error: error instanceof Error ? error.message : String(error),
-              baseFileName
-            }
-          );
-          continue;
-        }
+        // URL already accessible – just return it as-is.
+        filePaths.push(image.url);
       } else if (image.b64_json) {
         // OpenAI provides b64_json, assume it's PNG image data.
         // The spec says "The base64-encoded JSON of the generated image, if response_format is b64_json."
         // It doesn't specify the image type, but PNG is a common default.
-        dataUris.push(`data:image/png;base64,${image.b64_json}`);
+        try {
+          const filePath = await this.saveImageFromBase64(
+            image.b64_json,
+            `${baseFileName}_${i}`
+          );
+          filePaths.push(filePath);
+        } catch (error: unknown) {
+          this.logger.error(`Error saving image from base64 data`, {
+            error: error instanceof Error ? error.message : String(error),
+            baseFileName
+          });
+          continue;
+        }
       } else {
         this.logger.warn("Image data does not contain url or b64_json", {
           index: i,
@@ -548,6 +532,6 @@ export class OpenAIModelProvider extends ModelProvider {
         });
       }
     }
-    return dataUris;
+    return filePaths;
   }
 }

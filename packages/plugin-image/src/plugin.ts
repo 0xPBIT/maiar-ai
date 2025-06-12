@@ -9,7 +9,7 @@ import {
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
-  constructor() {
+  constructor(useMultiModal: boolean = false) {
     super({
       id: "plugin-image-generation",
       name: "image",
@@ -18,32 +18,29 @@ export class ImageGenerationPlugin extends Plugin {
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [
-        imageGenerationCapability.id,
-        multiModalImageGenerationCapability.id
+        useMultiModal
+          ? multiModalImageGenerationCapability.id
+          : imageGenerationCapability.id
       ],
       promptsDir: path.resolve(__dirname, "prompts")
+
     });
 
     this.executors = [
       {
         name: "generate_image",
-        description: async () =>
-          (
-            await this.runtime.templates.render(
-              `${this.id}/generate_image_description`
-            )
-          ).trim(),
-        fn: this.generateImage.bind(this)
-      },
-      {
-        name: "generate_image_with_images",
-        description: async () =>
-          (
-            await this.runtime.templates.render(
+        description: async () => {
+          return useMultiModal
+            ? await this.runtime.templates.render(
               `${this.id}/generate_image_with_images_description`
             )
-          ).trim(),
-        fn: this.generateImageWithImages.bind(this)
+            : await this.runtime.templates.render(
+              `${this.id}/generate_image_description`
+            )
+        },
+        fn: useMultiModal
+          ? this.generateImageWithImages.bind(this)
+          : this.generateImage.bind(this)
       }
     ];
   }
@@ -135,7 +132,7 @@ export class ImageGenerationPlugin extends Plugin {
     }
   }
 
-  public async init(): Promise<void> {}
+  public async init(): Promise<void> { }
 
-  public async shutdown(): Promise<void> {}
+  public async shutdown(): Promise<void> { }
 }

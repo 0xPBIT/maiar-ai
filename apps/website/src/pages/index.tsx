@@ -57,9 +57,9 @@ export default function Home(): JSX.Element {
     return () => clearInterval(interval);
   }, [isCarousel]);
 
-  const codeString = `export const multiModalTextGenerationCapability = defineCapability({
+  const codeString = `defineCapability({
   id: "multi-modal-text-generation",
-  description: "Generate text completions from prompts and other text",
+  description: "create text using text and images",
   input: z.object({
     prompt: z.string(),
     images: z.array(z.string()).optional()
@@ -79,7 +79,7 @@ export default function Home(): JSX.Element {
         }}
         codeTagProps={{
           style: {
-            fontSize: "1rem",
+            fontSize: "clamp(0.72rem, 1.4vw, 0.9rem)",
             fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
           }
         }}
@@ -613,6 +613,8 @@ export default function Home(): JSX.Element {
                 gap: 0;
                 padding: 0.5rem;
               }
+              /* Tighter padding for code on phones */
+              .code-block-container { padding: 0px !important; }
             }
 
             /* ---- Scroll behaviour & native snap ---- */
@@ -659,12 +661,14 @@ export default function Home(): JSX.Element {
               box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
               transition: opacity 0.3s ease;
               text-align: left;
+              overflow-x: auto; /* allow horizontal scroll on very small screens */
             }
 
             .code-block-container pre {
               margin: 0;
               background: transparent !important;
               white-space: pre-wrap;
+              word-break: break-word;
             }
 
             /* Cube visualization styles */
@@ -680,8 +684,8 @@ export default function Home(): JSX.Element {
             
             /* Ensure the cube image always remains perfectly square */
             .cube-image {
-              width: min(200px, 25vw);
-              height: min(200px, 25vw); /* Force height to match width */
+              width: min(180px, 40vw);
+              height: min(180px, 40vw);
               object-fit: contain;      /* Prevent any stretching/compression */
               max-width: 500px;
               max-height: 500px;
@@ -758,46 +762,39 @@ export default function Home(): JSX.Element {
             .icon-music {
               top: 60px;
               right: 100px;
-              animation-delay: 0.75s;
             }
             
             .icon-audio {
               right: 80px;
               top: 50%;
               transform: translateY(-50%);
-              animation-delay: 1.5s;
             }
             
             .icon-chart {
               bottom: 60px;
               right: 100px;
-              animation-delay: 2.25s;
             }
             
             .icon-video {
               bottom: 30px;
               left: 50%;
               transform: translateX(-50%);
-              animation-delay: 3s;
             }
             
             .icon-shapes {
               bottom: 60px;
               left: 100px;
-              animation-delay: 3.75s;
             }
             
             .icon-text {
               left: 80px;
               top: 50%;
               transform: translateY(-50%);
-              animation-delay: 4.5s;
             }
             
             .icon-vector {
               top: 60px;
               left: 100px;
-              animation-delay: 5.25s;
             }
             
             .capability-icon svg {
@@ -1016,6 +1013,78 @@ export default function Home(): JSX.Element {
                 display: block;
               }
             }
+
+            /* ------------------------------------------------------------- */
+            /* Enhanced carousel slide animation overrides */
+            .carousel {
+              overflow-x: hidden; /* hide horizontal overflow */
+              overflow-y: visible; /* allow vertical overflow so tall elements show */
+            }
+            .carousel-inner {
+              display: flex;
+              overflow: visible; /* allow tall / wide child content to render fully */
+              transition: transform 0.45s ease;
+            }
+            .carousel-item {
+              flex: 0 0 100%;
+              /* Override the absolute positioning & fade styles above */
+              position: relative !important;
+              inset: auto !important;
+              opacity: 1;
+            }
+
+            /* Mobile-first tweaks ------------------------------------------------ */
+            @media (max-width: 600px) {
+              /* Carousel spacing */
+              .carousel {
+                margin: 1rem 0 0;
+                padding: 0 0.25rem;
+              }
+              .carousel-inner {
+                min-height: auto; /* grow with content */
+              }
+
+              /* Code block container gets minimal padding (already 0 but ensure) */
+              .code-block-container {
+                padding: 0 0.5rem !important;
+              }
+
+              /* Cube graphic & container */
+              .cube-image {
+                width: min(140px, 60vw);
+                height: min(140px, 60vw);
+              }
+              .cube-container {
+                width: auto;
+                height: auto;
+              }
+
+              /* Capability icons around cube */
+              .capability-icon {
+                width: 40px;
+                height: 40px;
+              }
+              .capability-icon svg {
+                width: 18px;
+                height: 18px;
+              }
+
+              /* Provide breathing room via a fixed container size */
+              .cube-container {
+                width: 240px;
+                height: 240px;
+              }
+
+              /* Adjust icon offsets on phone */
+              .icon-vision { top: 10px; left: 50%; transform: translateX(-50%); }
+              .icon-video { bottom: 10px; left: 50%; transform: translateX(-50%); }
+              .icon-audio { right: 10px; top: 50%; transform: translateY(-50%); }
+              .icon-text { left: 10px; top: 50%; transform: translateY(-50%); }
+              .icon-music { right: 20px; top: 20px; }
+              .icon-chart { right: 20px; bottom: 20px; }
+              .icon-vector { left: 20px; top: 20px; }
+              .icon-shapes { left: 20px; bottom: 20px; }
+            }
           `}
         </style>
       </Head>
@@ -1135,17 +1204,17 @@ export default function Home(): JSX.Element {
         </p>
         {isCarousel ? (
           <div className="carousel">
-            <div className="carousel-inner">
-              {activeSlide === 0 && (
-                <div className="carousel-item active">
-                  <CodeBlockSection />
-                </div>
-              )}
-              {activeSlide === 1 && (
-                <div className="carousel-item active">
-                  <CubeVisualization />
-                </div>
-              )}
+            {/* Translate inner wrapper based on active slide */}
+            <div
+              className="carousel-inner"
+              style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+            >
+              <div className="carousel-item">
+                <CodeBlockSection />
+              </div>
+              <div className="carousel-item">
+                <CubeVisualization />
+              </div>
             </div>
             <div className="carousel-dots">
               <span

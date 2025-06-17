@@ -9,7 +9,7 @@ import {
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
-  constructor(useMultiModal: boolean = false) {
+  constructor({ useMultiModal = false }: { useMultiModal?: boolean } = {}) {
     super({
       id: "plugin-image-generation",
       name: "image",
@@ -23,7 +23,6 @@ export class ImageGenerationPlugin extends Plugin {
           : imageGenerationCapability.id
       ],
       promptsDir: path.resolve(__dirname, "prompts")
-
     });
 
     this.executors = [
@@ -32,11 +31,11 @@ export class ImageGenerationPlugin extends Plugin {
         description: async () => {
           return useMultiModal
             ? await this.runtime.templates.render(
-              `${this.id}/generate_image_with_images_description`
-            )
+                `${this.id}/generate_image_with_images_description`
+              )
             : await this.runtime.templates.render(
-              `${this.id}/generate_image_description`
-            )
+                `${this.id}/generate_image_description`
+              );
         },
         fn: useMultiModal
           ? this.generateImageWithImages.bind(this)
@@ -132,7 +131,7 @@ export class ImageGenerationPlugin extends Plugin {
     }
   }
 
-  public async init(): Promise<void> { }
+  public async init(): Promise<void> {}
 
-  public async shutdown(): Promise<void> { }
+  public async shutdown(): Promise<void> {}
 }

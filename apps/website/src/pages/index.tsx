@@ -1618,6 +1618,30 @@ export default function Home(): JSX.Element {
               justify-content: center;
               align-items: center;
             }
+
+            /* Icons row for platform slide */
+            .platform-icons-row {
+              display: flex;
+              gap: 2rem;
+              justify-content: center;
+              align-items: center;
+              flex-wrap: wrap;
+              margin: 2rem 0 1.5rem;
+            }
+            .platform-icons-row img,
+            .platform-icons-row svg {
+              width: 60px;
+              height: 60px;
+              color: #6CFF6C;
+              filter: drop-shadow(0 0 6px rgba(108,255,108,0.35));
+            }
+            @media (max-width: 600px) {
+              .platform-icons-row img,
+              .platform-icons-row svg {
+                width: 44px;
+                height: 44px;
+              }
+            }
           `}
         </style>
       </Head>
@@ -1851,46 +1875,51 @@ export default function Home(): JSX.Element {
       <section id="slide-3" className="slide">
         <h2>Platform Integrations</h2>
 
-        {/* Platform Integrations Section */}
         <div className="platform-section">
           <p className="platform-blurb">
-            Drop your agents into the conversations and workflows that already
-            matter &mdash; zero friction, maximum reach.
+            The MAIAR team maintains a growing roster of
+            officially&nbsp;supported platform integrations so you can deploy
+            your agent to popular social channels&nbsp;instantly.
           </p>
-          <ul
-            className="platform-list"
+
+          {/* Icons row */}
+          <div
+            className="platform-icons-row"
             aria-label="Official platform connectors"
           >
-            <li className="platform-item">
+            <Link
+              href="https://github.com/UraniumCorporation/maiar-ai/tree/main/packages/plugin-discord"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Discord Plugin"
+            >
               <img
                 src="/img/discord.svg"
                 alt="Discord logo"
                 className="platform-icon"
               />
-              <span>
-                <b>Discord</b> &mdash; full-featured bot framework and always-on
-                builder hub.
-              </span>
-            </li>
-            <li className="platform-item">
+            </Link>
+            <Link
+              href="https://github.com/UraniumCorporation/maiar-ai/tree/main/packages/plugin-x"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X Plugin"
+            >
               <img
                 src="/img/x.svg"
                 alt="X logo"
                 className="platform-icon x-icon"
               />
-              <span>
-                <b>X</b> &mdash; stream Spaces, monitor mentions, and post
-                generative media in real&nbsp;time.
-              </span>
-            </li>
-            <li className="platform-item">
-              <Send />
-              <span>
-                <b>Telegram</b> &mdash; ultra-fast chat-ops with inline prompts
-                and private dev channels.
-              </span>
-            </li>
-          </ul>
+            </Link>
+            <Link
+              href="https://github.com/UraniumCorporation/maiar-ai/tree/main/packages/plugin-telegram"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Telegram Plugin"
+            >
+              <Send className="platform-icon" />
+            </Link>
+          </div>
         </div>
       </section>
 

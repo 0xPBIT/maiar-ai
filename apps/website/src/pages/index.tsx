@@ -10,14 +10,19 @@ import Link from "@docusaurus/Link";
 import {
   ArrowRight,
   BarChart2,
+  Bot,
   Eye,
   FileText,
+  MessageCircle,
   Music,
   PenTool,
+  Server,
   Shapes,
   Video,
   Volume2
 } from "lucide-react";
+
+import FadeSlider from "../components/FadeSlider";
 
 // NEW HOMEPAGE IMPLEMENTATION
 export default function Home(): JSX.Element {
@@ -35,27 +40,16 @@ export default function Home(): JSX.Element {
 
   // ---------------------------------------------------------------------------
   // Carousel state & responsiveness for the capability section
-  const [isCarousel, setIsCarousel] = useState(false);
-  const [activeSlide, setActiveSlide] = useState(0);
+  const [useSlider, setUseSlider] = useState(false);
 
-  // Determine when to switch to carousel view (≤1300px width)
   useEffect(() => {
     const updateMode = () => {
-      setIsCarousel(window.innerWidth <= 1300);
+      setUseSlider(window.innerWidth <= 1300);
     };
     updateMode();
     window.addEventListener("resize", updateMode);
     return () => window.removeEventListener("resize", updateMode);
   }, []);
-
-  // Auto-advance carousel every 5 seconds when active
-  useEffect(() => {
-    if (!isCarousel) return;
-    const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev === 0 ? 1 : 0));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isCarousel]);
 
   const codeString = `defineCapability({
   id: "multi-modal-text-generation",
@@ -202,6 +196,47 @@ export default function Home(): JSX.Element {
       </Xwrapper>
     </div>
   );
+
+  // New generic code block component for reuse across slides
+  const CodeBlock: React.FC<{ code: string }> = ({ code }) => (
+    <div className="code-block-container">
+      <SyntaxHighlighter
+        language="typescript"
+        style={vscDarkPlus}
+        customStyle={{ background: "transparent", margin: 0 }}
+        codeTagProps={{
+          style: {
+            fontSize: "clamp(0.72rem, 1.4vw, 0.9rem)",
+            fontFamily: `"SF Mono", "Fira Code", "Consolas", "Monaco", monospace`
+          }
+        }}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
+
+  /* Simplified code snippets for Slide-2 */
+  const triggerCode = `this.triggers = [\n  {\n    name: \"server_chat\",\n    route: {\n      path: \"/chat\",\n      handler: this.handleChat.bind(this)\n    }\n  }\n];`;
+
+  const discordTriggerCode = `return {\n  name: \"discord_post_listener\",\n  start: () => {\n    discordService.client.on(\n      Events.MessageCreate,\n      handleMessage.bind(this)\n    );\n  }\n};`;
+
+  const executorCode = `this.executors.push({\n  name: \"generate_image\",\n  description: \"Create an image from a prompt\",\n  fn: async (task) => {\n    const { prompt } = await this.runtime.getObject(\n      z.object({ prompt: z.string() }),\n      task\n    );\n    return imageService.create(prompt);\n  }\n});`;
+
+  // Slide-2 carousel state & data -------------------------------------------
+  const codeSlides = [
+    { title: "Executor Registration", code: executorCode },
+    { title: "HTTP Route Trigger", code: triggerCode },
+    { title: "Discord Event Trigger", code: discordTriggerCode }
+  ];
+  const [codeSlide, setCodeSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCodeSlide((prev) => (prev + 1) % codeSlides.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Update overlay opacity and blob positions based on scroll
   useEffect(() => {
@@ -378,6 +413,8 @@ export default function Home(): JSX.Element {
 
     return () => cancelAnimationFrame(frameId);
   }, []);
+
+  // Add generic CodeBlock component, triggerCode and executorCode definitions (place after other helper components).
 
   return (
     <div ref={scrollRef}>
@@ -627,7 +664,19 @@ export default function Home(): JSX.Element {
             @keyframes bounce{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-10px);}}
 
             /* ---- Slide sections ---- */
-            .slide{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1rem 3rem;background:transparent;}
+            .slide{
+              position:relative;
+              min-height:100vh;
+              display:flex;
+              flex-direction:column;
+              justify-content:center;
+              align-items:center;
+              text-align:center;
+              padding:1rem 1.5rem; /* reduced horizontal padding */
+              background:transparent;
+              overflow:hidden; /* prevent horizontal bleed */
+              box-sizing:border-box;
+            }
             .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
             .slide p{font-size:1.5rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
 
@@ -640,28 +689,31 @@ export default function Home(): JSX.Element {
 
             /* Wrapper for cube and code block */
             .slide-content-wrapper {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 2rem;
-              width: 100%;
-              max-width: 1300px; /* Adjust to fit cube and code */
-              margin-top: 0.5rem;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              gap:2rem;
+              flex-wrap:wrap; /* allow wrapping when viewport narrower */
+              width:100%;
+              max-width:1100px; /* tighter width to remove bleed */
+              margin-top:0.5rem;
+              box-sizing:border-box;
             }
 
             /* Code block styles */
             .code-block-container {
-              background: rgba(14, 28, 14, 0.4); /* Dark green tint */
-              border: 1px solid rgba(108, 255, 108, 0.25);
-              border-radius: 0.75rem;
-              padding: 1.25rem;
-              backdrop-filter: blur(10px);
-              width: 100%;
-              max-width: 750px;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-              transition: opacity 0.3s ease;
-              text-align: left;
-              overflow-x: auto; /* allow horizontal scroll on very small screens */
+              background: rgba(14, 28, 14, 0.4);
+              border:1px solid rgba(108,255,108,0.25);
+              border-radius:0.75rem;
+              padding:1.25rem;
+              backdrop-filter:blur(10px);
+              width:100%;
+              max-width:600px; /* narrower to fit alongside cube */
+              flex:1 1 300px; /* allow grow/shrink */
+              box-shadow:0 4px 20px rgba(0,0,0,0.25);
+              transition:opacity 0.3s ease;
+              text-align:left;
+              overflow-x:auto;
             }
 
             .code-block-container pre {
@@ -827,11 +879,15 @@ export default function Home(): JSX.Element {
             
             /* Responsive adjustments */
             @media (max-width: 768px) {
+              .slide-content-wrapper {
+                margin-top: 1rem;
+                gap: 1.25rem;
+              }
 
-            .slide-content-wrapper {
-              margin-top: 3rem;
-            }
-
+              /* Reduce gap between paragraph and code carousel on Slide-2 */
+              #slide-2 .fade-slider {
+                margin-top: 1rem; /* was 2rem */
+              }
 
               .cube-container {
                 height: 400px;
@@ -844,13 +900,13 @@ export default function Home(): JSX.Element {
               }
               
               .capability-icon {
-                width: 60px;
-                height: 60px;
+                width: 36px;
+                height: 36px;
               }
               
               .capability-icon svg {
-                width: 24px;
-                height: 24px;
+                width: 16px;
+                height: 16px;
               }
               
               .icon-vision, .icon-video {
@@ -900,40 +956,6 @@ export default function Home(): JSX.Element {
                 margin-top: 1rem;
                 margin-bottom: 3rem;
               }
-
-              /* Top icon */
-              .icon-vision {
-                top: -40px;
-              }
-              /* Bottom icon */
-              .icon-video {
-                bottom: -40px;
-              }
-
-              /* Side icons closer */
-              .icon-audio {
-                right: -50px;
-              }
-              .icon-text {
-                left: -50px;
-              }
-
-              .icon-music {
-                right: 20px;
-                top: 20px;
-              }
-              .icon-chart {
-                right: 20px;
-                bottom: 20px;
-              }
-              .icon-vector {
-                left: 20px;
-                top: 20px;
-              }
-              .icon-shapes {
-                left: 20px;
-                bottom: 20px;
-              }
             }
 
             /* ---- Highlights section ---- */
@@ -953,39 +975,34 @@ export default function Home(): JSX.Element {
             /* Bring main sections above overlay */
             .hero,.slide{position:relative;z-index:2;}
 
-            /* ------------------------------------------------------------------------ */
-            /* Carousel styles for medium screens (≤1300px) */
-            .carousel {
+            /* Fade slider ------------------------------------------------------------------*/
+            .fade-slider {
               position: relative;
               width: 100%;
               max-width: 750px;
               margin: 2rem auto 0;
             }
-            .carousel-inner {
-              position: relative;
-              width: 100%;
-              min-height: 380px;
-            }
-            .carousel-item {
+            .fade-slide {
               position: absolute;
               inset: 0;
               opacity: 0;
-              transition: opacity 0.45s ease;
+              transition: opacity 0.6s ease-in-out;
               display: flex;
+              flex-direction: column;
               align-items: center;
               justify-content: center;
             }
-            .carousel-item.active {
+            .fade-slide.active {
               opacity: 1;
-              position: relative;
+              position: relative; /* take space when active */
             }
-            .carousel-dots {
+            .fade-dots {
               display: flex;
               justify-content: center;
               gap: 0.5rem;
               margin-top: 1rem;
             }
-            .carousel-dot {
+            .fade-dot {
               width: 10px;
               height: 10px;
               border-radius: 50%;
@@ -993,97 +1010,192 @@ export default function Home(): JSX.Element {
               cursor: pointer;
               transition: background 0.25s ease;
             }
-            .carousel-dot.active {
+            .fade-dot.active {
               background: #6CFF6C;
             }
-
-            /* Disable carousel on large screens */
             @media (min-width: 1301px) {
-              .carousel {
-                display: none;
-              }
+              .fade-slider { display: none; }
             }
 
-            /* Hide original side-by-side content when carousel is active */
-            @media (max-width: 1300px) {
-              .slide-content-wrapper {
-                display: none;
-              }
-              .carousel .code-block-container {
-                display: block;
-              }
-            }
-
-            /* ------------------------------------------------------------- */
-            /* Enhanced carousel slide animation overrides */
-            .carousel {
-              overflow-x: hidden; /* hide horizontal overflow */
-              overflow-y: visible; /* allow vertical overflow so tall elements show */
-            }
-            .carousel-inner {
+            /* Icon row for triggers -> executors visualization */
+            .trigger-executor-visual {
               display: flex;
-              overflow: visible; /* allow tall / wide child content to render fully */
-              transition: transform 0.45s ease;
+              align-items: center;
+              gap: 1.25rem;
+              margin: 1.5rem 0;
             }
-            .carousel-item {
-              flex: 0 0 100%;
-              /* Override the absolute positioning & fade styles above */
-              position: relative !important;
-              inset: auto !important;
-              opacity: 1;
+            .trigger-icons, .executor-icons {
+              display: flex;
+              gap: 0.75rem;
+            }
+            .trigger-executor-visual svg {
+              width: 32px;
+              height: 32px;
+              color: #6CFF6C;
+              filter: drop-shadow(0 0 6px rgba(108, 255, 108, 0.35));
+            }
+            .arrow-divider {
+              font-size: 1.75rem;
+              font-weight: 900;
+              color: #fff;
             }
 
-            /* Mobile-first tweaks ------------------------------------------------ */
+            .code-title {
+              font-size: 1rem;
+              font-weight: 800;
+              margin-bottom: 0.4rem;
+              text-align: left;
+              letter-spacing: 0.03em;
+            }
+
+            /* Stack title above code in Slide-2 carousel */
+            .carousel-code .carousel-item {
+              flex-direction: column;
+              width: 100vw;
+              align-items: stretch; /* allow children to fill width */
+            }
+
+            /* Ensure Slide-2 carousel is visible on large screens */
+            #slide-2 .carousel-code {
+              display: block;
+              max-width: 750px;
+              width: 100%;
+              margin-top: 0.5rem;
+            }
+
+            /* Make Slide-2 code blocks span full carousel width */
+            #slide-2 .carousel-code .code-block-container {
+              max-width: none;
+              width: 100%;
+              flex: 1 1 auto;
+            }
+
+            /* Tweak item alignment so vertical centering doesn't squash width */
+            #slide-2 .carousel-code .carousel-item {
+              justify-content: flex-start; /* stack title + code at top */
+            }
+
+            /* Allow Slide-2 carousel height to shrink with content */
+            #slide-2 .carousel-inner {
+              min-height: auto;
+            }
+
+            /* Left-align custom text blocks on Slide-2 and Slide-2b */
+            #slide-2 .slide-text-left, #slide-2b .slide-text-left {
+              text-align: left;
+              width: 100%;
+              max-width: 75ch; /* slightly wider paragraph */
+              margin: 1.5rem 0; /* breathing room */
+              align-self: flex-start; /* left-align within slide flex container */
+            }
+
+            /* Container for paragraph + morphing logo */
+            #slide-2 .executor-detail, #slide-2b .executor-detail {
+              display: flex;
+              align-items: center; /* vertically center svg relative to paragraph */
+              gap: 2.5rem; /* balanced spacing between paragraph and icon */
+              width: 100%;
+              max-width: 90ch; /* allow wider paragraph */
+              align-self: flex-start;
+            }
+
+            /* Morphing logo animation */
+            .logo-morph {
+              position: relative;
+              width: 100px; /* enlarged icon size */
+              height: 100px; /* enlarged icon size */
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              flex-shrink: 0;
+            }
+            .logo-morph img {
+              position: absolute;
+              inset: 0;
+              width: 100%;
+              height: 100%;
+              object-fit: contain;
+              opacity: 0;
+              transform: scale(0.8);
+              animation: logoMorph 9s infinite ease-in-out;
+            }
+            .logo-morph img:nth-child(1) { animation-delay: 0s; }
+            .logo-morph img:nth-child(2) { animation-delay: 3s; }
+            .logo-morph img:nth-child(3) { animation-delay: 6s; }
+
+            @keyframes logoMorph {
+              0% { opacity: 1; transform: scale(1); filter: blur(0); }
+              28% { opacity: 1; transform: scale(1.15); filter: blur(0); }
+              33% { opacity: 0; transform: scale(0.8); filter: blur(1px); }
+              95% { opacity: 0; transform: scale(0.8); filter: blur(4px); }
+              100% { opacity: 1; transform: scale(1); filter: blur(0); }
+            }
+
+            /* Stack vertically on mobile */
             @media (max-width: 600px) {
-              /* Carousel spacing */
-              .carousel {
-                margin: 1rem 0 0;
-                padding: 0 0.25rem;
+              #slide-2 .executor-detail {
+                flex-direction: column;
+                align-items: center; /* center children horizontally */
               }
-              .carousel-inner {
-                min-height: auto; /* grow with content */
+              #slide-2 .logo-morph {
+                align-self: center; /* ensure icon itself is centered */
+                margin-top: 1rem;
               }
+            }
 
-              /* Code block container gets minimal padding (already 0 but ensure) */
-              .code-block-container {
-                padding: 0 0.5rem !important;
-              }
+            /* Color morphing SVG logos with site accent green */
+            #slide-2 .logo-morph svg, #slide-2b .logo-morph svg {
+              color: var(--blob-color-1);
+            }
 
-              /* Cube graphic & container */
-              .cube-image {
-                width: min(140px, 60vw);
-                height: min(140px, 60vw);
-              }
-              .cube-container {
-                width: auto;
-                height: auto;
-              }
+            /* Override previous width overrides to keep slides full width */
+            .carousel-item {
+              padding: 0; /* remove extra padding that caused width overflow */
+              flex: 0 0 100% !important; /* full width */
+              max-width: 100% !important;
+              box-sizing: border-box;
+            }
+            .carousel-item > * {
+              max-width: 100% !important;
+              flex: 1 1 100% !important;
+            }
+            /* Ensure code-block respects border-box so borders don't add width */
+            .code-block-container {
+              box-sizing: border-box;
+            }
 
-              /* Capability icons around cube */
-              .capability-icon {
-                width: 40px;
-                height: 40px;
-              }
-              .capability-icon svg {
-                width: 18px;
-                height: 18px;
-              }
+            /* Mobile font size adjustments */
+            @media (max-width: 600px) {
+              html { font-size: 75%; }
+              .hero-content h1 { font-size: clamp(1.3rem, 5vw + 0.5rem, 2.2rem); }
+              .subheading { font-size: 1.1rem; }
+              .slide h2 { font-size: clamp(1.6rem, 4vw + 0.8rem, 2.1rem); }
+              .slide p { font-size: 1.2rem; }
+              .nav-links { font-size: 0.65rem; }
+              .card h3 { font-size: 1rem; }
+              .card p { font-size: 0.9rem; }
+            }
 
-              /* Provide breathing room via a fixed container size */
-              .cube-container {
-                width: 240px;
-                height: 240px;
-              }
+            /* Layout tweaks for Slide-2b: stack logo above paragraph */
+            #slide-2b .executor-detail {
+              flex-direction: column;
+              align-items: center;
+            }
+            #slide-2b .slide-text-left {
+              text-align: center;
+              align-self: center;
+            }
 
-              /* Adjust icon offsets on phone */
-              .icon-vision { top: 10px; left: 50%; transform: translateX(-50%); }
-              .icon-video { bottom: 10px; left: 50%; transform: translateX(-50%); }
-              .icon-audio { right: 10px; top: 50%; transform: translateY(-50%); }
-              .icon-text { left: 10px; top: 50%; transform: translateY(-50%); }
-              .icon-music { right: 20px; top: 20px; }
-              .icon-chart { right: 20px; bottom: 20px; }
-              .icon-vector { left: 20px; top: 20px; }
-              .icon-shapes { left: 20px; bottom: 20px; }
+            /* Responsive mobile adjustments for new Slide-2b */
+            @media (max-width: 600px) {
+              #slide-2b .executor-detail {
+                flex-direction: column;
+                align-items: center;
+              }
+              #slide-2b .logo-morph {
+                align-self: center;
+                margin-top: 1rem;
+              }
             }
           `}
         </style>
@@ -1202,34 +1314,16 @@ export default function Home(): JSX.Element {
           forward-compatible support for the accelerating scope of multimodal
           model capabilities without patching the core.
         </p>
-        {isCarousel ? (
-          <div className="carousel">
-            {/* Translate inner wrapper based on active slide */}
-            <div
-              className="carousel-inner"
-              style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-            >
-              <div className="carousel-item">
-                <CodeBlockSection />
-              </div>
-              <div className="carousel-item">
-                <CubeVisualization />
-              </div>
-            </div>
-            <div className="carousel-dots">
-              <span
-                className={`carousel-dot ${activeSlide === 0 ? "active" : ""}`}
-                onClick={() => setActiveSlide(0)}
-              />
-              <span
-                className={`carousel-dot ${activeSlide === 1 ? "active" : ""}`}
-                onClick={() => setActiveSlide(1)}
-              />
-            </div>
-          </div>
+        {useSlider ? (
+          <FadeSlider
+            slides={[
+              <CodeBlock code={codeString} key="code" />,
+              <CubeVisualization key="cube" />
+            ]}
+          />
         ) : (
           <div className="slide-content-wrapper">
-            <CodeBlockSection />
+            <CodeBlock code={codeString} />
             <CubeVisualization />
           </div>
         )}
@@ -1237,10 +1331,49 @@ export default function Home(): JSX.Element {
 
       <section id="slide-2" className="slide">
         <h2>Triggers &amp; Executors Architecture</h2>
-        <p>
-          Separate what starts work (triggers) from what does work (executors),
-          keeping your agent flexible and event-driven.
+        <p className="slide-text-left">
+          A <b>trigger</b> starts the chain &mdash; an <b>executor</b> does the
+          work. MAIAR's runtime lets you declare <b>HTTP&nbsp;routes</b> or hook
+          into
+          <b> native event listeners</b> (Discord, Slack, webhooks &mdash; you
+          name it), each one dropping a fully-typed <code>Context</code> object
+          onto the queue.
         </p>
+
+        {useSlider ? (
+          <FadeSlider
+            slides={codeSlides.map((c, idx) => (
+              <div key={idx} style={{ width: "100%" }}>
+                <div className="code-title" style={{ marginBottom: "0.4rem" }}>
+                  {c.title}
+                </div>
+                <CodeBlock code={c.code} />
+              </div>
+            ))}
+            interval={5500}
+          />
+        ) : (
+          <div className="carousel-code" style={{ display: "none" }} />
+        )}
+      </section>
+
+      {/* Executor detail moved to its own dedicated slide */}
+      <section id="slide-2b" className="slide">
+        <div className="executor-detail">
+          <div className="logo-morph" aria-hidden="true">
+            <img src="/img/mcp.svg" alt="MCP logo placeholder" />
+            <img src="/img/openai.svg" alt="OpenAI Codex logo placeholder" />
+            <img src="/img/claude.svg" alt="Claude logo placeholder" />
+          </div>
+          <p className="slide-text-left">
+            Executors live inside our <b>dynamic executor library</b>. Tool
+            names and descriptions are generated on&nbsp;the&nbsp;fly with{" "}
+            <code>.liquid</code> templates, and the same executor interface can
+            wrap popular AI tooling like <b>MCP</b>,<b> OpenAI&nbsp;Codex</b>,{" "}
+            <b>Claude</b>, or any custom&nbsp;SDK &mdash; no changes required to
+            your agent logic.
+          </p>
+        </div>
       </section>
 
       <section id="slide-3" className="slide">

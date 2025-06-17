@@ -81,9 +81,7 @@ interface AvailablePlugin {
 export interface PipelineGenerationContext {
   trigger: AgentTask["trigger"];
   availablePlugins: AvailablePlugin[];
-  currentContext: {
-    relatedMemoriesContext: string;
-  };
+  relatedMemories: string;
 }
 
 /**

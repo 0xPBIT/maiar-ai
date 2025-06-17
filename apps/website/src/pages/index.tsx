@@ -11,13 +11,17 @@ import {
   ArrowRight,
   BarChart2,
   Bot,
+  Coins,
   Eye,
   FileText,
-  MessageCircle,
+  Github,
   Music,
+  Package,
   PenTool,
+  Send,
   Server,
   Shapes,
+  Skull,
   Video,
   Volume2
 } from "lucide-react";
@@ -677,14 +681,20 @@ export default function Home(): JSX.Element {
               overflow:hidden; /* prevent horizontal bleed */
               box-sizing:border-box;
             }
-            .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);margin-bottom:1.5rem;letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
-            .slide p{font-size:1.5rem;max-width:58ch;opacity:0.9;line-height:1.7;margin:0 auto;font-weight:600;}
+            .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
+            .slide p{font-size:1.5rem;opacity:0.9;line-height:1.7;font-weight:600;text-align:left;}
 
             #slide-1 > h2,
             #slide-1 > p {
               width: 100%;
               max-width: 1300px;
+            }
+
+            /* Left align slide titles globally */
+            .slide h2 {
               text-align: left;
+              align-self: flex-start;
+              width: 100%;
             }
 
             /* Wrapper for cube and code block */
@@ -1092,6 +1102,7 @@ export default function Home(): JSX.Element {
             /* Container for paragraph + morphing logo */
             #slide-2 .executor-detail, #slide-2b .executor-detail {
               display: flex;
+              margin: auto;
               align-items: center; /* vertically center svg relative to paragraph */
               gap: 2.5rem; /* balanced spacing between paragraph and icon */
               width: 100%;
@@ -1184,6 +1195,7 @@ export default function Home(): JSX.Element {
             #slide-2b .slide-text-left {
               text-align: center;
               align-self: center;
+              font-size: 1.8rem;
             }
 
             /* Responsive mobile adjustments for new Slide-2b */
@@ -1196,6 +1208,415 @@ export default function Home(): JSX.Element {
                 align-self: center;
                 margin-top: 1rem;
               }
+            }
+
+            /* --------------------------------------------------------- */
+            /* Platform list styles (Slide-3)                          */
+            /* --------------------------------------------------------- */
+            .platform-list {
+              list-style: none;
+              padding: 0;
+              margin: 2rem 0 0;
+              display: flex;
+              flex-direction: column;
+              gap: 1.25rem;
+              max-width: 95ch;
+              text-align: left;
+            }
+            .platform-item {
+              display: flex;
+              align-items: flex-start;
+              gap: 0.9rem;
+              font-size: 1.4rem;
+              font-weight: 600;
+            }
+            .platform-item svg, .platform-item .platform-icon {
+              flex-shrink: 0;
+              width: 30px;
+              height: 30px;
+              color: #6CFF6C;
+              filter: drop-shadow(0 0 6px rgba(108, 255, 108, 0.35));
+            }
+
+            /* Slightly smaller X logo */
+            .platform-item .x-icon {
+              width: 26px;
+              height: 26px;
+            }
+
+            @media (max-width: 600px) {
+              .platform-item {
+                font-size: 1.2rem;
+                gap: 0.75rem;
+              }
+              .platform-item svg, .platform-item .platform-icon { width: 24px; height: 24px; }
+              .platform-item .x-icon { width: 22px; height: 22px; }
+            }
+
+            /* Sub-section headings & blurbs */
+            .platform-section { width: 100%; }
+            .platform-section h3 {
+              font-size: 1.75rem;
+              font-weight: 800;
+              margin: 0 0 0.75rem;
+              letter-spacing: 0.03em;
+              text-transform: uppercase;
+              width: 100%;
+            }
+            @media (max-width: 600px) {
+              .platform-section h3 { font-size: 1.45rem; }
+              .platform-blurb { font-size: 1.05rem; }
+            }
+
+            /* ---- Agent CEO call-out ---------------------------------- */
+            .agent-callout {
+              display:flex;
+              flex-direction:column;
+              align-items:center;
+              gap:1rem;
+              margin-top: 1.5rem;
+   
+            }
+            .agent-tagline {
+              font-size:1.25rem;
+              font-weight:700;
+              letter-spacing:0.03em;
+              opacity:0.9;
+              text-align:center;
+              max-width:60ch;
+            }
+            .agent-avatar {
+              width:220px;
+              height:auto;
+              border-radius:50%;
+              box-shadow:0 0 20px rgba(194,255,102,0.35);
+            }
+            .agent-social {
+              display:flex;
+              gap:1rem;
+            }
+            .agent-social a {
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              padding:0.4rem;
+              border-radius:50%;
+              background:rgba(255,255,255,0.05);
+              border:1px solid rgba(255,255,255,0.1);
+              transition:background 0.25s ease;
+            }
+            .agent-social a:hover {
+              background:rgba(255,255,255,0.15);
+            }
+            .agent-social svg,
+            .agent-social img.agent-social-icon {
+              width:22px;
+              height:22px;
+              filter:drop-shadow(0 0 6px rgba(108,255,108,0.35));
+            }
+
+            @media (max-width:600px) {
+              .agent-tagline { display:none; }
+              .agent-account-avatar {
+                width:40px;
+                height:40px;
+                padding:7px;
+              }
+              .agent-callout { margin-top:1rem; }
+            }
+
+            /* New horizontal account row */
+            .agent-accounts {
+              display:flex;
+              gap:2rem;
+        
+              flex-wrap:wrap;
+              justify-content:center;
+            }
+            .agent-account {
+              display:flex;
+              flex-direction:column;
+              align-items:center;
+              gap:0.4rem;
+              text-decoration:none;
+            }
+            .agent-account-avatar {
+              width:40px;
+              height:40px;
+              object-fit:contain;
+              filter:drop-shadow(0 0 6px rgba(108,255,108,0.35));
+              border-radius:50%;
+              background:rgba(255,255,255,0.03);
+              border:1px solid rgba(255,255,255);
+              padding:9px; /* slight inset so SVG fits nicely */
+              box-sizing:border-box;
+            }
+            /* CEO already circular image, remove extra chrome */
+            .ceo-avatar {
+              background:none;
+              border:none;
+              padding:0;
+            }
+            .agent-account-name {
+              font-size:0.9rem;
+              font-weight:700;
+              letter-spacing:0.03em;
+              color:#fff;
+              opacity:0.9;
+            }
+
+            /* Bounty detail copy */
+            .bounty-detail {
+              font-size: 1.25rem;
+              max-width: 60ch;
+              margin: 1.25rem 0 0;
+              opacity: 0.9;
+              line-height: 1.6;
+              font-weight: 600;
+            }
+            .community-actions {
+              margin-top: 1.5rem;
+              display: flex;
+              gap: 1rem;
+              flex-wrap: wrap;
+              justify-content: flex-start;
+            }
+
+            @media (max-width: 600px) {
+              .platform-section h3 { font-size: 1.45rem; }
+              .platform-blurb { font-size: 1.05rem; }
+              .bounty-detail { font-size: 1.05rem; }
+              .community-actions {
+                flex-direction: column;
+                align-items: stretch;
+              }
+              .community-actions .btn {
+                width: 100%;
+                justify-content: center;
+              }
+            }
+
+
+            
+            #slide-3b .platform-list { margin-left: 0; gap: 1rem; }
+            #slide-3b .platform-item {
+              align-items: flex-start;
+              line-height: 1.5;
+            }
+
+            /* Community feature layout */
+            .community-features {
+              display: flex;
+              flex-direction: column;
+              gap: 2rem;
+              align-items: flex-start;
+              margin-top: 2rem;
+            }
+            .community-feature {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+   
+              width: 100%;
+              text-align: left;
+              gap: 0.9rem;
+            }
+            .community-feature .feature-icon svg {
+              width: 44px;
+              height: 44px;
+              color: #6CFF6C;
+              filter: drop-shadow(0 0 6px rgba(108,255,108,0.35));
+            }
+            .community-feature h3 {
+              font-size: 1.4rem;
+              font-weight: 800;
+              margin: 0;
+              letter-spacing: 0.03em;
+              text-transform: uppercase;
+            }
+            .feature-desc {
+              font-size: 1.2rem;
+              line-height: 1.55;
+              font-weight: 600;
+              opacity: 0.9;
+            }
+            .feature-actions {
+              display: flex;
+              gap: 0.75rem;
+              flex-wrap: wrap;
+            }
+            @media (max-width: 600px) {
+              .community-features { gap: 1.75rem; }
+              .community-feature { max-width: none; }
+              .feature-actions { flex-direction: column; align-items: stretch; }
+              .feature-actions .btn {
+                width: 100%;
+                justify-content: center;
+              }
+            }
+
+            
+              .bounty-feature {
+                align-self: flex-end;
+                text-align: right;
+                align-items: flex-end;
+              }
+              .bounty-feature .feature-actions {
+                justify-content: flex-end;
+              }
+  
+
+            /* Slide-3b specific tweaks remove old styles that targeted lists */
+            #slide-3b .platform-list { display: none; }
+
+            /* ----------------------------------------- */
+            /* Medium screens (tablet / small desktop)   */
+            /* ----------------------------------------- */
+            @media (max-width: 1024px) and (min-width: 601px) {
+              /* Paragraphs and descriptive text */
+              .slide p,
+              .platform-blurb,
+              .feature-desc,
+              .bounty-detail,
+              .platform-item {
+                font-size: 1.1rem;
+              }
+
+              /* Section sub-headings */
+              .platform-section h3,
+              .community-feature h3 {
+                font-size: 1.45rem;
+              }
+
+              /* Feature icon size tweak */
+              .community-feature .feature-icon svg {
+                width: 38px;
+                height: 38px;
+              }
+
+              /* Slightly smaller hero title */
+              .hero-content h1 {
+                font-size: clamp(1.7rem, 3vw + 1rem, 2.6rem);
+              }
+            }
+
+            /* ---------------------------------------------------- */
+            /* Final CTA Slide (slide-4)                            */
+            /* ---------------------------------------------------- */
+            #slide-4 {
+              text-align: left;
+            }
+            #slide-4 .final-actions {
+              margin-top: 1.5rem;
+              display: flex;
+              gap: 1rem;
+              flex-wrap: wrap;
+            }
+            #slide-4 .social-grid {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 1rem;
+              margin-top: 2.5rem;
+              width: 100%;
+              max-width: 800px;
+              justify-content: center;
+            }
+            .social-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 0.5rem;
+              width: 80px
+              text-decoration: none;
+            }
+            .social-icon {
+              width: 45px;
+              height: 45px;
+              color: #6CFF6C;
+              filter: drop-shadow(0 0 6px rgba(108,255,108,0.35));
+            }
+            .social-item span {
+              font-size: 0.9rem;
+              font-weight: 700;
+              letter-spacing: 0.03em;
+              color: #fff;
+              opacity: 0.9;
+            }
+
+            @media (max-width: 600px) {
+              #slide-4 .social-grid {
+                grid-template-columns: repeat(2, 1fr);
+              }
+            }
+
+            /* Dev grid */
+            .dev-grid {
+              display: flex;
+              gap: 2.5rem;
+              flex-wrap: nowrap;
+              justify-content: center;
+              align-items: center;
+            }
+            .dev-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 0.5rem;
+              text-decoration: none;
+            }
+            .dev-avatar {
+              width: 80px;
+              height: 80px;
+              border-radius: 50%;
+              object-fit: cover;
+              filter: drop-shadow(0 0 6px rgba(108,255,108,0.35));
+            }
+            .dev-item span {
+              font-size: 0.9rem;
+              font-weight: 700;
+            }
+
+            @media (max-width:600px) {
+              .dev-avatar { width: 56px; height: 56px; }
+            }
+
+            /* Dev team section */
+            .dev-heading {
+              font-size: 1.5rem;
+              font-weight: 800;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+              margin: 2.5rem 0 1rem;
+              text-align: center;
+              align-self: center;
+            }
+
+            .dev-section {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+
+            .socials-section {
+              margin-top: 1.5rem;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .socials-heading {
+              font-size: 1.5rem;
+              font-weight: 800;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+              margin-bottom: 1rem;
+              text-align: center;
+            }
+            .socials-grid {
+              display: flex;
+              gap: 2.5rem;
+              flex-wrap: nowrap;
+              justify-content: center;
+              align-items: center;
             }
           `}
         </style>
@@ -1254,14 +1675,13 @@ export default function Home(): JSX.Element {
         {/* Hero content */}
         <main className="hero-content">
           <h1>
-            A Composable, Extensible,
+            An Extensible,
             <br /> Plugin-Based AI Agent Framework
           </h1>
           <p className="subheading">
             A ready-to-use, open framework featuring{" "}
             <b>multimodal capabilities</b>, swappable memory infrastructure, and
-            a <b>plugin ecosystem</b>. Fully customizable to use your models,
-            tools, and system prompts. <b>Launch your agents on day one.</b>
+            a <b>plugin ecosystem</b>.
           </p>
           <div className="actions">
             <Link className="btn primary" to="/docs/getting-started">
@@ -1284,6 +1704,58 @@ export default function Home(): JSX.Element {
             playsInline
             className="hero-image"
           />
+
+          {/* Agent CEO & social entities */}
+          <div className="agent-callout">
+            <div className="agent-accounts">
+              <div className="agent-account" aria-label="Agent CEO">
+                <Link
+                  href="https://x.com/UraniumCEO"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="agent-account"
+                  aria-label="Agent CEO on X"
+                >
+                  <img
+                    src="/img/CEO.png"
+                    alt="Agent CEO portrait"
+                    className="agent-account-avatar ceo-avatar"
+                  />
+                  <span className="agent-account-name">CEO</span>
+                </Link>
+              </div>
+
+              <Link
+                href="https://x.com/UraniumCubeCorp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="agent-account"
+                aria-label="Uranium Corporation on X"
+              >
+                <img
+                  src="/img/ucorp_alpha.svg"
+                  alt="Uranium Corporation X logo"
+                  className="agent-account-avatar"
+                />
+                <span className="agent-account-name">UCORP</span>
+              </Link>
+
+              <Link
+                href="https://x.com/Maiar_AI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="agent-account"
+                aria-label="MAIAR_AI on X"
+              >
+                <img
+                  src="/img/maiar_alpha.svg"
+                  alt="MAIAR_AI X logo"
+                  className="agent-account-avatar"
+                />
+                <span className="agent-account-name">MAIAR</span>
+              </Link>
+            </div>
+          </div>
         </main>
 
         {/* Scroll arrow */}
@@ -1377,12 +1849,275 @@ export default function Home(): JSX.Element {
       </section>
 
       <section id="slide-3" className="slide">
-        <h2>Community Plugin Registry &amp; Platform Integrations</h2>
-        <p>
-          Discover, share, and integrate community-built plugins from our open
-          GitHub registry, plus official integrations for Discord, X, Telegram,
-          and more.
+        <h2>Platform Integrations</h2>
+
+        {/* Platform Integrations Section */}
+        <div className="platform-section">
+          <p className="platform-blurb">
+            Drop your agents into the conversations and workflows that already
+            matter &mdash; zero friction, maximum reach.
+          </p>
+          <ul
+            className="platform-list"
+            aria-label="Official platform connectors"
+          >
+            <li className="platform-item">
+              <img
+                src="/img/discord.svg"
+                alt="Discord logo"
+                className="platform-icon"
+              />
+              <span>
+                <b>Discord</b> &mdash; full-featured bot framework and always-on
+                builder hub.
+              </span>
+            </li>
+            <li className="platform-item">
+              <img
+                src="/img/x.svg"
+                alt="X logo"
+                className="platform-icon x-icon"
+              />
+              <span>
+                <b>X</b> &mdash; stream Spaces, monitor mentions, and post
+                generative media in real&nbsp;time.
+              </span>
+            </li>
+            <li className="platform-item">
+              <Send />
+              <span>
+                <b>Telegram</b> &mdash; ultra-fast chat-ops with inline prompts
+                and private dev channels.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      {/* New Slide 3b: MAIAR Community */}
+      <section id="slide-3b" className="slide">
+        <h2>MAIAR Community</h2>
+
+        <div className="platform-section">
+          <div className="community-features">
+            {/* Plugin Registry Feature */}
+            <div className="community-feature">
+              <div className="feature-icon">
+                <Package />
+              </div>
+              <h3>Open Plugin Registry</h3>
+              <p className="feature-desc">
+                Browse or publish capabilities with a single command, and
+                Supercharge your agent with community tooling.
+              </p>
+              <Link className="btn primary" to="/plugins">
+                Browse Plugins
+              </Link>
+            </div>
+
+            {/* Bounty Program Feature */}
+            <div className="community-feature bounty-feature">
+              <div className="feature-icon">
+                <Skull />
+              </div>
+              <h3>Bounty Program</h3>
+              <p className="feature-desc" style={{ textAlign: "right" }}>
+                Automated, on-chain rewards for high-priority issues &mdash; no
+                waiting, no ambiguity.
+              </p>
+              <p className="bounty-detail" style={{ textAlign: "right" }}>
+                Uranium Corporation's GitHub Action workflow guarantees
+                transparent payouts and prevents duplicate work through an RFC
+                gate. It's also{" "}
+                <a
+                  href="https://github.com/UraniumCorporation/solana-payout-action"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  open sourced
+                </a>{" "}
+                and available for any Solana project.
+              </p>
+              <div className="feature-actions">
+                <Link className="btn secondary" to="/docs/bounty-program">
+                  How Bounties Work
+                </Link>
+                <Link
+                  className="btn secondary"
+                  href="https://x.com/maiar_ai/status/1898165736964772162"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Read Announcement
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final Slide 4: Call-to-Action & Social Grid */}
+      <section id="slide-4" className="slide">
+        <h2>Ready to Build with MAIAR?</h2>
+        <p style={{ maxWidth: "60ch" }}>
+          Dive into the docs, join our community spaces, and help shape the next
+          wave of composable AI agents.
         </p>
+
+        <div className="actions final-actions">
+          <Link className="btn primary" to="/docs/getting-started">
+            Get Started <ArrowRight size={16} />
+          </Link>
+          <Link
+            className="btn secondary"
+            href="https://x.com/maiar_ai/status/1902235957560013069"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Watch Demo
+          </Link>
+        </div>
+
+        <div className="social-grid">
+          {/* GitHub */}
+          <Link
+            href="https://github.com/UraniumCorporation/maiar-ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-item"
+            aria-label="GitHub Repository"
+          >
+            <Github className="social-icon" />
+            <span>GitHub</span>
+          </Link>
+
+          {/* Discord */}
+          <Link
+            href="https://discord.com/invite/7CAjkpCsED"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-item"
+            aria-label="Join Discord"
+          >
+            <img src="/img/discord.svg" alt="Discord" className="social-icon" />
+            <span>Discord</span>
+          </Link>
+
+          {/* Whitepaper */}
+          <Link
+            href="https://maiar.dev/maiar.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-item"
+            aria-label="MAIAR Whitepaper PDF"
+          >
+            <FileText className="social-icon" />
+            <span>Whitepaper</span>
+          </Link>
+          <Link
+            href="https://t.me/MaiarAI"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-item"
+            aria-label="Telegram"
+          >
+            <Send className="social-icon" />
+            <span>Telegram</span>
+          </Link>
+          <Link
+            href="https://x.com/i/communities/1873262529368969344"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-item"
+            aria-label="MAIAR Community on X"
+          >
+            <img src="/img/x.svg" alt="X" className="social-icon" />
+            <span>X&nbsp;Community</span>
+          </Link>
+        </div>
+        {/* Socials avatar grid */}
+        <div className="socials-section">
+          <h3 className="socials-heading">Socials</h3>
+          <div className="socials-grid">
+            <Link
+              href="https://x.com/UraniumCubeCorp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dev-item"
+              aria-label="UCorp on X"
+            >
+              <img
+                src="/img/ucorp_x.png"
+                alt="UCorp avatar"
+                className="dev-avatar"
+              />
+              <span>UCORP</span>
+            </Link>
+            <Link
+              href="https://x.com/Maiar_AI"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dev-item"
+              aria-label="MAIAR on X"
+            >
+              <img
+                src="/img/maiar_x.png"
+                alt="MAIAR avatar"
+                className="dev-avatar"
+              />
+              <span>MAIAR</span>
+            </Link>
+            <Link
+              href="https://x.com/UraniumCEO"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dev-item"
+              aria-label="CEO on X"
+            >
+              <img
+                src="/img/ceo_x.jpg"
+                alt="CEO avatar"
+                className="dev-avatar"
+              />
+              <span>CEO</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Dev team section (outside grid) */}
+        <div className="dev-section">
+          <h3 className="dev-heading">Lead Devs</h3>
+          <div className="dev-grid">
+            <Link
+              href="https://x.com/0xPBIT"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dev-item"
+              aria-label="0xPBIT on X"
+            >
+              <img
+                src="/img/0xpbit.jpg"
+                alt="0xPBIT avatar"
+                className="dev-avatar"
+              />
+              <span>0xPBIT</span>
+            </Link>
+            <Link
+              href="https://x.com/0xOdditor"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dev-item"
+              aria-label="0xOdditor on X"
+            >
+              <img
+                src="/img/0xodditor.jpg"
+                alt="0xOdditor avatar"
+                className="dev-avatar"
+              />
+              <span>0xODDITOR</span>
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

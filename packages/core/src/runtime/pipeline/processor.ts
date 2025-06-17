@@ -75,37 +75,35 @@ export class Processor {
     );
 
     // Get related memories from the space search
-    const relatedMemories = await this.memoryManager.queryMemory({
+    const relatedMemoriesResults = await this.memoryManager.queryMemory({
       relatedSpaces: task.space.relatedSpaces,
       limit: 10
     });
 
-    const relatedMemoriesContext = await this.runtime.templates.render(
+    const relatedMemories = await this.runtime.templates.render(
       "core/related_memories",
       {
         relatedMemoriesContext: JSON.stringify({
           task: task.trigger,
-          relatedMemories
+          relatedMemoriesResults
         })
       }
     );
 
     this.updateMonitoringState(task, {
-      relatedMemories: relatedMemoriesContext
+      relatedMemories
     });
 
     this.logger.debug("related memories context", {
       type: "runtime.pipeline.related.memories",
-      relatedMemoriesContext
+      relatedMemories
     });
 
     // Create the generation context
     const pipelineContext: PipelineGenerationContext = {
       trigger: task.trigger,
       availablePlugins,
-      currentContext: {
-        relatedMemoriesContext
-      }
+      relatedMemories
     };
 
     let generatePipelineContext = "";
@@ -115,7 +113,7 @@ export class Processor {
         "core/pipeline_generate",
         {
           availablePlugins,
-          relatedMemories: relatedMemoriesContext,
+          relatedMemories,
           trigger: pipelineContext.trigger
         }
       );

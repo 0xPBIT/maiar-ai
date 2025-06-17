@@ -75,7 +75,7 @@ async function main() {
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
-    new ImageGenerationPlugin(),
+    new ImageGenerationPlugin({ useMultiModal: true }),
     new DiscordPlugin({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,

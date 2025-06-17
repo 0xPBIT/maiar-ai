@@ -9,7 +9,7 @@ import {
 import { MultimodalPromptResponseSchema, PromptResponseSchema } from "./types";
 
 export class ImageGenerationPlugin extends Plugin {
-  constructor() {
+  constructor({ useMultiModal = false }: { useMultiModal?: boolean } = {}) {
     super({
       id: "plugin-image-generation",
       name: "image",
@@ -18,8 +18,9 @@ export class ImageGenerationPlugin extends Plugin {
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
       requiredCapabilities: [
-        imageGenerationCapability.id,
-        multiModalImageGenerationCapability.id
+        useMultiModal
+          ? multiModalImageGenerationCapability.id
+          : imageGenerationCapability.id
       ],
       promptsDir: path.resolve(__dirname, "prompts")
     });
@@ -27,23 +28,18 @@ export class ImageGenerationPlugin extends Plugin {
     this.executors = [
       {
         name: "generate_image",
-        description: async () =>
-          (
-            await this.runtime.templates.render(
-              `${this.id}/generate_image_description`
-            )
-          ).trim(),
-        fn: this.generateImage.bind(this)
-      },
-      {
-        name: "generate_image_with_images",
-        description: async () =>
-          (
-            await this.runtime.templates.render(
-              `${this.id}/generate_image_with_images_description`
-            )
-          ).trim(),
-        fn: this.generateImageWithImages.bind(this)
+        description: async () => {
+          return useMultiModal
+            ? await this.runtime.templates.render(
+                `${this.id}/generate_image_with_images_description`
+              )
+            : await this.runtime.templates.render(
+                `${this.id}/generate_image_description`
+              );
+        },
+        fn: useMultiModal
+          ? this.generateImageWithImages.bind(this)
+          : this.generateImage.bind(this)
       }
     ];
   }

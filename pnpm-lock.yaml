@@ -266,10 +266,10 @@ importers:
         specifier: 2.1.1
         version: 2.1.1
       framer-motion:
-        specifier: ^12.16.0
+        specifier: 12.16.0
         version: 12.16.0(react-dom@19.0.0)(react@19.0.0)
       lucide-react:
-        specifier: ^0.513.0
+        specifier: 0.513.0
         version: 0.513.0(react@19.0.0)
       prism-react-renderer:
         specifier: 2.4.1
@@ -284,13 +284,13 @@ importers:
         specifier: 3.1.0
         version: 3.1.0(react-dom@19.0.0)(react@19.0.0)
       react-syntax-highlighter:
-        specifier: ^15.6.1
+        specifier: 15.6.1
         version: 15.6.1(react@19.0.0)
       react-use-scroll-snap:
-        specifier: ^1.0.0
+        specifier: 1.0.0
         version: 1.0.0(react@19.0.0)
       react-xarrows:
-        specifier: ^2.0.2
+        specifier: 2.0.2
         version: 2.0.2(react@19.0.0)
     devDependencies:
       '@docusaurus/module-type-aliases':
@@ -312,7 +312,7 @@ importers:
         specifier: 19.0.3
         version: 19.0.3(@types/react@19.0.8)
       '@types/react-syntax-highlighter':
-        specifier: ^15.5.13
+        specifier: 15.5.13
         version: 15.5.13
       docusaurus-plugin-typedoc:
         specifier: 1.2.3

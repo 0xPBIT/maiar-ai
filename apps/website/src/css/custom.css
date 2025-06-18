@@ -284,3 +284,22 @@ html[data-theme="dark"] .main-wrapper {
 .navbar-sidebar__items .navbar__link:hover {
   background: rgba(126, 255, 167, 0.1);
 }
+
+.ucorp-callout {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1000;
+  color: rgb(186, 255, 154);
+  font-size: 0.9rem;
+  font-family: "Courier New", Courier, monospace;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+}
+
+.ucorp-callout img {
+  width: 24px;
+  height: 24px;
+}

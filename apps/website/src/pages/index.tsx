@@ -681,17 +681,27 @@ export default function Home(): JSX.Element {
               overflow:hidden; /* prevent horizontal bleed */
               box-sizing:border-box;
             }
-            .slide h2{font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
+            .slide h2{margin: 0 auto 1.25rem;font-size:clamp(2rem, 3.5vw + 1rem, 2.8rem);letter-spacing:0.04em;font-weight:800;text-transform:uppercase;}
             .slide p{font-size:1.5rem;opacity:0.9;line-height:1.7;font-weight:600;text-align:left;}
 
             #slide-1 > h2,
             #slide-1 > p {
+            margin: 0 auto 1.25rem;
+              width: 100%;
+              max-width: 1300px;
+            }
+
+            #slide-2 > h2,
+            #slide-2 > p,
+            #slide-2 > slide-text-left {
+            margin: 0 auto 1.25rem;
               width: 100%;
               max-width: 1300px;
             }
 
             /* Left align slide titles globally */
             .slide h2 {
+            margin: 0 auto 1.25rem;
               text-align: left;
               align-self: flex-start;
               width: 100%;
@@ -699,6 +709,7 @@ export default function Home(): JSX.Element {
 
             /* Wrapper for cube and code block */
             .slide-content-wrapper {
+            margin: 0 auto 1.25rem;
               display:flex;
               align-items:center;
               justify-content:center;
@@ -1094,7 +1105,6 @@ export default function Home(): JSX.Element {
             #slide-2 .slide-text-left, #slide-2b .slide-text-left {
               text-align: left;
               width: 100%;
-              max-width: 75ch; /* slightly wider paragraph */
               margin: 1.5rem 0; /* breathing room */
               align-self: flex-start; /* left-align within slide flex container */
             }
@@ -1642,6 +1652,24 @@ export default function Home(): JSX.Element {
                 height: 44px;
               }
             }
+
+            /* Universal side margins for slide content */
+            .slide > * {
+              /* Constrain width to match hero content */
+              max-width: 70rem; /* ≈1120px, same as .hero-content */
+              width: 100%;
+              margin-left: auto;
+              margin-right: auto;
+            }
+
+            /* Fix rogue left-alignment on certain slide elements */
+            .slide h2,
+            #slide-2 .slide-text-left,
+            #slide-2b .slide-text-left,
+            #slide-2 .executor-detail,
+            #slide-2b .executor-detail {
+              align-self: center !important; /* center horizontally within slide */
+            }
           `}
         </style>
       </Head>
@@ -1988,7 +2016,7 @@ export default function Home(): JSX.Element {
       {/* Final Slide 4: Call-to-Action & Social Grid */}
       <section id="slide-4" className="slide">
         <h2>Ready to Build with MAIAR?</h2>
-        <p style={{ maxWidth: "60ch" }}>
+        <p>
           Dive into the docs, join our community spaces, and help shape the next
           wave of composable AI agents.
         </p>

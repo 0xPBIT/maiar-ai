@@ -273,85 +273,57 @@ execute: async (context: AgentContext): Promise<PluginResult> => {
 Here's a complete example of an image generation plugin:
 
 ```typescript
-import { z } from "zod";
+export class SearchPlugin extends Plugin {
+  private service: PerplexityService;
 
-import { AgentContext, PluginBase, PluginResult } from "@maiar-ai/core";
-
-import { ImageService } from "./service";
-import { generatePromptTemplate } from "./templates";
-
-// Define our schema
-const PromptResponseSchema = z.object({
-  prompt: z.string().describe("The prompt for the image generation model")
-});
-
-export class PluginImageGeneration extends PluginBase {
-  private service: ImageService;
-
-  constructor(config: { apiKey: string }) {
-    if (!config.apiKey) {
-      throw new Error("API key is required for image generation plugin");
-    }
-
+  constructor(config: SearchPluginConfig) {
     super({
-      id: "plugin-image-generation",
-      name: "image",
-      description: "Generate images from text descriptions"
+      id: "plugin-search",
+      name: "Search",
+      description: "Search the web for information",
+      ...
     });
 
-    this.service = new ImageService(config.apiKey);
+    this.service = new PerplexityService(config.apiKey);
 
-    this.addExecutor({
-      name: "generate_image",
-      description: "Generate an image based on a text prompt",
-      execute: async (context: AgentContext): Promise<PluginResult> => {
-        try {
-          const promptResponse = await this.runtime.operations.getObject(
-            PromptResponseSchema,
-            generatePromptTemplate(context.contextChain),
-            { temperature: 0.7 }
-          );
-
-          const urls = await this.service.getImage(promptResponse.prompt);
-
-          // Enhance context
-          context.set(`${this.id}:generated_images`, {
-            urls,
-            timestamp: Date.now(),
-            metadata: {
-              originalPrompt: promptResponse.prompt
-            }
-          });
-
-          return {
-            success: true,
-            data: {
-              urls,
-              helpfulInstruction:
-                "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
-            }
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error:
-              error instanceof Error ? error.message : "Unknown error occurred"
-          };
-        }
+    this.executors = [
+      {
+        name: "search",
+        description: async () =>
+          (
+            await this.runtime.templates.render(`${this.id}/search_description`)
+          ).trim(),
+        fn: this.search.bind(this)
       }
-    });
+    ];
+  }
+
+  private async search(task: AgentTask): Promise<PluginResult> {
+    const queryPrompt = await this.runtime.templates.render(
+      `${this.id}/query`,
+      {
+        context: JSON.stringify(task, null, 2)
+      }
+    );
+
+    const params = await this.runtime.getObject(
+      PerplexityQueryResponseSchema,
+      queryPrompt
+    );
+
+    const query = params.query;
+    const result = await this.service.query(query);
+
+    return {
+      success: true,
+      data: {
+        content: result.content,
+        citations: result.citations
+      }
+    };
   }
 }
 ```
-
-This example demonstrates:
-
-- Using `getObject` for data extraction
-- Schema definitions with descriptions
-- Context chain enhancement
-- Proper error handling
-- Type safety
-- Clear documentation
 
 :::tip Next Steps
 

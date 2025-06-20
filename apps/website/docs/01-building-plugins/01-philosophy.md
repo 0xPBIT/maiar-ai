@@ -57,8 +57,8 @@ Each step in the pipeline can:
 Each plugin should have a clear, focused purpose. For example:
 
 - A weather plugin provides weather data
-- An Express plugin handles HTTP communication
-- A time plugin manages time-related operations
+- A X plugin handles X communication
+- A Solana plugin handles Solana transactions
 
 ### Composability
 
@@ -68,10 +68,9 @@ Plugins should be designed to work together. For example:
 // Plugins can be combined to create complex behaviors
 const runtime = createRuntime({
   plugins: [
-    new ExpressPlugin(), // Handle HTTP
-    new AuthPlugin(), // Add authentication
-    new WeatherPlugin(), // Provide weather data
-    new ResponsePlugin() // Format responses
+    new XPlugin(), // Handle X communication
+    new SolanaPlugin(), // Handle Solana transactions
+    new WeatherPlugin() // Provide weather data
   ]
 });
 ```
@@ -104,31 +103,6 @@ super({
   capabilities: ["get_weather", "weather_alerts"]
 });
 ```
-
-## Real-World Example
-
-Consider how an HTTP request flows through the system:
-
-1. **Express Plugin (Trigger)**
-
-   - Receives HTTP request
-   - Creates initial context with request data
-   - Sets up response handler
-
-2. **Auth Plugin (Executor)**
-
-   - Validates user credentials
-   - Adds user data to context
-
-3. **Weather Plugin (Executor)**
-
-   - Reads location from context
-   - Fetches weather data
-   - Adds weather data to context
-
-4. **Response Plugin (Executor)**
-   - Formats data from context
-   - Sends response via handler
 
 This pipeline architecture enables:
 

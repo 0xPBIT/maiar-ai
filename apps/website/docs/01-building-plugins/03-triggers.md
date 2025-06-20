@@ -22,212 +22,100 @@ The initialization happens through `addTrigger`, where you set up your servers, 
 Here's how different types of triggers initialize:
 
 ```typescript
-export class MyPlugin extends PluginBase {
+export class TextGenerationPlugin extends Plugin {
   constructor() {
-    super({ id: "my-plugin" });
-
-    // Express Server Trigger
-    this.addTrigger({
-      id: "http_server",
-      start: () => {
-        // Initialize Express server
-        const app = express();
-        app.use(express.json());
-
-        // Set up routes that will create events
-        app.post("/webhook", async (req, res) => {
-          await this.runtime.createEvent(
-            {
-              pluginId: this.id,
-              action: "webhook_received",
-              data: req.body
-            },
-            {
-              responseHandler: (result) => res.json(result)
-            }
-          );
-        });
-
-        // Start server
-        app.listen(3000);
-      }
+    super({
+      id: "plugin-text",
+      name: "Text Generation",
+      description: "Generate text",
+      ...
     });
 
-    // WebSocket Trigger
-    this.addTrigger({
-      id: "websocket_server",
-      start: () => {
-        // Initialize WebSocket server
-        const wss = new WebSocketServer({ port: 8080 });
 
-        // Set up connection handler
-        wss.on("connection", (ws) => {
-          // Set up message handler that will create events
-          ws.on("message", async (message) => {
-            await this.runtime.createEvent(
-              {
-                pluginId: this.id,
-                action: "ws_message_received",
-                data: message
-              },
-              {
-                responseHandler: (result) => ws.send(JSON.stringify(result))
-              }
-            );
-          });
-        });
+    this.triggers = [
+      {
+        name: "server_chat",
+        route: {
+          path: "/chat",
+          handler: this.handleChat.bind(this),
+          middleware: [express.json()]
+        }
       }
-    });
-
-    // File Watcher Trigger
-    this.addTrigger({
-      id: "file_watcher",
-      start: () => {
-        // Initialize file watcher
-        const watcher = chokidar.watch("some/directory");
-
-        // Set up change handler that will create events
-        watcher.on("change", async (path) => {
-          await this.runtime.createEvent({
-            pluginId: this.id,
-            action: "file_changed",
-            data: { path }
-          });
-        });
-      },
-      // Clean up when plugin stops
-      stop: () => {
-        watcher.close();
-      }
-    });
+    ];
   }
+
+
+
+  private async handleChat(req: Request, res: Response): Promise<void> {
+    const { message, user } = req.body;
+
+    // Create event with initial context and response handler
+    const platformContext: ChatPlatformContext = {
+      platform: this.id,
+      responseHandler: (result: unknown) => res.json(result)
+    };
+
+    // Create initial context item
+    const initialContext: Context = {
+      id: `${this.id}-${Date.now()}`,
+      pluginId: this.id,
+      content: message,
+      timestamp: Date.now(),
+      metadata: {
+        user,
+        platformContext
+      }
+    };
+
+    // Create space for the event to define related memory items
+    const spacePrefix = `${this.id}-${user}`;
+
+    const space: Space = {
+      id: `${spacePrefix}-${Date.now()}`,
+      relatedSpaces: {
+        prefix: spacePrefix
+      }
+    };
+
+    // Add event to the runtime scheduler
+    await this.runtime.createEvent(initialContext, space);
+  }
+
+  ...
 }
-```
-
-## Event Creation
-
-After initialization, triggers create events in response to external actions:
-
-```typescript
-// Express route creates events for HTTP requests
-app.post("/message", async (req, res) => {
-  await this.runtime.createEvent(
-    {
-      pluginId: this.id,
-      action: "receive_message",
-      timestamp: Date.now(),
-      data: req.body
-    },
-    {
-      responseHandler: (result) => res.json(result)
-    }
-  );
-});
-
-// WebSocket handler creates events for messages
-ws.on("message", async (message) => {
-  await this.runtime.createEvent(
-    {
-      pluginId: this.id,
-      action: "ws_message",
-      timestamp: Date.now(),
-      data: JSON.parse(message)
-    },
-    {
-      responseHandler: (result) => ws.send(JSON.stringify(result))
-    }
-  );
-});
-```
-
-## Trigger Lifecycle
-
-The trigger lifecycle looks like this:
-
-```
-[Agent Starts] → [Trigger Initialization] → [Wait for Events]
-                        ↓                          ↓
-                   Start Servers             Create Events
-                   Setup Listeners           Start Runtime
-                   Initialize Connections    Handle Responses
-```
-
-## Best Practices
-
-### Clean Initialization
-
-Keep your trigger initialization clean and focused:
-
-```typescript
-this.addTrigger({
-  id: "my_trigger",
-  start: async () => {
-    try {
-      // Initialize resources
-      const server = await this.initializeServer();
-
-      // Set up event handlers
-      server.on("event", this.handleEvent.bind(this));
-
-      // Store cleanup functions
-      this.cleanup = () => server.close();
-    } catch (error) {
-      console.error("Failed to initialize trigger:", error);
-      throw error; // Let the agent know initialization failed
-    }
-  },
-  stop: async () => {
-    // Clean up resources
-    if (this.cleanup) {
-      await this.cleanup();
-    }
-  }
-});
 ```
 
 ### Event Creation
 
-Create events with complete context:
+Create events with complete context and proper space management:
+
+Demonstrates a one-to-one relationship between events and spaces.
 
 ```typescript
-private async handleEvent(data: any) {
-  await this.runtime.createEvent({
-    pluginId: this.id,
-    action: "handle_event",
-    timestamp: Date.now(),
-    data,
-    metadata: {
-      source: "my_trigger",
-      version: "1.0"
-    }
-  }, {
-    responseHandler: this.handleResponse.bind(this),
-    errorHandler: this.handleError.bind(this)
-  });
-}
+const spacePrefix = `${this.id}-${user}`;
+
+const space: Space = {
+  id: `${spacePrefix}-${Date.now()}`,
+  relatedSpaces: {
+    prefix: spacePrefix
+  }
+};
+
+await this.runtime.createEvent(initialContext, space);
 ```
+
+:::tip Learn More About Spaces
+Spaces are a powerful way to group related memory items together based on forum and function. You can learn more about them [here](../core-utilities/spaces).
+:::
 
 ### Resource Management
 
-Always clean up resources when the trigger stops:
+Utilize the plugin lifecycle to initialize and clean up resources.
 
 ```typescript
-this.addTrigger({
-  id: "my_trigger",
-  start: () => {
-    this.server = new Server();
-    this.watcher = new FileWatcher();
-    this.connections = new Set();
-  },
-  stop: async () => {
-    // Clean up in reverse order of creation
-    for (const conn of this.connections) {
-      await conn.close();
-    }
-    await this.watcher.close();
-    await this.server.shutdown();
-  }
-});
+  public async init(): Promise<void> {}
+
+  public async shutdown(): Promise<void> {}
 ```
 
 :::tip Next Steps

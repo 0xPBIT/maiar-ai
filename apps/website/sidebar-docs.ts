@@ -52,7 +52,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "model-providers/index"
       },
-      items: ["model-providers/overview", "model-providers/capabilities"]
+      items: ["model-providers/overview"]
     },
     {
       type: "category",
@@ -62,6 +62,15 @@ const sidebars: SidebarsConfig = {
         id: "memory-providers/index"
       },
       items: ["memory-providers/overview"]
+    },
+    {
+      type: "category",
+      label: "Capabilities",
+      link: {
+        type: "doc",
+        id: "core-utilities/index"
+      },
+      items: ["capabilities/capabilities", "capabilities/transforms"]
     },
     {
       type: "category",

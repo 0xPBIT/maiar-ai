@@ -1,249 +1,82 @@
 ---
 title: Model Providers
-description: Learn how to use model providers in MAIAR
+description: Integrate any LLM or generative model with MAIAR
 sidebar_position: 1
 ---
 
 # Models in MAIAR
 
-Maiar's model system provides a simple interface for integrating any model into your agent. The framework comes with providers for popular services like OpenAI and Ollama, but its true power lies in its extensibility.
+MAIAR contains a **pluggable model layer**. A _model provider_ wraps one or many concrete models (OpenAI, Ollama, etc.) and exposes the **capabilities** they support—text generation, image generation, multimodal reasoning, and so on.  
+Plugins and the runtime consume these capabilities without needing to know which physical model they come from.
 
-## The Model Provider System
+---
 
-At its core, a model provider is a wrapper around a models capabilities:
+## The Model Provider Base-Class
 
-```typescript
-interface ModelProvider {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly capabilities: Map<string, ModelCapability>;
+Every provider **extends** the abstract [`ModelProvider`](../../api/classes/ModelProvider) class that lives in `@maiar-ai/core`.  
+The class already implements logging, capability bookkeeping and type-safe execution—your job is to
 
-  /**
-   * Add a capability to the model
-   */
-  addCapability(capability: ModelCapability): void;
+1. call `super()` with metadata (id, name, description),
+2. register at least one capability, and
+3. implement the lifecycle hooks: `init`, `checkHealth`, and `shutdown`.
 
-  /**
-   * Get all capabilities supported by this model
-   */
-  getCapabilities(): ModelCapability[];
+---
 
-  /**
-   * Check if the model supports a specific capability
-   */
-  hasCapability(capabilityId: string): boolean;
+## Model Capabilities
 
-  /**
-   * Get a specific capability instance
-   */
-  getCapability<I, O>(capabilityId: string): ModelCapability<I, O> | undefined;
+A [**capability**](../04-capabilities/capabilities.md) is an atomic skill that a model can perform. Typical examples:
 
-  /**
-   * Execute a capability
-   */
-  executeCapability<I, O>(
-    capabilityId: string,
-    input: I,
-    config?: ModelRequestConfig
-  ): Promise<O>;
+- `text-generation` – Generate plain text from a prompt.
+- `image-generation` – Create an image from a text prompt.
+- `multi-modal-text-generation` – Combine text & images as inputs.
 
-  /**
-   * Initialize the model with any necessary setup
-   */
-  init?(): Promise<void>;
+The runtime guarantees that only validated data reaches your implementation and that plugins only call models that actually possess the requested capability.
 
-  /**
-   * Check model health
-   */
-  checkHealth(): Promise<void>;
-}
+For an in-depth guide see the [Capabilities documentation](../04-capabilities/capabilities.md).
 
-interface ModelRequestConfig {
-  temperature?: number; // Controls randomness (0-1)
-  maxTokens?: number; // Maximum tokens in response
-  stopSequences?: string[]; // Sequences that stop generation
-}
-```
+---
 
-This simplicity is what makes MAIAR's model system so flexible. You can:
+## Official Providers
 
-- Use our maintained providers (OpenAI, Ollama)
-- Create custom providers for other services
-- Wrap existing providers to add functionality
+MAIAR ships with providers for the some common back-ends.  
+Each provider can expose _multiple_ capabilities depending on which model(s) you include in the `models` array.
 
-## Understanding Capabilities
-
-A key part of the model provider system is the concept of capabilities. Capabilities define what a model can do, such as text generation, image creation, or embedding generation.
-
-Model providers implement specific capabilities, and plugins can then consume these capabilities, creating a flexible, extensible system. This abstraction allows plugins to work with any model provider that supports the required capabilities.
-
-For a comprehensive understanding of how capabilities work in MAIAR, including:
-
-- How they're defined in models
-- How plugins declare and consume them
-- How the runtime validates and manages them
-- Best practices for implementing capabilities
-
-See the detailed [Capabilities documentation](../04-capabilities/capabilities.md).
-
-## Why Custom Providers Matter
-
-Let's look at a real example. When using the Deepseek model through Ollama, the output includes the model's reasoning process with think tags:
-
-```
-Human: What's 2+2?
-Assistant: Let me help you with that.
-
-<think>
-Let me solve this simple arithmetic problem.
-2 + 2 is a basic addition.
-The answer is clearly 4.
-</think>
-
-The answer is 4.
-```
-
-While these think tags are valuable for debugging and understanding the model's reasoning, we might want to hide them from end users. Here's how we implemented a custom provider to clean the output:
+### OpenAI
 
 ```typescript
-import { ModelProvider, ModelRequestConfig } from "@maiar-ai/core";
-
-export interface DeepseekConfig {
-  baseUrl: string;
-  model: string;
-}
-
-export class DeepseekProvider implements ModelProvider {
-  readonly id = "deepseek";
-  readonly name = "Deepseek";
-  readonly description = "Deepseek models running through Ollama";
-
-  private baseUrl: string;
-  private model: string;
-
-  constructor(config: DeepseekConfig) {
-    if (!config.baseUrl) {
-      throw new Error("baseUrl is required");
-    }
-    if (!config.model) {
-      throw new Error("model is required");
-    }
-
-    this.baseUrl = config.baseUrl.replace(/\/$/, "");
-    this.model = config.model;
-
-    this.addCapability({
-      id: "text-generation",
-      name: "Text generation capability",
-      description: "Deepseek models running through Ollama",
-      execute: this.generateText.bind(this)
-    });
-  }
-
-  async generateText(
-    prompt: string,
-    config?: ModelRequestConfig
-  ): Promise<string> {
-    try {
-      this.logger.info("sending prompt to deepseek", {
-        type: "model.request.sent",
-        prompt
-      });
-
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: this.model,
-          prompt: `${prompt}\n\nAssistant: Let me help you with that.`,
-          stream: false,
-          options: {
-            temperature: config?.temperature ?? 0.7,
-            stop: config?.stopSequences
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const text = data.response;
-
-      this.logger.info("received response from deepseek", {
-        type: "model.response.received",
-        responseLength: text.length
-      });
-
-      // Clean up the model's reasoning process and think tags
-      const cleanedText = text
-        .replace(/^Assistant: Let me help you with that\.\s*/, "")
-        .replace(/<think>[\s\S]*?<\/think>\s*/g, "");
-
-      return cleanedText;
-    } catch (error) {
-      this.logger.error("error getting text from deepseek", {
-        type: "model.generation.error",
-        error: error instanceof Error ? error.message : String(error)
-      });
-      throw error;
-    }
-  }
-}
-```
-
-Now when we use this provider:
-
-```typescript
-const runtime = createRuntime({
-  models: [
-    new DeepseekProvider({
-      baseUrl: "http://localhost:11434",
-      model: "deepseek-coder:6.7b"
-    })
-  ]
-});
-
-const answer = await runtime.model.getText("What's 2+2?");
-console.log(answer); // "The answer is 4."
-```
-
-The output is clean and user-friendly, while still preserving the model's reasoning capabilities internally through logging.
-
-## Built-in Providers
-
-Maiar maintains several official providers:
-
-### OpenAI Provider
-
-```typescript
-import { OpenAIProvider } from "@maiar-ai/model-openai";
+import { OpenAIModelProvider } from "@maiar-ai/model-openai";
 
 const runtime = createRuntime({
   models: [
-    new OpenAIProvider({
-      apiKey: process.env.OPENAI_API_KEY,
-      model: "gpt-3.5-turbo"
+    new OpenAIModelProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+      models: ["gpt-4o"] // you can list several models!
     })
   ]
 });
 ```
 
-### Ollama Provider
+### Ollama
 
 ```typescript
-import { OllamaProvider } from "@maiar-ai/model-ollama";
+import { OllamaModelProvider } from "@maiar-ai/model-ollama";
 
 const runtime = createRuntime({
   models: [
-    new OllamaProvider({
+    new OllamaModelProvider({
       baseUrl: "http://localhost:11434",
       model: "llama2"
     })
   ]
 });
 ```
+
+### Deepseek (specialised Ollama provider)
+
+```typescript
+import { DeepseekModelProvider } from "@maiar-ai/model-ollama";
+
+// Same pattern as above – just pass the Deepseek model tag.
+```
+
+Feel free to copy any of these providers as a starting point for your own models. Because everything revolves around _capabilities_, your plugins will continue to work as long as the required capability id is present – regardless of where the underlying intelligence comes from.

@@ -82,7 +82,8 @@ const sidebars: SidebarsConfig = {
       items: [
         "core-utilities/runtime",
         "core-utilities/getObject",
-        "core-utilities/createEvent"
+        "core-utilities/createEvent",
+        "core-utilities/spaces"
       ]
     }
   ]

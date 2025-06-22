@@ -85,7 +85,7 @@ For a comprehensive understanding of how capabilities work in MAIAR, including:
 - How the runtime validates and manages them
 - Best practices for implementing capabilities
 
-See the detailed [Capabilities documentation](./02-capabilities.md).
+See the detailed [Capabilities documentation](../04-capabilities/capabilities.md).
 
 ## Why Custom Providers Matter
 

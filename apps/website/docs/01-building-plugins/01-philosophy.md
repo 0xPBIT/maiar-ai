@@ -115,7 +115,6 @@ This pipeline architecture enables:
 
 - Learn about [Executors](./executors) in detail
 - Understand [Triggers](./triggers) and event handling
-- Explore [Core Utilities](../core-utilities/runtime) for implementation details
 - Check out [Model Providers](../model-providers/overview) for model integration
 - See [Memory Providers](../memory-providers/overview) for state management
 

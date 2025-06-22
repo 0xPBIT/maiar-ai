@@ -131,7 +131,6 @@ const analysis = await runtime.getObject(
 
 ## Next Steps
 
-- Learn about [createEvent](./createEvent) for event handling
 - Explore [Building Plugins](../building-plugins/philosophy) for using getObject in plugins
 - Check out [Model Providers](../model-providers/overview) for model configuration
 - Read about [Executors](../building-plugins/executors) for practical usage examples

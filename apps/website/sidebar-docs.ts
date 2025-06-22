@@ -79,12 +79,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "core-utilities/index"
       },
-      items: [
-        "core-utilities/runtime",
-        "core-utilities/getObject",
-        "core-utilities/createEvent",
-        "core-utilities/spaces"
-      ]
+      items: ["core-utilities/getObject", "core-utilities/spaces"]
     }
   ]
 };

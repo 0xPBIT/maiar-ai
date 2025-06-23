@@ -4,16 +4,12 @@ import { CapabilityMap, defineCapability } from "@maiar-ai/core";
 
 export const imageGenerationCapability = defineCapability({
   id: "image-generation",
-  name: "image-generation",
-  description: "Generate images from text prompts",
   input: z.string(),
   output: z.array(z.string())
 });
 
 export const multiModalImageGenerationCapability = defineCapability({
   id: "multi-modal-image-generation",
-  name: "multi-modal-image-generation",
-  description: "Generate images from text prompts and other images",
   input: z.object({
     prompt: z.string(),
     urls: z.array(z.string()).optional()

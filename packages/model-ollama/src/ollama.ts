@@ -17,8 +17,6 @@ export const textGenerationSchema = {
 
 // Constants for provider information
 const PROVIDER_ID = "ollama";
-const PROVIDER_NAME = "Ollama";
-const PROVIDER_DESCRIPTION = "Local Ollama models like Llama 2 and Mistral";
 
 export class OllamaModelProvider extends ModelProvider {
   private baseUrl: string;
@@ -26,9 +24,7 @@ export class OllamaModelProvider extends ModelProvider {
 
   constructor(config: OllamaConfig) {
     super({
-      id: PROVIDER_ID,
-      name: PROVIDER_NAME,
-      description: PROVIDER_DESCRIPTION
+      id: PROVIDER_ID
     });
     if (!config.baseUrl) {
       throw new Error("baseUrl is required");
@@ -41,9 +37,6 @@ export class OllamaModelProvider extends ModelProvider {
     this.model = config.model;
     this.addCapability({
       id: "text-generation",
-      name: "Text generation capability",
-      description:
-        "Generate text using ollama model. Takes text and input and returns text",
       input: textGenerationSchema.input,
       output: textGenerationSchema.output,
       execute: this.generateText.bind(this)

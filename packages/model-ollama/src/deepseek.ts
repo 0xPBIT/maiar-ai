@@ -24,8 +24,6 @@ High level rules you must follow:
 
 // Constants for provider information
 const PROVIDER_ID = "deepseek";
-const PROVIDER_NAME = "Deepseek";
-const PROVIDER_DESCRIPTION = "Deepseek models running through Ollama";
 
 export class DeepseekModelProvider extends ModelProvider {
   private baseUrl: string;
@@ -33,9 +31,7 @@ export class DeepseekModelProvider extends ModelProvider {
 
   constructor(config: DeepseekConfig) {
     super({
-      id: PROVIDER_ID,
-      name: PROVIDER_NAME,
-      description: PROVIDER_DESCRIPTION
+      id: PROVIDER_ID
     });
     if (!config.baseUrl) {
       throw new Error("baseUrl is required");
@@ -48,8 +44,6 @@ export class DeepseekModelProvider extends ModelProvider {
     this.model = config.model;
     this.addCapability({
       id: "text-generation",
-      name: "Text generation capability",
-      description: "Deepseek models running through Ollama",
       input: textGenerationSchema.input,
       output: textGenerationSchema.output,
       execute: this.generateText.bind(this)

@@ -4,16 +4,12 @@ import { CapabilityMap, defineCapability } from "@maiar-ai/core";
 
 export const textGenerationCapability = defineCapability({
   id: "text-generation",
-  name: "text-generation",
-  description: "Generate text completions from prompts",
   input: z.string(),
   output: z.string()
 });
 
 export const multiModalTextGenerationCapability = defineCapability({
   id: "multi-modal-text-generation",
-  name: "multi-modal-text-generation",
-  description: "Generate text completions from prompts and other text",
   input: z.object({
     prompt: z.string(),
     images: z.array(z.string()).optional()
@@ -23,16 +19,12 @@ export const multiModalTextGenerationCapability = defineCapability({
 
 export const imageGenerationCapability = defineCapability({
   id: "image-generation",
-  name: "image-generation",
-  description: "Generate images from text prompts",
   input: z.string(),
   output: z.array(z.string())
 });
 
 export const multiModalImageGenerationCapability = defineCapability({
   id: "multi-modal-image-generation",
-  name: "multi-modal-image-generation",
-  description: "Generate images from text prompts and other images",
   input: z.object({
     prompt: z.string(),
     images: z.array(z.string()).optional()

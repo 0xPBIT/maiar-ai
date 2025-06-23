@@ -25,7 +25,6 @@ export class DiscordPlugin extends Plugin {
   }) {
     super({
       id: "plugin-discord",
-      name: "Discord",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

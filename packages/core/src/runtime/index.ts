@@ -257,7 +257,6 @@ export class Runtime {
       capabilities: modelManager.getAvailableCapabilities(),
       plugins: plugins.map((p) => ({
         id: p.id,
-        name: p.name,
         description: p.description,
         requiredCapabilities: p.requiredCapabilities,
         triggers: p.triggers.map((t) => ({

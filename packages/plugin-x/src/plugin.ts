@@ -16,7 +16,6 @@ export class XPlugin extends Plugin {
   constructor(private config: XPluginConfig) {
     super({
       id: "plugin-x",
-      name: "X",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

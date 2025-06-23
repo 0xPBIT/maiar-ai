@@ -21,7 +21,6 @@ export class MCPPlugin extends Plugin {
   constructor(config: ServerConfig | ServerConfig[]) {
     super({
       id: "plugin-mcp",
-      name: "MCP",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

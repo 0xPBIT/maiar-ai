@@ -17,7 +17,6 @@ export class TelegramPlugin extends Plugin {
   constructor(private config: TelegramPluginConfig) {
     super({
       id: "plugin-telegram",
-      name: "Telegram",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

@@ -25,7 +25,6 @@ export class TextGenerationPlugin extends Plugin {
   constructor() {
     super({
       id: "plugin-text",
-      name: "Text Generation",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

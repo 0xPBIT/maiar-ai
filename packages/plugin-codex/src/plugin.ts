@@ -13,7 +13,6 @@ export class CodexPlugin extends Plugin {
   }) {
     super({
       id: "plugin-codex",
-      name: "Codex CLI",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

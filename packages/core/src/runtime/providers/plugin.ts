@@ -10,13 +10,10 @@ import { Executor, Resolvable, Trigger } from "./plugin.types";
  * A plugin consists of triggers, executors, and required capabilities.
  */
 export abstract class Plugin {
-  /** Unique identifier for the plugin. */
+  /** Unique identifier for the plugin. Must be static as it's used to identify the plugin in the runtime. */
   public readonly id: string;
 
-  /** Human-readable name of the plugin. */
-  public readonly name: Resolvable<string>;
-
-  /** Description of what the plugin does. */
+  /** Description of what the plugin does. Used by the agent harness to give the agent context about the plugin and its capabilities. */
   public readonly description: Resolvable<string>;
 
   /** List of required capabilities the plugin depends on. */
@@ -74,19 +71,16 @@ export abstract class Plugin {
    */
   constructor({
     id,
-    name,
     description,
     requiredCapabilities,
     promptsDir
   }: {
     id: string;
-    name: Resolvable<string>;
     description: Resolvable<string>;
     requiredCapabilities: (keyof ICapabilities)[];
     promptsDir?: string | string[];
   }) {
     this.id = id;
-    this.name = name;
     this.description = description;
 
     // Store optional prompts directory/directories for automatic prompt registration

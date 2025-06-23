@@ -74,42 +74,23 @@ const space: Space = {
 
 Why this shape?
 
-• **Isolation** – Two different channels (`#general` vs `#random`) never mix because the channel ID is baked into the prefix.
+- **Isolation** – Two different channels (`#general` vs `#random`) never mix because the channel ID is baked into the prefix.
 
-• **Context fan-out** – When querying memory the plugin uses `relatedSpaces.prefix === discordSpacePrefix` so the agent sees _all_ messages from that channel, not just the single one that triggered the run.
+- **Context fan-out** – When querying memory the plugin uses `relatedSpaces.prefix === discordSpacePrefix` so the agent sees _all_ messages from that channel, not just the single one that triggered the run.
 
-• **Granularity when needed** – The full `space.id` drills all the way down to one message. This lets you store and reference that exact event later (e.g. "edit the reply to message _ABC_").
-
----
-
-## Querying with Spaces
-
-When you need historical context you call `runtime.memory.queryMemory(...)` (or the `memory:query` executor in a prompt) and pass _either_:
-
-• `spaceId` – **exact** match (only memories for that single event), or
-• `relatedSpaces.prefix` / `relatedSpaces.pattern` – **broad** match.
-
-```ts
-// Last 10 memories from the same Discord channel
-const history = await runtime.memory.queryMemory({
-  relatedSpaces: { prefix: discordSpacePrefix },
-  limit: 10
-});
-```
-
-Under the hood the memory provider converts the filter into the most efficient query its backend supports (SQL `LIKE`, Redis prefix tree, etc.).
-
----
+- **Granularity when needed** – The full `space.id` drills all the way down to one message. This lets you store and reference that exact event later (e.g. "edit the reply to message _ABC_").
 
 ## How the runtime uses `relatedSpaces`
 
-Before the first pipeline step runs the **MemoryManager** performs a _pre-fetch_ pass. It takes the incoming task's `space` object and:
+Before the first pipeline step runs, the **MemoryManager** performs a _pre-fetch_ pass. It takes the incoming task's `space` object and:
 
 1. Looks at `relatedSpaces` (prefix or pattern).
 2. Pulls in a configurable window of recent memories that match.
 3. Injects those memories into the `contextChain` so every downstream step (and the LLM) sees the most relevant history _automatically_.
 
-## Your only job is to craft a descriptive `space.id` _and_ a useful `relatedSpaces` filter.
+:::tip
+Your only job is to craft a descriptive `space.id` _and_ a useful `relatedSpaces` filter.
+:::
 
 ## Best practices & gotchas
 

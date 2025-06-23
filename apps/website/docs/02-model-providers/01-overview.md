@@ -16,7 +16,7 @@ Plugins and the runtime consume these capabilities without needing to know which
 Every provider **extends** the abstract [`ModelProvider`](../../api/classes/ModelProvider) class that lives in `@maiar-ai/core`.  
 The class already implements logging, capability bookkeeping and type-safe execution—your job is to
 
-1. call `super()` with metadata (id, name, description),
+1. call `super()` with metadata (id, description),
 2. register at least one capability, and
 3. implement the lifecycle hooks: `init`, `checkHealth`, and `shutdown`.
 
@@ -67,18 +67,10 @@ const runtime = Runtime.init({
   models: [
     new OllamaModelProvider({
       baseUrl: "http://localhost:11434",
-      model: "llama2"
+      model: "llama2" // also works with deepseek reasoning models
     })
   ]
 });
-```
-
-### Deepseek (specialised Ollama provider)
-
-```typescript
-import { DeepseekModelProvider } from "@maiar-ai/model-ollama";
-
-// Same pattern as above – just pass the Deepseek model tag.
 ```
 
 Feel free to copy any of these providers as a starting point for your own models. Because everything revolves around _capabilities_, your plugins will continue to work as long as the required capability id is present – regardless of where the underlying intelligence comes from.

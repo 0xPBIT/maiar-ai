@@ -68,7 +68,7 @@ const sidebars: SidebarsConfig = {
       label: "Capabilities",
       link: {
         type: "doc",
-        id: "core-utilities/index"
+        id: "capabilities/capabilities"
       },
       items: ["capabilities/capabilities", "capabilities/transforms"]
     },

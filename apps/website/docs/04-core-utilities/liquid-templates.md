@@ -57,6 +57,10 @@ export class MyAwesomePlugin extends Plugin {
 }
 ```
 
+:::warning
+It's important that the `promptsDir` folder location is not the current location in your working project. It should be the resulting location of when your plugin is built. You will need to copy these files to the correct location in your working project on build time.
+:::
+
 The **Runtime** automatically calls `promptRegistry.registerDirectory()` for every plugin that declares `promptsDir`, namespacing each file under `<pluginId>/`.
 
 ---
@@ -103,6 +107,7 @@ Liquid gives you all the essentials for ergonomic prompt engineering:
 - **Loops** – `{% for item in list %} … {% endfor %}`
 - **Filters** – `{{ title | downcase }}`
 - **Partials / includes** – `{% include 'shared/header' %}` (works across your `promptsDir`)
+- **Error throwing** – `{% throw "Error message" %}` (useful for required fields that are not provided)
 
 For the full language reference see the [_Liquid Documentation_](https://shopify.github.io/liquid/) and the **[liquidjs guide](https://liquidjs.com/tutorials/)**.
 

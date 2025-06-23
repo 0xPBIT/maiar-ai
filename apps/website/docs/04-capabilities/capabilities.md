@@ -6,7 +6,7 @@ MAIAR treats every model feature—text generation, image editing, speech recogn
 
 This contract-first approach keeps the framework future-proof. When a new foundation model ships with a novel modality, you simply register a provider that describes the new capability—no breaking changes and no plugin rewrites. Likewise, plugin authors build against an abstract interface rather than a specific model, confident their code will keep working as providers evolve.
 
-The payoff is **native multimodality**: GPT-4o, GPT-Image-1 and tomorrow's text-audio-video giants all slot in via the same mechanism, while plugins continue to talk in their own preferred shapes thanks to the transform system you'll see below.
+The payoff is **native multimodality**: GPT-4o, GPT-Image-1 and tomorrow's text-audio-video giants all slot in via the same mechanism, while plugins continue to talk in their own preferred shapes thanks to the [transform system](/docs/capabilities/transforms).
 
 ## 1 Defining a capability
 
@@ -94,7 +94,7 @@ declare module "@maiar-ai/core" {
 }
 ```
 
-At runtime, every capability that the provider exports is automatically **registered** when the provider is passed to `Runtime.init()`.
+At runtime, every capability that is registered with the model provider is passed to `Runtime.init()`.
 
 ## 3 Consuming capabilities in a Plugin
 
@@ -126,3 +126,7 @@ const urls = await runtime.executeCapability("text-generation", prompt);
 ```
 
 `executeCapability` validates the input/output against the Zod schemas you defined earlier.
+
+:::tip Learn More About Transforms
+What if we have a capability that requires a different input or output type than the one the model provider supports, but it's effectively the same operation? What if it's exactly the same operation and shape, but the developer has named it differently? We can use transforms to convert the data to the required type. Learn more about transforms [here](/docs/capabilities/transforms).
+:::

@@ -81,4 +81,7 @@ await runtime.executeCapability("multi-modal-image-generation", {
 });
 ```
 
-… and the runtime will route the request to the OpenAI provider, transforming the data on the fly.
+and the runtime will route the request to the OpenAI provider, transforming the data on the fly.
+
+:::tip Advanced Transforms
+Transforms are a powerful way to adapt data between different capabilities, model providers, plugins, and separate developement projects. To learn more about transforms, check out the code in the core repository [here](https://github.com/UraniumCorporation/maiar-ai/blob/main/packages/core/src/runtime/managers/model/index.ts).

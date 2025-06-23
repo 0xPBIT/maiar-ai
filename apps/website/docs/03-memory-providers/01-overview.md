@@ -63,6 +63,36 @@ Want the full details on Spaces? Check the dedicated guide: [Spaces](../04-core-
 
 ---
 
+## The Memory Plugin
+
+Each provider ships with a **Memory Plugin** – a normal MAIAR plugin that wraps the raw storage API in a few high-level executors so the pipeline (and your prompts) can manipulate memory using plain language commands instead of SQL/REST calls. This memory table should be it's own sandboxed table in the database so the agent can't modify action execution history.
+
+### Why a plugin?
+
+- Keeps the runtime 100 % storage-agnostic – the plugin knows _how_ to talk to the database so the LLM doesn't have to.
+- Lets LLMs reuse the same verbs (`memory:query`, `memory:add_document`, `memory:remove_document`) no matter which database you swap in.
+- Gives you a single place to expose **extra** capabilities – e.g. full-text search, vector similarity, bulk import – without changing core code.
+
+### Standard executors
+
+| Executor                 | Purpose                                                  |
+| ------------------------ | -------------------------------------------------------- |
+| `memory:query`           | Retrieve memories that match a SQL / SQL-like predicate. |
+| `memory:add_document`    | Persist an arbitrary text blob as a new memory row.      |
+| `memory:remove_document` | Delete documents that match a query.                     |
+
+The concrete names match the table below for built-in providers, but you can add your own.
+
+```ts
+// inside a pipeline step definition
+{
+  pluginId: "plugin-sqlite-memory",
+  action: "memory:query"
+}
+```
+
+## When a plugin is available on the memory providers `getPlugin()` method, it is automatically registered when the provider is registered.
+
 ## The `MemoryProvider` interface
 
 ```ts
@@ -98,50 +128,6 @@ const runtime = await Runtime.init({
 ```
 
 Internally `Runtime` → `MemoryManager` → your provider – nothing else touches the database.
-
----
-
-## The Memory Plugin
-
-Each provider ships with a **Memory Plugin** – a normal MAIAR plugin that wraps the raw storage API in a few high-level executors so the pipeline (and your prompts) can manipulate memory using plain language commands instead of SQL/REST calls. This memory table should be it's own sandboxed table in the database so the agent can't modify action execution history.
-
-### Why a plugin?
-
-- Keeps the runtime 100 % storage-agnostic – the plugin knows _how_ to talk to the database so the LLM doesn't have to.
-- Lets LLMs reuse the same verbs (`memory:query`, `memory:add_document`, `memory:remove_document`) no matter which database you swap in.
-- Gives you a single place to expose **extra** capabilities – e.g. full-text search, vector similarity, bulk import – without changing core code.
-
-### Standard executors
-
-| Executor                 | Purpose                                                  |
-| ------------------------ | -------------------------------------------------------- |
-| `memory:query`           | Retrieve memories that match a SQL / SQL-like predicate. |
-| `memory:add_document`    | Persist an arbitrary text blob as a new memory row.      |
-| `memory:remove_document` | Delete documents that match a query.                     |
-
-The concrete names match the table below for built-in providers, but you can add your own.
-
-```ts
-// inside a pipeline step definition
-{
-  pluginId: "plugin-sqlite-memory",
-  action: "memory:query"
-}
-```
-
-The plugin is automatically registered when the provider is registered:
-
-```ts
-await runtime.memoryManager.registerMemoryProvider(
-  new SQLiteMemoryProvider({
-    dbPath: "./data/memory.db"
-  })
-);
-// ⇢ MemoryManager calls provider.getPlugin()
-// ⇢ PluginRegistry registers it, so it's available to pipelines
-```
-
-You normally **don't** need to touch this — but if you're writing a provider you should expose a plugin (even a minimal one) so agents can use your storage from inside the agentic pipeline flow.
 
 ---
 

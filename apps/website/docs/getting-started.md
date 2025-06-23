@@ -50,7 +50,7 @@ The CLI defaults to the OpenAI model provider. To use it, you'll need to:
 1. Create an OpenAI account at [platform.openai.com](https://platform.openai.com)
 2. Generate an API key in your account settings.
 3. Add funds to your account to use the API
-4. Create a `.env` file with your API key as shown below
+4. Add your API key when the CLI prompts you for it
 
 :::
 
@@ -80,7 +80,7 @@ pnpm start
 3. Test your agent with a simple prompt:
 
 ```bash
-curl -X POST http://localhost:3000/chat -H "Content-Type: application/json" -d '{"user": "test_user", "message": "Hello, how are you?"}'
+curl -X POST http://localhost:3000/chat -H "Content-Type: application/json" -d '{"user": "Bob", "message": "Hello, how are you?"}'
 ```
 
 You should recieve a response from the agent.
@@ -92,36 +92,33 @@ The basic configuration above includes:
 - OpenAI's GPT-4.1 as the language model, and DALL-E 3 for image generation.
 - SQLite-based conversation memory
 - Text and image generation capabilities
-- WebSocket agent telemetry output
+- Rich console logging
+- Logging over WebSocket for remote monitoring
 
 You can customize the configuration by:
 
 - Changing the OpenAI models used for text and image generation
 - Configuring memory storage options (e.g. SQLite, Postgres, etc.)
-- Adding more plugins
-- Adjusting plugin settings
+- Adding more plugins and adjusting their settings
 
-## Available Plugins
+## Adding Plugins
 
 You can extend your agent's capabilities by installing additional plugins:
 
 <Tabs groupId="package-manager">
   <TabItem value="npm" label="npm">
 ```bash
-npm install @maiar-ai/plugin-x
 npm install @maiar-ai/plugin-discord
 ````
   </TabItem>
   <TabItem value="yarn" label="yarn">
 ```bash
-yarn add @maiar-ai/plugin-x
 yarn add @maiar-ai/plugin-discord
 ````
 
   </TabItem>
   <TabItem value="pnpm" label="pnpm" default>
 ```bash
-pnpm add @maiar-ai/plugin-x
 pnpm add @maiar-ai/plugin-discord
 ````
 
@@ -137,9 +134,16 @@ import { PluginDiscord } from "@maiar-ai/plugin-discord";
 
 const runtime = createRuntime({
   // ... other config
-  plugins: [new PluginDiscord(), ...]
+  plugins: [
+    new PluginDiscord({
+      /* Configuration options go here */
+    })
+    // ... other plugins
+  ]
 });
 ```
+
+Check out some of our [plugins](/plugins) to get started.
 
 :::info Troubleshooting
 
@@ -157,6 +161,6 @@ For more help, please [open an issue](https://github.com/maiar-ai/maiar/issues) 
 :::tip Next Steps
 
 - Explore the [API Reference](/api) to learn about available methods and configurations
-- Check out the Plugins Guide to learn how to extend your agent's capabilities
+- Check out the [Plugins Guide](/docs/building-plugins) to learn how to extend your agent's capabilities
 - Join our [Discord](https://discord.gg/7CAjkpCsED) to get help and share your experiences
   :::

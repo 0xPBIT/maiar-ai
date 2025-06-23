@@ -46,7 +46,8 @@ Each provider can expose _multiple_ capabilities depending on which model(s) you
 ```typescript
 import { OpenAIModelProvider } from "@maiar-ai/model-openai";
 
-const runtime = createRuntime({
+const runtime = Runtime.init({
+  // ... other configurations
   models: [
     new OpenAIModelProvider({
       apiKey: process.env.OPENAI_API_KEY!,
@@ -61,7 +62,8 @@ const runtime = createRuntime({
 ```typescript
 import { OllamaModelProvider } from "@maiar-ai/model-ollama";
 
-const runtime = createRuntime({
+const runtime = Runtime.init({
+  // ... other configurations
   models: [
     new OllamaModelProvider({
       baseUrl: "http://localhost:11434",

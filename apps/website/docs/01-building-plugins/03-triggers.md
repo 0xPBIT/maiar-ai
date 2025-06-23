@@ -15,11 +15,13 @@ A trigger consists of two main parts:
 1. **Initialization** - Setup code that runs when the agent starts
 2. **Event Creation** - Code that creates events in response to external actions
 
-The initialization happens through `addTrigger`, where you set up your servers, connections, and listeners. Then, these listeners use `createEvent` to start the runtime processing when something happens.
-
 ## Trigger Initialization
 
 Here's how different types of triggers initialize:
+
+### Express Routes Trigger
+
+MAIAR has a built-in express server that you can register post routes on to handle incoming requests of different types:
 
 ```typescript
 export class TextGenerationPlugin extends Plugin {
@@ -85,11 +87,49 @@ export class TextGenerationPlugin extends Plugin {
 }
 ```
 
+### Custom Start Trigger
+
+You can also create a trigger that starts when the agent starts, such as an event listener, cron job, or other external service.
+
+```typescript
+export class TelegramPlugin extends Plugin {
+  private bot: Telegraf<TelegramContext>;
+
+  constructor(private config: TelegramPluginConfig) {
+    super({
+      id: "plugin-telegram",
+      name: "Telegram"
+      // ... other configurations
+    });
+
+    this.bot = new Telegraf<TelegramContext>(config.token);
+
+    this.triggers = [
+      {
+        name: "telegram_message",
+        start: this.listenForTelegramMessages.bind(this)
+      }
+    ];
+  }
+
+  // ... other code
+
+  private async listenForTelegramMessages(): Promise<void> {
+    this.bot.on("message", async (ctx: TelegramContext) => {
+      // ... other code related to telegram
+      await this.runtime.createEvent(context, space); // create events inside this trigger
+    });
+
+    this.logger.info("Telegram message listener attached.");
+  }
+}
+```
+
 ### Event Creation
 
 Create events with complete context and proper space management:
 
-Demonstrates a one-to-one relationship between events and spaces.
+Demonstrates a one-to-one relationship between events and spaces. From the route trigger example above, we create an event with the initial context and response handler:
 
 ```typescript
 const spacePrefix = `${this.id}-${user}`;

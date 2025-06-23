@@ -132,7 +132,7 @@ import { PluginDiscord } from "@maiar-ai/plugin-discord";
 
 // ... other imports
 
-const runtime = createRuntime({
+const runtime = await Runtime.init({
   // ... other config
   plugins: [
     new PluginDiscord({

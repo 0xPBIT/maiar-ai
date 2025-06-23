@@ -20,37 +20,41 @@ An executor is a function that:
 Here's a basic executor:
 
 ```typescript
-this.addExecutor({
-  name: "generate_image",
-  description: "Generate an image based on a text prompt",
-  execute: async (context: AgentContext): Promise<PluginResult> => {
-    try {
-      // Extract prompt from context using getObject
-      const promptResponse = await this.runtime.operations.getObject(
-        PromptResponseSchema,
-        generatePromptTemplate(context.contextChain),
-        { temperature: 0.7 }
-      );
+// Snippet from inside a plugin, this is not a full implementation
+this.executors = [
+  {
+    name: "generate_image",
+    description: "Generate an image based on a text prompt",
+    fn: async (context: AgentContext): Promise<PluginResult> => {
+      try {
+        // Extract prompt from context using getObject
+        const promptResponse = await this.runtime.operations.getObject(
+          PromptResponseSchema,
+          generatePromptTemplate(context.contextChain),
+          { temperature: 0.7 }
+        );
 
-      const prompt = promptResponse.prompt;
-      const urls = await this.service.getImage(prompt);
+        const prompt = promptResponse.prompt;
+        const urls = await this.service.getImage(prompt);
 
-      return {
-        success: true,
-        data: {
-          urls,
-          helpfulInstruction:
-            "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred"
-      };
+        return {
+          success: true,
+          data: {
+            urls,
+            helpfulInstruction:
+              "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
+          }
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Unknown error occurred"
+        };
+      }
     }
   }
-});
+];
 ```
 
 ## Executor Components
@@ -130,18 +134,9 @@ execute: async (context: AgentContext): Promise<PluginResult> => {
 
 ### Results
 
-Executors return a `PluginResult` object:
+You can add hardcoded strings to the `data` field of the `PluginResult` object.
 
-```typescript
-interface PluginResult<T = any> {
-  success: boolean; // Whether the operation succeeded
-  data?: T; // Optional data on success
-  error?: string; // Error message on failure
-  helpfulInstruction?: string; // Optional context for the AI
-}
-```
-
-The `helpfulInstruction` field is particularly important as it co-locates data with guidance for the model. For example:
+The `helpfulInstruction` field is particularly important example as it co-locates data with guidance for the model:
 
 ```typescript
 return {
@@ -163,9 +158,7 @@ This approach:
 
 You can think of helpful instructions as programmer-written notes that help the model understand and use the data appropriately in its responses.
 
-## Best Practices
-
-### Schema Definition
+## Schema Definition
 
 Use Zod schemas with clear descriptions:
 
@@ -175,51 +168,16 @@ const PromptResponseSchema = z.object({
 });
 ```
 
-### Error Handling
-
-Handle extraction and processing errors:
-
-```typescript
-execute: async (context: AgentContext): Promise<PluginResult> => {
-  try {
-    // Extract data with getObject
-    const promptResponse = await this.runtime.operations.getObject(
-      PromptResponseSchema,
-      generatePromptTemplate(context.contextChain)
-    );
-
-    // Attempt operation
-    const urls = await this.service.getImage(promptResponse.prompt);
-    return {
-      success: true,
-      data: { urls }
-    };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: "Could not generate a valid prompt from context"
-      };
-    }
-
-    console.error("[ImagePlugin] Error:", error);
-    return {
-      success: false,
-      error: "Failed to generate image"
-    };
-  }
-};
-```
-
-### Clear Documentation
+## Clear Documentation
 
 Document your executor's context requirements:
 
 ```typescript
-this.addExecutor({
-  name: "generate_image",
-  description: "Generate an image based on a text prompt",
-  helpfulInstructions: `
+this.executors = [
+  {
+    name: "generate_image",
+    description: "Generate an image based on a text prompt",
+    helpfulInstructions: `
     Required context:
     - User's image description or request
     - Any style preferences or requirements
@@ -229,43 +187,11 @@ this.addExecutor({
     - Original prompt used
     - Timestamp of generation
   `,
-  execute: async (context: AgentContext): Promise<PluginResult> => {
-    // Implementation
-  }
-});
-```
-
-### Context Enhancement
-
-Be explicit about context modifications:
-
-```typescript
-execute: async (context: AgentContext): Promise<PluginResult> => {
-  // Extract data
-  const promptResponse = await this.runtime.operations.getObject(
-    PromptResponseSchema,
-    generatePromptTemplate(context.contextChain)
-  );
-
-  // Generate image
-  const urls = await this.service.getImage(promptResponse.prompt);
-
-  // Enhance context with structured data
-  context.set(`${this.id}:generated_images`, {
-    urls,
-    timestamp: Date.now(),
-    metadata: {
-      originalPrompt: promptResponse.prompt,
-      generationParams: {
-        width: 1024,
-        height: 1024,
-        steps: 6
-      }
+    fn: async (context: AgentContext) => {
+      // Implementation
     }
-  });
-
-  return { success: true, data: { urls } };
-};
+  }
+];
 ```
 
 ## Real-World Example

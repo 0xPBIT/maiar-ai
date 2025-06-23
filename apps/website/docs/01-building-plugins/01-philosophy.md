@@ -66,11 +66,15 @@ Plugins should be designed to work together. For example:
 
 ```typescript
 // Plugins can be combined to create complex behaviors
-const runtime = createRuntime({
+const runtime = await Runtime.init({
+  // ... other configurations
   plugins: [
-    new XPlugin(), // Handle X communication
-    new SolanaPlugin(), // Handle Solana transactions
-    new WeatherPlugin() // Provide weather data
+    new TextGenerationPlugin(),
+    new TimePlugin(),
+    new SearchPlugin({
+      apiKey: process.env.PERPLEXITY_API_KEY as string
+    })
+    // ... other plugins
   ]
 });
 ```
@@ -80,7 +84,8 @@ const runtime = createRuntime({
 Plugins should be mindful of the context chain:
 
 ```typescript
-execute: async (params: any, context: PluginContext) => {
+// Snippet from inside a plugin, this is not a full implementation
+fn: async (params: any, context: PluginContext) => {
   // Read existing context
   const userData = context.get("user_data");
 
@@ -96,9 +101,9 @@ execute: async (params: any, context: PluginContext) => {
 Plugins declare their capabilities through metadata:
 
 ```typescript
+// Snippet from inside a plugin, this is not a full implementation
 super({
   id: "weather-plugin",
-  name: "Weather",
   description: "Provides weather information",
   capabilities: ["get_weather", "weather_alerts"]
 });

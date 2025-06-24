@@ -88,13 +88,13 @@ export class Runtime {
     modelProviders,
     memoryProvider,
     plugins,
-    capabilityAliases,
+    capabilityAliases = [],
     options
   }: {
     modelProviders: ModelProvider[];
     memoryProvider: MemoryProvider;
     plugins: Plugin[];
-    capabilityAliases: CapabilityAliasGroup[];
+    capabilityAliases?: CapabilityAliasGroup[];
     options?: {
       logger?: LoggerOptions;
       server?: {

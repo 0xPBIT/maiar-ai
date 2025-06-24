@@ -24,7 +24,6 @@ export class TerminalPlugin extends Plugin {
   constructor(private config: TerminalPluginConfig) {
     super({
       id: "plugin-terminal",
-      name: "Terminal Plugin",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

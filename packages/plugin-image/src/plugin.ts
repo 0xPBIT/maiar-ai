@@ -12,7 +12,6 @@ export class ImageGenerationPlugin extends Plugin {
   constructor({ useMultiModal = false }: { useMultiModal?: boolean } = {}) {
     super({
       id: "plugin-image-generation",
-      name: "image",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

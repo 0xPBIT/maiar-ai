@@ -88,13 +88,13 @@ export class Runtime {
     modelProviders,
     memoryProvider,
     plugins,
-    capabilityAliases,
+    capabilityAliases = [],
     options
   }: {
     modelProviders: ModelProvider[];
     memoryProvider: MemoryProvider;
     plugins: Plugin[];
-    capabilityAliases: CapabilityAliasGroup[];
+    capabilityAliases?: CapabilityAliasGroup[];
     options?: {
       logger?: LoggerOptions;
       server?: {
@@ -257,7 +257,6 @@ export class Runtime {
       capabilities: modelManager.getAvailableCapabilities(),
       plugins: plugins.map((p) => ({
         id: p.id,
-        name: p.name,
         description: p.description,
         requiredCapabilities: p.requiredCapabilities,
         triggers: p.triggers.map((t) => ({

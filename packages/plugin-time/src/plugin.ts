@@ -6,7 +6,6 @@ export class TimePlugin extends Plugin {
   constructor() {
     super({
       id: "plugin-time",
-      name: "Time",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

@@ -13,8 +13,6 @@ export interface ModelCapability<
   ConfigType = unknown
 > {
   readonly id: string;
-  readonly name: string;
-  readonly description: string;
   readonly input: z.ZodType<InputType>;
   readonly output: z.ZodType<OutputType>;
   readonly config?: z.ZodType<ConfigType>;
@@ -36,26 +34,14 @@ export interface ModelRequestConfig {
  */
 export abstract class ModelProvider {
   public readonly id: string;
-  public readonly name: string;
-  public readonly description: string;
   public readonly capabilities: Map<string, ModelCapability>;
 
   public get logger(): Logger {
     return logger.child({ scope: `model.provider.${this.id}` });
   }
 
-  constructor({
-    id,
-    name,
-    description
-  }: {
-    id: string;
-    name: string;
-    description: string;
-  }) {
+  constructor({ id }: { id: string }) {
     this.id = id;
-    this.name = name;
-    this.description = description;
     this.capabilities = new Map<string, ModelCapability>();
   }
 

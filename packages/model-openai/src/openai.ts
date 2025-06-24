@@ -43,8 +43,6 @@ const MULTI_MODAL_IMAGE_MODELS = new Set<OpenAIModel>(
 
 // Constants for provider information
 const PROVIDER_ID = "openai";
-const PROVIDER_NAME = "OpenAI";
-const PROVIDER_DESCRIPTION = "OpenAI API models like GPT-4 and GPT-3.5";
 
 export class OpenAIModelProvider extends ModelProvider {
   private client: OpenAI;
@@ -52,9 +50,7 @@ export class OpenAIModelProvider extends ModelProvider {
 
   constructor(config: OpenAIConfig) {
     super({
-      id: PROVIDER_ID,
-      name: PROVIDER_NAME,
-      description: PROVIDER_DESCRIPTION
+      id: PROVIDER_ID
     });
     this.client = new OpenAI({ apiKey: config.apiKey });
     this.models = config.models;

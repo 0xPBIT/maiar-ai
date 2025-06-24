@@ -63,7 +63,6 @@ export class Processor {
     const availablePlugins = await Promise.all(
       this.pluginRegistry.plugins.map(async (plugin: Plugin) => ({
         id: plugin.id,
-        name: await plugin.resolveField(plugin.name),
         description: await plugin.resolveField(plugin.description),
         executors: await Promise.all(
           plugin.executors.map(async (e) => ({
@@ -340,7 +339,6 @@ export class Processor {
     const availablePlugins = await Promise.all(
       this.pluginRegistry.plugins.map(async (plugin) => ({
         id: plugin.id,
-        name: await plugin.resolveField(plugin.name),
         description: await plugin.resolveField(plugin.description),
         executors: await Promise.all(
           plugin.executors.map(async (e) => ({

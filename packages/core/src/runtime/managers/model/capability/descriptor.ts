@@ -7,8 +7,6 @@ export interface CapabilityDescriptor<
   C = unknown
 > {
   readonly id: Id;
-  readonly name: string;
-  readonly description: string;
   readonly input: ZodType<I>;
   readonly output: ZodType<O>;
   readonly config?: ZodType<C>; // optional provider/plugin-specific config schema

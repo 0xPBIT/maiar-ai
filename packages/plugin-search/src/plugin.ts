@@ -11,7 +11,6 @@ export class SearchPlugin extends Plugin {
   constructor(config: SearchPluginConfig) {
     super({
       id: "plugin-search",
-      name: "Search",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

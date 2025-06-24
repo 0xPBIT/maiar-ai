@@ -70,7 +70,6 @@ interface PluginExecutor {
 
 interface AvailablePlugin {
   id: string;
-  name: string;
   description: string;
   executors: PluginExecutor[];
 }

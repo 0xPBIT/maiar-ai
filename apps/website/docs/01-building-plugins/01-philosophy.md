@@ -57,8 +57,8 @@ Each step in the pipeline can:
 Each plugin should have a clear, focused purpose. For example:
 
 - A weather plugin provides weather data
-- An Express plugin handles HTTP communication
-- A time plugin manages time-related operations
+- A X plugin handles X communication
+- A Solana plugin handles Solana transactions
 
 ### Composability
 
@@ -66,30 +66,17 @@ Plugins should be designed to work together. For example:
 
 ```typescript
 // Plugins can be combined to create complex behaviors
-const runtime = createRuntime({
+const agent = await Runtime.init({
+  // ... other configurations
   plugins: [
-    new ExpressPlugin(), // Handle HTTP
-    new AuthPlugin(), // Add authentication
-    new WeatherPlugin(), // Provide weather data
-    new ResponsePlugin() // Format responses
+    new TextGenerationPlugin(),
+    new TimePlugin(),
+    new SearchPlugin({
+      apiKey: process.env.PERPLEXITY_API_KEY as string
+    })
+    // ... other plugins
   ]
 });
-```
-
-### Context-Aware
-
-Plugins should be mindful of the context chain:
-
-```typescript
-execute: async (params: any, context: PluginContext) => {
-  // Read existing context
-  const userData = context.get("user_data");
-
-  // Add new data to context
-  context.set("weather_data", await this.getWeather(userData.location));
-
-  return { success: true };
-};
 ```
 
 ### Declarative Interface
@@ -97,38 +84,19 @@ execute: async (params: any, context: PluginContext) => {
 Plugins declare their capabilities through metadata:
 
 ```typescript
-super({
-  id: "weather-plugin",
-  name: "Weather",
-  description: "Provides weather information",
-  capabilities: ["get_weather", "weather_alerts"]
-});
+// Snippet from inside a plugin, this is not a full implementation
+export class WeatherPlugin extends Plugin {
+  constructor() {
+    super({
+      id: "weather-plugin",
+      requiredCapabilities: [multiModalTextGenerationCapability.id] // generate text using text and images as input
+    });
+    // other constructor code ...
+  }
+
+  // plugin implementation code ...
+}
 ```
-
-## Real-World Example
-
-Consider how an HTTP request flows through the system:
-
-1. **Express Plugin (Trigger)**
-
-   - Receives HTTP request
-   - Creates initial context with request data
-   - Sets up response handler
-
-2. **Auth Plugin (Executor)**
-
-   - Validates user credentials
-   - Adds user data to context
-
-3. **Weather Plugin (Executor)**
-
-   - Reads location from context
-   - Fetches weather data
-   - Adds weather data to context
-
-4. **Response Plugin (Executor)**
-   - Formats data from context
-   - Sends response via handler
 
 This pipeline architecture enables:
 
@@ -141,8 +109,6 @@ This pipeline architecture enables:
 
 - Learn about [Executors](./executors) in detail
 - Understand [Triggers](./triggers) and event handling
-- Explore [Core Utilities](../core-utilities/runtime) for implementation details
-- Check out [Model Providers](../model-providers/overview) for model integration
-- See [Memory Providers](../memory-providers/overview) for state management
+- Learn more about [Capabilities](../capabilities/capabilities)
 
 :::

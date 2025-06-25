@@ -54,116 +54,44 @@ This will start the client on `http://localhost:5173`.
 
 ### Connecting to a Maiar Agent
 
-By default, the client connects to WebSocket at `ws://localhost:3001/monitor`. Make sure your Maiar agent is running with the WebSocket monitor provider enabled.
+By default, the client connects to WebSocket at `ws://localhost:3000/monitor`.
 
 To enable the WebSocket monitor in your Maiar agent, add the provider to your agent configuration:
 
 ```typescript
-import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
+// imports above ...
 
-import { createRuntime } from "@maiar-ai/core";
-
-const runtime = createRuntime({
-  // ...other configurations
-  monitors: [
-    new WebSocketMonitorProvider({
-      port: 3001, // Default port
-      path: "/monitor" // Default path
-    })
-  ]
+const agent = await Runtime.init({
+  // ... other configurations
+  options: {
+    logger: {
+      level: "debug",
+      transports: [websocket({ path: "/monitor" }) /* other transports */]
+    }
+  }
 });
 ```
-
-### Custom WebSocket Configuration
-
-If you need to configure a custom port or path for the WebSocket connection, you'll need to update both the agent's WebSocketMonitorProvider and the client's connection settings.
-
-#### Example: Using a custom WebSocket URL
-
-1. Configure the WebSocketMonitorProvider on your agent:
-
-```typescript
-import { WebSocketMonitorProvider } from "@maiar-ai/monitor-websocket";
-
-import { createRuntime } from "@maiar-ai/core";
-
-const runtime = createRuntime({
-  // ...other configurations
-  monitors: [
-    new WebSocketMonitorProvider({
-      port: 8080, // Custom port
-      path: "/agent-monitor" // Custom path
-    })
-  ]
-});
-```
-
-2. Update your client application to connect to the same endpoint by providing the complete WebSocket URL:
-
-```typescript
-// In your component or custom hook
-import { useMonitorSocket } from "../hooks/useMonitorSocket";
-
-function MyComponent() {
-  const { connected, agentState, events } = useMonitorSocket({
-    url: "ws://localhost:8080/agent-monitor" // Must match the agent's configuration
-  });
-
-  // Rest of your component...
-}
-```
-
-#### Changing the WebSocket URL from the UI
-
-You can also change the WebSocket URL directly from the client interface:
-
-1. Click on the Connection status chip in the top-right corner of the dashboard
-2. Enter your custom WebSocket URL in the provided field
-3. Click "Apply" to connect to the new endpoint
-4. Use "Reset to Default" to revert to the default WebSocket URL (`ws://localhost:3001/monitor`)
-
-This feature is particularly useful when:
-
-- Testing with different agent configurations
-- Connecting to remote Maiar agents
-- Switching between different agent instances
-- Working in development environments with varying port configurations
 
 ### Chat API Configuration
 
-The chat panel connects to a default endpoint of `http://localhost:3002/message`. This endpoint can be configured in the same way as the WebSocket connection.
+The chat panel connects to a default endpoint of `http://localhost:3000/chat`. This endpoint can be configured in the same way as the WebSocket connection.
 
-To enable chat functionality in your Maiar agent, you need to add the Express plugin to your agent configuration:
+To enable chat functionality in your MAIAR agent, you need to add the [text plugin](https://github.com/uraniumcorporation/maiar-ai/tree/main/packages/plugin-text) to your agent configuration:
 
 ```typescript
-import { Router } from "express";
+const plugins: Plugin[] = [
+  new TextGenerationPlugin()
+  // ... other plugins
+];
 
-import { createRuntime } from "@maiar-ai/core";
-
-import { ExpressPlugin } from "@maiar-ai/plugin-express";
-
-// Create a router with the required /message endpoint
-const router = Router();
-
-// Add the message route the chat component expects
-router.post("/message", async (req, res) => {
-  // Extract message and user from request body
-  const { message, user } = req.body;
-
-  // Process the message and send a response
-  // You can check how this is done in the maiar-starter repository
-  // ...
-});
-
-const runtime = createRuntime({
-  // ...other configurations
-  plugins: [
-    new ExpressPlugin({
-      port: 3002, // Default port for chat API
-      router // Pass your router with the /message endpoint
-    })
-    // ...other plugins
-  ]
+const agent = await Runtime.init({
+  // ... other configurations
+  plugins,
+  options: {
+    server: {
+      port: 3000 // the port for your server
+    }
+  }
 });
 ```
 

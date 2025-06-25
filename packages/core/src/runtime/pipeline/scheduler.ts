@@ -163,8 +163,8 @@ export class Scheduler {
 
   /**
    * Queues a task to be run, first stores the user interaction in memory, augments the task context with the conversationId, and then queues the task
-   * @param task - the task to queue
-   * @param platformContext - the platform context of the task
+   * @param trigger - the trigger of the task
+   * @param space - the space of the task
    */
   public async queueTask(
     trigger: AgentTask["trigger"],

@@ -20,37 +20,41 @@ An executor is a function that:
 Here's a basic executor:
 
 ```typescript
-this.addExecutor({
-  name: "generate_image",
-  description: "Generate an image based on a text prompt",
-  execute: async (context: AgentContext): Promise<PluginResult> => {
-    try {
-      // Extract prompt from context using getObject
-      const promptResponse = await this.runtime.operations.getObject(
-        PromptResponseSchema,
-        generatePromptTemplate(context.contextChain),
-        { temperature: 0.7 }
-      );
+// Snippet from inside a plugin, this is not a full implementation
+this.executors = [
+  {
+    name: "generate_image",
+    description: "Generate an image based on a text prompt",
+    fn: async (context: AgentContext): Promise<PluginResult> => {
+      try {
+        // Extract prompt from context using getObject
+        const promptResponse = await this.runtime.operations.getObject(
+          PromptResponseSchema,
+          generatePromptTemplate(context.contextChain),
+          { temperature: 0.7 }
+        );
 
-      const prompt = promptResponse.prompt;
-      const urls = await this.service.getImage(prompt);
+        const prompt = promptResponse.prompt;
+        const urls = await this.service.getImage(prompt);
 
-      return {
-        success: true,
-        data: {
-          urls,
-          helpfulInstruction:
-            "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred"
-      };
+        return {
+          success: true,
+          data: {
+            urls,
+            helpfulInstruction:
+              "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
+          }
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Unknown error occurred"
+        };
+      }
     }
   }
-});
+];
 ```
 
 ## Executor Components
@@ -130,18 +134,9 @@ execute: async (context: AgentContext): Promise<PluginResult> => {
 
 ### Results
 
-Executors return a `PluginResult` object:
+You can add hardcoded strings to the `data` field of the `PluginResult` object.
 
-```typescript
-interface PluginResult<T = any> {
-  success: boolean; // Whether the operation succeeded
-  data?: T; // Optional data on success
-  error?: string; // Error message on failure
-  helpfulInstruction?: string; // Optional context for the AI
-}
-```
-
-The `helpfulInstruction` field is particularly important as it co-locates data with guidance for the model. For example:
+Adding metadata such as `helpfulInstruction` is particularly important as it co-locates data with guidance for the model:
 
 ```typescript
 return {
@@ -163,9 +158,7 @@ This approach:
 
 You can think of helpful instructions as programmer-written notes that help the model understand and use the data appropriately in its responses.
 
-## Best Practices
-
-### Schema Definition
+## Schema Definition
 
 Use Zod schemas with clear descriptions:
 
@@ -175,97 +168,32 @@ const PromptResponseSchema = z.object({
 });
 ```
 
-### Error Handling
-
-Handle extraction and processing errors:
-
-```typescript
-execute: async (context: AgentContext): Promise<PluginResult> => {
-  try {
-    // Extract data with getObject
-    const promptResponse = await this.runtime.operations.getObject(
-      PromptResponseSchema,
-      generatePromptTemplate(context.contextChain)
-    );
-
-    // Attempt operation
-    const urls = await this.service.getImage(promptResponse.prompt);
-    return {
-      success: true,
-      data: { urls }
-    };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: "Could not generate a valid prompt from context"
-      };
-    }
-
-    console.error("[ImagePlugin] Error:", error);
-    return {
-      success: false,
-      error: "Failed to generate image"
-    };
-  }
-};
-```
-
-### Clear Documentation
+## Clear Documentation
 
 Document your executor's context requirements:
 
 ```typescript
-this.addExecutor({
-  name: "generate_image",
-  description: "Generate an image based on a text prompt",
-  helpfulInstructions: `
-    Required context:
-    - User's image description or request
-    - Any style preferences or requirements
-    
-    Enhances context with:
-    - Generated image URLs
-    - Original prompt used
-    - Timestamp of generation
-  `,
-  execute: async (context: AgentContext): Promise<PluginResult> => {
-    // Implementation
-  }
-});
-```
+export class ImageGenerationPlugin extends Plugin {
+  constructor({ useMultiModal = false }: { useMultiModal?: boolean } = {}) {
+    super({
+      id: "plugin-image-generation",
+      requiredCapabilities: [imageGenerationCapability.id]
+      // other configurations ...
+    });
 
-### Context Enhancement
-
-Be explicit about context modifications:
-
-```typescript
-execute: async (context: AgentContext): Promise<PluginResult> => {
-  // Extract data
-  const promptResponse = await this.runtime.operations.getObject(
-    PromptResponseSchema,
-    generatePromptTemplate(context.contextChain)
-  );
-
-  // Generate image
-  const urls = await this.service.getImage(promptResponse.prompt);
-
-  // Enhance context with structured data
-  context.set(`${this.id}:generated_images`, {
-    urls,
-    timestamp: Date.now(),
-    metadata: {
-      originalPrompt: promptResponse.prompt,
-      generationParams: {
-        width: 1024,
-        height: 1024,
-        steps: 6
+    this.executors = [
+      {
+        name: "generate_image",
+        description:
+          "Generate an image based on a text prompt. Information from the context chain will be used to assist in the generation.",
+        fn: async (task: AgentTask) => {
+          // Implementation
+          return { success: true, data: { urls: [] } };
+        }
       }
-    }
-  });
-
-  return { success: true, data: { urls } };
-};
+    ];
+  }
+}
 ```
 
 ## Real-World Example
@@ -273,90 +201,61 @@ execute: async (context: AgentContext): Promise<PluginResult> => {
 Here's a complete example of an image generation plugin:
 
 ```typescript
-import { z } from "zod";
+export class SearchPlugin extends Plugin {
+  private service: PerplexityService;
 
-import { AgentContext, PluginBase, PluginResult } from "@maiar-ai/core";
-
-import { ImageService } from "./service";
-import { generatePromptTemplate } from "./templates";
-
-// Define our schema
-const PromptResponseSchema = z.object({
-  prompt: z.string().describe("The prompt for the image generation model")
-});
-
-export class PluginImageGeneration extends PluginBase {
-  private service: ImageService;
-
-  constructor(config: { apiKey: string }) {
-    if (!config.apiKey) {
-      throw new Error("API key is required for image generation plugin");
-    }
-
+  constructor(config: SearchPluginConfig) {
     super({
-      id: "plugin-image-generation",
-      name: "image",
-      description: "Generate images from text descriptions"
+      id: "plugin-search",
+      name: "Search",
+      description: "Search the web for information",
+      ...
     });
 
-    this.service = new ImageService(config.apiKey);
+    this.service = new PerplexityService(config.apiKey);
 
-    this.addExecutor({
-      name: "generate_image",
-      description: "Generate an image based on a text prompt",
-      execute: async (context: AgentContext): Promise<PluginResult> => {
-        try {
-          const promptResponse = await this.runtime.operations.getObject(
-            PromptResponseSchema,
-            generatePromptTemplate(context.contextChain),
-            { temperature: 0.7 }
-          );
-
-          const urls = await this.service.getImage(promptResponse.prompt);
-
-          // Enhance context
-          context.set(`${this.id}:generated_images`, {
-            urls,
-            timestamp: Date.now(),
-            metadata: {
-              originalPrompt: promptResponse.prompt
-            }
-          });
-
-          return {
-            success: true,
-            data: {
-              urls,
-              helpfulInstruction:
-                "IMPORTANT: You MUST use the exact URLs provided in the urls array above."
-            }
-          };
-        } catch (error) {
-          return {
-            success: false,
-            error:
-              error instanceof Error ? error.message : "Unknown error occurred"
-          };
-        }
+    this.executors = [
+      {
+        name: "search",
+        description: async () =>
+          (
+            await this.runtime.templates.render(`${this.id}/search_description`)
+          ).trim(),
+        fn: this.search.bind(this)
       }
-    });
+    ];
+  }
+
+  private async search(task: AgentTask): Promise<PluginResult> {
+    const queryPrompt = await this.runtime.templates.render(
+      `${this.id}/query`,
+      {
+        context: JSON.stringify(task, null, 2)
+      }
+    );
+
+    const params = await this.runtime.getObject(
+      PerplexityQueryResponseSchema,
+      queryPrompt
+    );
+
+    const query = params.query;
+    const result = await this.service.query(query);
+
+    return {
+      success: true,
+      data: {
+        content: result.content,
+        citations: result.citations
+      }
+    };
   }
 }
 ```
-
-This example demonstrates:
-
-- Using `getObject` for data extraction
-- Schema definitions with descriptions
-- Context chain enhancement
-- Proper error handling
-- Type safety
-- Clear documentation
 
 :::tip Next Steps
 
 - Learn about [Triggers](./triggers) for handling events
 - Explore [getObject](../core-utilities/getObject) for data extraction
-- See [Runtime](../core-utilities/runtime) for the complete plugin API
 - Check out [Plugin Philosophy](./philosophy) for architectural overview
 - Read about [Model Providers](../model-providers/overview) for model integration

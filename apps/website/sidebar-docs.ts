@@ -52,7 +52,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "model-providers/index"
       },
-      items: ["model-providers/overview", "model-providers/capabilities"]
+      items: ["model-providers/overview"]
     },
     {
       type: "category",
@@ -65,15 +65,24 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Capabilities",
+      link: {
+        type: "doc",
+        id: "capabilities/capabilities"
+      },
+      items: ["capabilities/capabilities", "capabilities/transforms"]
+    },
+    {
+      type: "category",
       label: "Core Utilities",
       link: {
         type: "doc",
         id: "core-utilities/index"
       },
       items: [
-        "core-utilities/runtime",
         "core-utilities/getObject",
-        "core-utilities/createEvent"
+        "core-utilities/spaces",
+        "core-utilities/liquid-templates"
       ]
     }
   ]

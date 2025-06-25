@@ -109,6 +109,6 @@ This pipeline architecture enables:
 
 - Learn about [Executors](./executors) in detail
 - Understand [Triggers](./triggers) and event handling
-- Learn more about [Capabilities](./capabilities/capabilities)
+- Learn more about [Capabilities](../capabilities/capabilities)
 
 :::

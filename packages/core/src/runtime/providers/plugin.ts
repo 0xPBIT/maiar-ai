@@ -64,7 +64,6 @@ export abstract class Plugin {
    * Creates a new plugin instance.
    * @param {Object} params - The plugin initialization parameters.
    * @param {string} params.id - Unique identifier for the plugin.
-   * @param {string} params.name - Human-readable name of the plugin.
    * @param {string} params.description - Description of the plugin.
    * @param {(keyof ICapabilities)[]} params.requiredCapabilities - Capabilities required by the plugin.
    * @param {string | string[]} [params.promptsDir] - Optional absolute path(s) to a directory containing Liquid prompt templates.

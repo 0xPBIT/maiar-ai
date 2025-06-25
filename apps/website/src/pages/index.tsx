@@ -1670,6 +1670,12 @@ export default function Home(): JSX.Element {
             #slide-2b .executor-detail {
               align-self: center !important; /* center horizontally within slide */
             }
+
+            /* ---- GPU compositing hints for animated elements ---- */
+            .overlay{will-change:opacity;}
+            .capability-icon{will-change:transform;}
+            .cube-image{will-change:transform;}
+            .fade-slide{will-change:opacity,transform;}
           `}
         </style>
       </Head>

@@ -1,9 +1,12 @@
 {
-  "name": "@maiar-ai/plugin-codex",
+  "name": "create-maiar",
   "version": "0.25.0-alpha.0",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "create-maiar": "./dist/index.js"
+  },
   "files": [
     "dist"
   ],
@@ -24,7 +27,7 @@
     "agent",
     "framework",
     "plugin",
-    "codex"
+    "cli"
   ],
   "author": "UraniumCorporation <contact@maiar.dev> (https://maiar.dev)",
   "license": "MIT",
@@ -38,16 +41,15 @@
   },
   "scripts": {
     "prepublishOnly": "pnpm run build",
-    "dev": "tsup --config ../../tsup.config.base.ts --watch",
+    "dev": "tsup --config ./tsup.config.ts --watch",
     "typecheck": "tsc --project tsconfig.json --noEmit false",
-    "build": "tsup --config ../../tsup.config.base.ts",
+    "build": "tsup --config ./tsup.config.ts",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maiar-ai/core": "workspace:*",
-    "@openai/codex": "0.1.2504211509",
-    "execa": "9.3.1",
-    "zod": "3.24.1"
+    "@clack/prompts": "0.11.0",
+    "commander": "14.0.0",
+    "liquidjs": "10.21.1"
   },
   "devDependencies": {
     "@types/node": "22.13.1",

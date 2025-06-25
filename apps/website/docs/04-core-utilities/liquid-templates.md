@@ -58,7 +58,7 @@ export class MyAwesomePlugin extends Plugin {
 ```
 
 :::warning
-It's important that the `promptsDir` folder location is not the current location in your working project. It should be the resulting location of when your plugin is built. You will need to copy these files to the correct location in your working project on build time.
+It's important that the `promptsDir` folder location is not the current location in your working project. It should be the resulting location of when your plugin is built. You will need to copy these files to the correct location in your build directory as part of your build process.
 :::
 
 The **Runtime** automatically calls `promptRegistry.registerDirectory()` for every plugin that declares `promptsDir`, namespacing each file under `<pluginId>/`.

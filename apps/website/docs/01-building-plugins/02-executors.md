@@ -136,7 +136,7 @@ execute: async (context: AgentContext): Promise<PluginResult> => {
 
 You can add hardcoded strings to the `data` field of the `PluginResult` object.
 
-The `helpfulInstruction` field is particularly important example as it co-locates data with guidance for the model:
+Adding metadata such as `helpfulInstruction` is particularly important as it co-locates data with guidance for the model:
 
 ```typescript
 return {
@@ -173,25 +173,27 @@ const PromptResponseSchema = z.object({
 Document your executor's context requirements:
 
 ```typescript
-this.executors = [
-  {
-    name: "generate_image",
-    description: "Generate an image based on a text prompt",
-    helpfulInstructions: `
-    Required context:
-    - User's image description or request
-    - Any style preferences or requirements
-    
-    Enhances context with:
-    - Generated image URLs
-    - Original prompt used
-    - Timestamp of generation
-  `,
-    fn: async (context: AgentContext) => {
-      // Implementation
-    }
+export class ImageGenerationPlugin extends Plugin {
+  constructor({ useMultiModal = false }: { useMultiModal?: boolean } = {}) {
+    super({
+      id: "plugin-image-generation",
+      requiredCapabilities: [imageGenerationCapability.id]
+      // other configurations ...
+    });
+
+    this.executors = [
+      {
+        name: "generate_image",
+        description:
+          "Generate an image based on a text prompt. Information from the context chain will be used to assist in the generation.",
+        fn: async (task: AgentTask) => {
+          // Implementation
+          return { success: true, data: { urls: [] } };
+        }
+      }
+    ];
   }
-];
+}
 ```
 
 ## Real-World Example

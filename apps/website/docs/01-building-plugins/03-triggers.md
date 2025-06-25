@@ -28,9 +28,7 @@ export class TextGenerationPlugin extends Plugin {
   constructor() {
     super({
       id: "plugin-text",
-      name: "Text Generation",
-      description: "Generate text",
-      ...
+      // other configurations ...
     });
 
 
@@ -97,8 +95,7 @@ export class TelegramPlugin extends Plugin {
 
   constructor(private config: TelegramPluginConfig) {
     super({
-      id: "plugin-telegram",
-      name: "Telegram"
+      id: "plugin-telegram"
       // ... other configurations
     });
 
@@ -119,8 +116,6 @@ export class TelegramPlugin extends Plugin {
       // ... other code related to telegram
       await this.runtime.createEvent(context, space); // create events inside this trigger
     });
-
-    this.logger.info("Telegram message listener attached.");
   }
 }
 ```

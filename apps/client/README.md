@@ -76,7 +76,7 @@ const agent = await Runtime.init({
 
 The chat panel connects to a default endpoint of `http://localhost:3000/chat`. This endpoint can be configured in the same way as the WebSocket connection.
 
-To enable chat functionality in your Maiar agent, you need to add the Express plugin to your agent configuration:
+To enable chat functionality in your Maiar agent, you need to add the [text plugin](https://github.com/uraniumcorporation/maiar-ai/tree/main/packages/plugin-text) to your agent configuration:
 
 ```typescript
 const plugins: Plugin[] = [

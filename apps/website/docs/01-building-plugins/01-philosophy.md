@@ -66,7 +66,7 @@ Plugins should be designed to work together. For example:
 
 ```typescript
 // Plugins can be combined to create complex behaviors
-const runtime = await Runtime.init({
+const agent = await Runtime.init({
   // ... other configurations
   plugins: [
     new TextGenerationPlugin(),
@@ -79,34 +79,23 @@ const runtime = await Runtime.init({
 });
 ```
 
-### Context-Aware
-
-Plugins should be mindful of the context chain:
-
-```typescript
-// Snippet from inside a plugin, this is not a full implementation
-fn: async (params: any, context: PluginContext) => {
-  // Read existing context
-  const userData = context.get("user_data");
-
-  // Add new data to context
-  context.set("weather_data", await this.getWeather(userData.location));
-
-  return { success: true };
-};
-```
-
 ### Declarative Interface
 
 Plugins declare their capabilities through metadata:
 
 ```typescript
 // Snippet from inside a plugin, this is not a full implementation
-super({
-  id: "weather-plugin",
-  description: "Provides weather information",
-  capabilities: ["get_weather", "weather_alerts"]
-});
+export class WeatherPlugin extends Plugin {
+  constructor() {
+    super({
+      id: "weather-plugin",
+      requiredCapabilities: [multiModalTextGenerationCapability.id] // generate text using text and images as input
+    });
+    // other constructor code ...
+  }
+
+  // plugin implementation code ...
+}
 ```
 
 This pipeline architecture enables:
@@ -120,7 +109,6 @@ This pipeline architecture enables:
 
 - Learn about [Executors](./executors) in detail
 - Understand [Triggers](./triggers) and event handling
-- Check out [Model Providers](../model-providers/overview) for model integration
-- See [Memory Providers](../memory-providers/overview) for state management
+- Learn more about [Capabilities](./capabilities/capabilities)
 
 :::

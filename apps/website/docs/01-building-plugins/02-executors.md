@@ -255,7 +255,7 @@ export class SearchPlugin extends Plugin {
 
 :::tip Next Steps
 
-- Learn about [Triggers](./triggers) for handling events
-- Explore [getObject](../core-utilities/getObject) for data extraction
-- Check out [Plugin Philosophy](./philosophy) for architectural overview
-- Read about [Model Providers](../model-providers/overview) for model integration
+- Learn about [Triggers](/docs/building-plugins/triggers/) for handling events
+- Explore [getObject](/docs/core-utilities/getObject/) for data extraction
+- Check out [Plugin Philosophy](/docs/building-plugins/philosophy/) for architectural overview
+- Read about [Model Providers](/docs/model-providers/overview/) for model integration

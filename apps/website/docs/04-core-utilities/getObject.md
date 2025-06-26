@@ -131,6 +131,6 @@ const analysis = await runtime.getObject(
 
 ## Next Steps
 
-- Explore [Building Plugins](../building-plugins/philosophy) for using getObject in plugins
-- Check out [Model Providers](../model-providers/overview) for model configuration
-- Read about [Executors](../building-plugins/executors) for practical usage examples
+- Explore [Building Plugins](/docs/building-plugins/philosophy/) for using getObject in plugins
+- Check out [Model Providers](/docs/model-providers/overview/) for model configuration
+- Read about [Executors](/docs/building-plugins/executors/) for practical usage examples

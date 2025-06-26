@@ -190,6 +190,7 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 
   plugins: [
+    require.resolve("./plugins/preload-css"),
     [
       "docusaurus-plugin-typedoc",
       {

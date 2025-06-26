@@ -30,7 +30,7 @@ const config: Config = {
     defaultLocale: "en",
     locales: ["en"]
   },
-  trailingSlash: false,
+  trailingSlash: true,
   presets: [
     [
       "classic",

@@ -1,6 +1,6 @@
 {
   "name": "@maiar-ai/core",
-  "version": "0.25.0-alpha.1",
+  "version": "0.25.0-alpha.2",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [

@@ -8,23 +8,10 @@ export const imageGenerationCapability = defineCapability({
   output: z.array(z.string())
 });
 
-export const multiModalImageGenerationCapability = defineCapability({
-  id: "multi-modal-image-generation",
-  input: z.object({
-    prompt: z.string(),
-    urls: z.array(z.string()).optional()
-  }),
-  output: z.array(z.string()),
-  config: z.object({
-    number: z.number().int().positive().default(1)
-  })
-});
-
 // Group all capabilities for this provider into a readonly tuple so we can derive
 // a CapabilityMap type and reuse it in the module augmentation below.
 export const IMAGE_GENERATION_CAPABILITIES = [
-  imageGenerationCapability,
-  multiModalImageGenerationCapability
+  imageGenerationCapability
 ] as const;
 
 // Use the CapabilityMap helper to augment ICapabilities with all OpenAI capabilities.

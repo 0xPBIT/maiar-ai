@@ -21,10 +21,10 @@ import {
   MultimodalPromptResponseSchema
 } from "./types";
 
-export class TextGenerationPlugin extends Plugin {
+export class ChatPlugin extends Plugin {
   constructor() {
     super({
-      id: "plugin-text",
+      id: "plugin-chat",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

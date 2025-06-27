@@ -1,4 +1,4 @@
-# @maiar-ai/plugin-text
+# @maiar-ai/plugin-chat
 
 This package is part of the [Maiar](https://maiar.dev) ecosystem, designed to work seamlessly with `@maiar-ai/core`.
 

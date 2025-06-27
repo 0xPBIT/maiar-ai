@@ -3,15 +3,8 @@ import "dotenv/config";
 import { config } from "dotenv";
 import { readFileSync } from "fs";
 import { join, resolve } from "path";
-import { z } from "zod";
 
-import {
-  CapabilityAliasGroup,
-  MemoryProvider,
-  ModelProvider,
-  Plugin,
-  Runtime
-} from "@maiar-ai/core";
+import { MemoryProvider, ModelProvider, Plugin, Runtime } from "@maiar-ai/core";
 import { stdout, websocket } from "@maiar-ai/core/dist/logger";
 
 import {
@@ -19,25 +12,20 @@ import {
   OpenAIMultiModalImageGenerationModel,
   OpenAIMultiModalTextGenerationModel
 } from "@maiar-ai/model-openai";
-import { multiModalImageGenerationCapability as openaiImageGenMM } from "@maiar-ai/model-openai";
 
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
 import { CharacterPlugin } from "@maiar-ai/plugin-character";
+import { ChatPlugin } from "@maiar-ai/plugin-chat";
 import {
   DiscordPlugin,
   postListenerTrigger,
   replyMessageExecutor,
   sendMessageExecutor
 } from "@maiar-ai/plugin-discord";
-import {
-  ImageGenerationPlugin,
-  multiModalImageGenerationCapability as pluginImageGenMM
-} from "@maiar-ai/plugin-image";
+import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
 import { SearchPlugin } from "@maiar-ai/plugin-search";
 import { TelegramPlugin } from "@maiar-ai/plugin-telegram";
-import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
-import { TimePlugin } from "@maiar-ai/plugin-time";
 
 // Suppress deprecation warnings
 process.removeAllListeners("warning");
@@ -69,13 +57,12 @@ async function main() {
   // });
 
   const plugins: Plugin[] = [
-    new TextGenerationPlugin(),
-    new TimePlugin(),
+    new ChatPlugin(),
     //new SearchPermissionPlugin(["0xPBIT"]),
     new SearchPlugin({
       apiKey: process.env.PERPLEXITY_API_KEY as string
     }),
-    new ImageGenerationPlugin({ useMultiModal: true }),
+    new ImageGenerationPlugin(),
     new DiscordPlugin({
       token: process.env.DISCORD_BOT_TOKEN as string,
       clientId: process.env.DISCORD_CLIENT_ID as string,
@@ -93,54 +80,10 @@ async function main() {
     })
   ];
 
-  const capabilityAliases: CapabilityAliasGroup[] = [
-    {
-      ids: [openaiImageGenMM.id, pluginImageGenMM.id],
-      transforms: [
-        {
-          config: {
-            plugin: pluginImageGenMM.config!,
-            provider: openaiImageGenMM.config!,
-            transform: (
-              cfg: unknown
-            ):
-              | z.infer<NonNullable<typeof openaiImageGenMM.config>>
-              | undefined => {
-              if (!cfg) return undefined;
-
-              const config = cfg as z.infer<
-                NonNullable<typeof pluginImageGenMM.config>
-              >;
-              return {
-                n: config.number || 1
-              };
-            }
-          },
-          input: {
-            plugin: pluginImageGenMM.input,
-            provider: openaiImageGenMM.input,
-            transform: (
-              i: unknown
-            ): z.infer<NonNullable<typeof openaiImageGenMM.input>> => {
-              const input = i as z.infer<
-                NonNullable<typeof pluginImageGenMM.input>
-              >;
-              return {
-                prompt: input.prompt,
-                images: input.urls
-              };
-            }
-          }
-        }
-      ]
-    }
-  ];
-
   const agent = await Runtime.init({
     modelProviders,
     memoryProvider,
     plugins,
-    capabilityAliases,
     options: {
       logger: {
         level: "debug",

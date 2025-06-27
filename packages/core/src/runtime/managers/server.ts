@@ -53,6 +53,16 @@ export class ServerManager {
         : [middleware]
       : [express.raw({ type: "*/*" })];
 
+    // Check if the method and path already exists
+    for (const layer of this.router.stack) {
+      if (!layer.route) continue;
+
+      const route = layer.route;
+      if (route.stack.some((m) => m.method === method) && route.path === path) {
+        throw new Error(`${method.toUpperCase()} ${path} route already exists`);
+      }
+    }
+
     // Register route with the router
     this.router[method](
       path,

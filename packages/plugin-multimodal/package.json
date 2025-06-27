@@ -1,5 +1,5 @@
 {
-  "name": "@maiar-ai/plugin-time",
+  "name": "@maiar-ai/plugin-multimodal",
   "version": "0.25.0-alpha.1",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -24,7 +24,7 @@
     "agent",
     "framework",
     "plugin",
-    "time"
+    "text"
   ],
   "author": "UraniumCorporation <contact@maiar.dev> (https://maiar.dev)",
   "license": "MIT",
@@ -44,9 +44,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maiar-ai/core": "workspace:*"
+    "@maiar-ai/core": "workspace:*",
+    "express": "4.21.2",
+    "zod": "3.24.1"
   },
   "devDependencies": {
+    "@types/express": "5.0.0",
     "@types/node": "22.13.1",
     "tsup": "8.3.6",
     "typescript": "5.7.3"

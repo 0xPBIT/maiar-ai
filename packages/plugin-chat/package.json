@@ -1,5 +1,5 @@
 {
-  "name": "@maiar-ai/plugin-text",
+  "name": "@maiar-ai/plugin-chat",
   "version": "0.25.0-alpha.1",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

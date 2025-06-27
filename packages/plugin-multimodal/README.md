@@ -1,4 +1,4 @@
-# @maiar-ai/plugin-time
+# @maiar-ai/plugin-multimodal
 
 This package is part of the [Maiar](https://maiar.dev) ecosystem, designed to work seamlessly with `@maiar-ai/core`.
 

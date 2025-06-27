@@ -262,6 +262,9 @@ export default function Home(): JSX.Element {
       const randomY =
         Math.random() * (maxY + blob.offsetHeight) - blob.offsetHeight * 0.5;
 
+      // Smoothly animate the reposition so the blob glides instead of blinking
+      blob.style.transition = "left 0.9s ease-out, top 0.9s ease-out";
+
       blob.style.left = `${randomX}px`;
       blob.style.top = `${randomY}px`;
       blob.style.marginLeft = "0"; // Clear preset margin offsets so left positioning works everywhere

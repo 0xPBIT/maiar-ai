@@ -1,3 +1,54 @@
+# 1.0.0 (2025-06-27)
+
+### 🚀 Features
+
+- dynamic resolvable plugin metadata ([#162](https://github.com/UraniumCorporation/maiar-ai/pull/162))
+- update prompt system to use template files ([#161](https://github.com/UraniumCorporation/maiar-ai/pull/161))
+- ⚠️  break out multimodal capabilities to isolated plugin ([#177](https://github.com/UraniumCorporation/maiar-ai/pull/177))
+- **cli:** ✨ add initial CLI package for create-maiar ([#165](https://github.com/UraniumCorporation/maiar-ai/pull/165))
+
+### 🩹 Fixes
+
+- hot reloading fails due to hanging node process ([#163](https://github.com/UraniumCorporation/maiar-ai/pull/163))
+- **ci:** 👷 use pull_request event to correctly checkout forked PR code ([#172](https://github.com/UraniumCorporation/maiar-ai/pull/172))
+- **ci:** 👷 checkout PR head from fork in pull_request_target ([#173](https://github.com/UraniumCorporation/maiar-ai/pull/173))
+- **ci:** 👷 checkout correct PR head from fork in all jobs ([#174](https://github.com/UraniumCorporation/maiar-ai/pull/174))
+- **cli:** update cli packages to use chat plugin ([#178](https://github.com/UraniumCorporation/maiar-ai/pull/178))
+- **core:** pipeline creation step ([#168](https://github.com/UraniumCorporation/maiar-ai/pull/168))
+- **plugin-image, model-openai:** dynamically set required capabilities ([#166](https://github.com/UraniumCorporation/maiar-ai/pull/166))
+
+### 💅 Refactors
+
+- ⚠️  remove name id pair ([#171](https://github.com/UraniumCorporation/maiar-ai/pull/171))
+
+### 📖 Documentation
+
+- new landing page and hero elements ([#169](https://github.com/UraniumCorporation/maiar-ai/pull/169))
+- update docs for version 1 ([#170](https://github.com/UraniumCorporation/maiar-ai/pull/170))
+- optimize landing page ([#175](https://github.com/UraniumCorporation/maiar-ai/pull/175))
+- fix docs page loading jank ([#176](https://github.com/UraniumCorporation/maiar-ai/pull/176))
+- update new quickstart guide in readme ([#179](https://github.com/UraniumCorporation/maiar-ai/pull/179))
+
+### 🏡 Chore
+
+- **release:** 🔖 create new tag/release v0.25.0-alpha.0 ([efe9fa7](https://github.com/UraniumCorporation/maiar-ai/commit/efe9fa7))
+- **release:** 🔖 create new tag/release v0.25.0-alpha.1 ([58564ac](https://github.com/UraniumCorporation/maiar-ai/commit/58564ac))
+- **release:** 🔖 create new tag/release v0.25.0-alpha.2 ([aa19289](https://github.com/UraniumCorporation/maiar-ai/commit/aa19289))
+
+### ✅ Tests
+
+- **config:** 🧪🔧 standup vitest ([#164](https://github.com/UraniumCorporation/maiar-ai/pull/164))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  break out multimodal capabilities to isolated plugin ([#177](https://github.com/UraniumCorporation/maiar-ai/pull/177))
+- ⚠️  remove name id pair ([#171](https://github.com/UraniumCorporation/maiar-ai/pull/171))
+
+### ❤️ Thank You
+
+- ktn1234 @ktn1234
+- pbit @0xPBIT
+
 ## 0.25.0-alpha.2 (2025-06-27)
 
 ### 🚀 Features

@@ -1,6 +1,6 @@
 {
   "name": "@maiar-ai/plugin-telegram",
-  "version": "0.25.0-alpha.2",
+  "version": "1.0.0",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

@@ -195,6 +195,9 @@ importers:
       '@maiar-ai/plugin-mcp':
         specifier: workspace:*
         version: link:../../packages/plugin-mcp
+      '@maiar-ai/plugin-multimodal':
+        specifier: workspace:*
+        version: link:../../packages/plugin-multimodal
       '@maiar-ai/plugin-search':
         specifier: workspace:*
         version: link:../../packages/plugin-search
@@ -204,9 +207,6 @@ importers:
       '@maiar-ai/plugin-terminal':
         specifier: workspace:*
         version: link:../../packages/plugin-terminal
-      '@maiar-ai/plugin-time':
-        specifier: workspace:*
-        version: link:../../packages/plugin-time
       '@maiar-ai/plugin-websocket':
         specifier: workspace:*
         version: link:../../packages/plugin-websocket
@@ -716,22 +716,6 @@ importers:
       zod:
         specifier: 3.24.1
         version: 3.24.1
-    devDependencies:
-      '@types/node':
-        specifier: 22.13.1
-        version: 22.13.1
-      tsup:
-        specifier: 8.3.6
-        version: 8.3.6(@swc/core@1.5.7)(typescript@5.7.3)
-      typescript:
-        specifier: 5.7.3
-        version: 5.7.3
-
-  packages/plugin-time:
-    dependencies:
-      '@maiar-ai/core':
-        specifier: workspace:*
-        version: link:../core
     devDependencies:
       '@types/node':
         specifier: 22.13.1

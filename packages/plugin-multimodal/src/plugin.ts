@@ -22,7 +22,7 @@ import {
   MultimodalTextPromptResponseSchema
 } from "./types";
 
-export class ChatPlugin extends Plugin {
+export class MultiModalPlugin extends Plugin {
   constructor() {
     super({
       id: "plugin-chat",

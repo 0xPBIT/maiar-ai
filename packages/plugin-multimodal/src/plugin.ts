@@ -25,7 +25,7 @@ import {
 export class MultiModalPlugin extends Plugin {
   constructor() {
     super({
-      id: "plugin-chat",
+      id: "plugin-multimodal",
       description: async () =>
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)

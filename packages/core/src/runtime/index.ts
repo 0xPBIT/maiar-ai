@@ -353,12 +353,30 @@ export class Runtime {
         );
 
         if (trigger.route) {
-          this.serverManager.registerRoute(
-            "post",
-            trigger.route.path,
-            trigger.route.handler,
-            trigger.route.middleware
-          );
+          try {
+            this.serverManager.registerRoute(
+              "post",
+              trigger.route.path,
+              trigger.route.handler,
+              trigger.route.middleware
+            );
+          } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err));
+            this.logger.error(
+              `failed to register trigger route for plugin id "${plugin.id}" trigger "${trigger.name}"`,
+              {
+                type: "plugin.trigger.route.registration.failed",
+                method: "POST",
+                path: trigger.route.path,
+                plugin: plugin.id,
+                trigger: trigger.name,
+                error: error.message
+              }
+            );
+
+            await this.stop();
+            process.exit(1);
+          }
         }
 
         if (trigger.start) trigger.start();

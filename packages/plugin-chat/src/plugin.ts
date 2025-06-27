@@ -11,15 +11,8 @@ import {
   Space
 } from "@maiar-ai/core";
 
-import {
-  multiModalTextGenerationCapability,
-  textGenerationCapability
-} from "./capabiliites";
-import {
-  ChatPlatformContext,
-  ChatResponseSchema,
-  MultimodalPromptResponseSchema
-} from "./types";
+import { textGenerationCapability } from "./capabiliites";
+import { ChatPlatformContext, ChatResponseSchema } from "./types";
 
 export class ChatPlugin extends Plugin {
   constructor() {
@@ -29,10 +22,7 @@ export class ChatPlugin extends Plugin {
         (
           await this.runtime.templates.render(`${this.id}/plugin_description`)
         ).trim(),
-      requiredCapabilities: [
-        textGenerationCapability.id,
-        multiModalTextGenerationCapability.id
-      ],
+      requiredCapabilities: [textGenerationCapability.id],
       promptsDir: path.resolve(__dirname, "prompts")
     });
 
@@ -46,16 +36,6 @@ export class ChatPlugin extends Plugin {
             )
           ).trim(),
         fn: this.generateText.bind(this)
-      },
-      {
-        name: "generate_text_multimodal",
-        description: async () =>
-          (
-            await this.runtime.templates.render(
-              `${this.id}/generate_text_multimodal_description`
-            )
-          ).trim(),
-        fn: this.generateTextMultimodal.bind(this)
       },
       {
         name: "send_chat_response",
@@ -89,31 +69,6 @@ export class ChatPlugin extends Plugin {
     );
 
     return { success: true, data: { text } };
-  }
-
-  private async generateTextMultimodal(task: AgentTask): Promise<PluginResult> {
-    const multimodalPromptTemplate = await this.runtime.templates.render(
-      `${this.id}/multimodal_text_prompt`,
-      { context: JSON.stringify(task, null, 2) }
-    );
-
-    const promptResponse = await this.runtime.getObject(
-      MultimodalPromptResponseSchema,
-      multimodalPromptTemplate
-    );
-
-    const prompt = promptResponse.prompt;
-    const images = promptResponse.images;
-
-    const text = await this.runtime.executeCapability(
-      multiModalTextGenerationCapability.id,
-      {
-        prompt,
-        images
-      }
-    );
-
-    return { success: true, data: { text, prompt, images } };
   }
 
   private async handleChat(req: Request, res: Response): Promise<void> {

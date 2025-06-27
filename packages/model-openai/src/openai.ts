@@ -60,14 +60,6 @@ export class OpenAIModelProvider extends ModelProvider {
         ...textGenerationCapability,
         execute: this.generateTextWithText.bind(this)
       });
-
-      this.logger.info("add text generation capability", {
-        type: "openai.model.capability.registration",
-        model: this.id,
-        capability: "text-generation",
-        inputSchema: textGenerationCapability.input,
-        outputSchema: textGenerationCapability.output
-      });
     }
 
     if (this.models.some((m) => MULTI_MODAL_TEXT_MODELS.has(m))) {
@@ -82,28 +74,12 @@ export class OpenAIModelProvider extends ModelProvider {
         ...imageGenerationCapability,
         execute: this.generateImageWithText.bind(this)
       });
-
-      this.logger.info("add image generation capability", {
-        type: "openai.model.capability.registration",
-        model: this.id,
-        capability: "image-generation",
-        inputSchema: imageGenerationCapability.input,
-        outputSchema: imageGenerationCapability.output
-      });
     }
 
     if (this.models.some((m) => MULTI_MODAL_IMAGE_MODELS.has(m))) {
       this.addCapability({
         ...multiModalImageGenerationCapability,
         execute: this.generateImageMultimodal.bind(this)
-      });
-
-      this.logger.info("add multi-modal image generation capability", {
-        type: "openai.model.capability.registration",
-        model: this.id,
-        capability: "multi-modal-image-generation",
-        inputSchema: multiModalImageGenerationCapability.input,
-        outputSchema: multiModalImageGenerationCapability.output
       });
     }
   }

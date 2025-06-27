@@ -21,8 +21,8 @@ import {
 import { SQLiteMemoryProvider } from "@maiar-ai/memory-sqlite";
 
 import { CharacterPlugin } from "@maiar-ai/plugin-character";
+import { ChatPlugin } from "@maiar-ai/plugin-chat";
 import { ImageGenerationPlugin } from "@maiar-ai/plugin-image";
-import { TextGenerationPlugin } from "@maiar-ai/plugin-text";
 
 // Configure and start the MAIAR AI agent
 async function main() {
@@ -41,7 +41,7 @@ async function main() {
   });
 
   const plugins: Plugin[] = [
-    new TextGenerationPlugin(),
+    new ChatPlugin(),
     new ImageGenerationPlugin(),
     new CharacterPlugin({
       character: readFileSync(join(process.cwd(), "character.xml"), "utf-8")

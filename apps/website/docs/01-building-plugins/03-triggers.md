@@ -140,7 +140,7 @@ await this.runtime.createEvent(initialContext, space);
 ```
 
 :::tip Learn More About Spaces
-Spaces are a powerful way to group related memory items together based on forum and function. You can learn more about them [here](../core-utilities/spaces).
+Spaces are a powerful way to group related memory items together based on forum and function. You can learn more about them [here](/docs/core-utilities/spaces).
 :::
 
 ### Resource Management
@@ -155,8 +155,8 @@ Utilize the plugin lifecycle to initialize and clean up resources.
 
 :::tip Next Steps
 
-- Learn about [Executors](./executors) for handling events
-- Check out [Model Providers](../model-providers/overview) for LLM integration
-- See [Memory Providers](../memory-providers/overview) for state management
+- Learn about [Executors](/docs/building-plugins/executors/) for handling events
+- Check out [Model Providers](/docs/model-providers/overview/) for LLM integration
+- See [Memory Providers](/docs/memory-providers/overview/) for state management
 
 :::

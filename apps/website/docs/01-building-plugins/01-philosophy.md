@@ -107,8 +107,8 @@ This pipeline architecture enables:
 
 :::tip Next Steps
 
-- Learn about [Executors](./executors) in detail
-- Understand [Triggers](./triggers) and event handling
-- Learn more about [Capabilities](../capabilities/capabilities)
+- Learn about [Executors](/docs/building-plugins/executors/) in detail
+- Understand [Triggers](/docs/building-plugins/triggers/) and event handling
+- Learn more about [Capabilities](/docs/capabilities/capabilities/)
 
 :::

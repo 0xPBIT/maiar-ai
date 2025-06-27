@@ -21,7 +21,7 @@ const config: Config = {
   projectName: "maiar-ai", // Usually your repo name.
 
   onBrokenLinks: "throw",
-  onBrokenMarkdownLinks: "warn",
+  onBrokenMarkdownLinks: "throw",
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
@@ -30,7 +30,7 @@ const config: Config = {
     defaultLocale: "en",
     locales: ["en"]
   },
-  trailingSlash: false,
+  trailingSlash: true,
   presets: [
     [
       "classic",
@@ -190,6 +190,7 @@ const config: Config = {
   } satisfies Preset.ThemeConfig,
 
   plugins: [
+    require.resolve("./plugins/preload-css"),
     [
       "docusaurus-plugin-typedoc",
       {

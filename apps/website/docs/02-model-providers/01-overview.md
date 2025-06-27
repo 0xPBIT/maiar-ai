@@ -13,7 +13,7 @@ Plugins and the runtime consume these capabilities without needing to know which
 
 ## The Model Provider Base-Class
 
-Every provider **extends** the abstract [`ModelProvider`](../../api/classes/ModelProvider) class that lives in `@maiar-ai/core`.  
+Every provider **extends** the abstract [`ModelProvider`](/api/classes/ModelProvider) class that lives in `@maiar-ai/core`.  
 The class already implements logging, capability bookkeeping and type-safe execution—your job is to
 
 1. call `super()` with metadata (id, description),
@@ -24,7 +24,7 @@ The class already implements logging, capability bookkeeping and type-safe execu
 
 ## Model Capabilities
 
-A [**capability**](../04-capabilities/capabilities.md) is an atomic skill that a model can perform. Typical examples:
+A [**capability**](/docs/capabilities/capabilities/) is an atomic skill that a model can perform. Typical examples include:
 
 - `text-generation` – Generate plain text from a prompt.
 - `image-generation` – Create an image from a text prompt.

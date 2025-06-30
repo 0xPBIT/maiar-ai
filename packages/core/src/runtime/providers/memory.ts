@@ -27,6 +27,7 @@ export interface Memory {
  * Defines a unit of space that is stored for the memory provider
  * @property id - unique identifier for the space
  * @property relatedSpaces - optional related spaces to search for additional context
+ * @property concurrencyGroup - optional group identifier to bucket multiple spaces on one worker
  */
 export interface Space {
   id: string;
@@ -34,6 +35,7 @@ export interface Space {
     prefix?: string;
     pattern?: string;
   };
+  concurrencyGroup?: string;
 }
 
 /**

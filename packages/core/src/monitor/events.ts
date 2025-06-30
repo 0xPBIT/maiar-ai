@@ -73,6 +73,13 @@ export interface AgentStatePayload {
   explanation?: string;
   /** Whether the runtime is currently evaluating a possible pipeline modification */
   modificationCheckInProgress?: boolean;
+  /** Worker pool statistics for concurrent execution monitoring */
+  workerPool?: {
+    totalWorkers: number;
+    activeWorkers: number;
+    queueLengths: Record<string, number>;
+    workerHealth: Record<string, 'healthy' | 'unhealthy' | 'starting' | 'stopping'>;
+  };
 }
 
 export interface StateUpdate extends BaseEvent {

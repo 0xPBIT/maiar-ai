@@ -6,6 +6,7 @@ import { StateUpdate } from "../../monitor/events";
 import { MemoryManager } from "../managers/memory";
 import { PluginRegistry } from "../managers/plugin";
 import { Processor } from "./processor";
+import { WorkerPool, WorkerConfig } from "./worker-pool";
 import { AgentTask } from "./types";
 
 export class Scheduler {
@@ -13,6 +14,8 @@ export class Scheduler {
   private readonly memoryManager: MemoryManager;
   private readonly pluginRegistry: PluginRegistry;
   private readonly processor: Processor;
+  private readonly workerPool: WorkerPool;
+  private readonly config: WorkerConfig;
 
   private taskQueue: AgentTask[];
   private isRunning: boolean;
@@ -24,11 +27,21 @@ export class Scheduler {
   constructor(
     runtime: Runtime,
     memoryManager: MemoryManager,
-    pluginRegistry: PluginRegistry
+    pluginRegistry: PluginRegistry,
+    config?: Partial<WorkerConfig>
   ) {
     this.runtime = runtime;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
+
+    // Default configuration with opt-in concurrency
+    this.config = {
+      enableConcurrency: false,
+      maxWorkersPerSpace: 1,
+      workerTimeoutMs: 30000,
+      healthCheckIntervalMs: 5000,
+      ...config
+    };
 
     this.processor = new Processor(
       this.runtime,
@@ -36,8 +49,33 @@ export class Scheduler {
       this.pluginRegistry
     );
 
+    this.workerPool = new WorkerPool(
+      this.runtime,
+      this.memoryManager,
+      this.pluginRegistry,
+      this.config
+    );
+
     this.taskQueue = [];
     this.isRunning = false;
+  }
+
+  /**
+   * Initialize the scheduler and worker pool
+   */
+  public async init(): Promise<void> {
+    await this.workerPool.init();
+    this.logger.info("Scheduler initialized", {
+      concurrencyEnabled: this.config.enableConcurrency
+    });
+  }
+
+  /**
+   * Shutdown the scheduler and worker pool
+   */
+  public async shutdown(): Promise<void> {
+    await this.workerPool.shutdown();
+    this.logger.info("Scheduler shutdown complete");
   }
 
   /**
@@ -45,17 +83,22 @@ export class Scheduler {
    * This is consumed by the monitor UI to keep the queue counter up-to-date.
    */
   private emitQueueState() {
+    const baseState = {
+      queueLength: this.taskQueue.length,
+      isRunning: this.isRunning,
+      lastUpdate: Date.now()
+    };
+
+    // Add worker pool stats if concurrency is enabled
+    const state = this.config.enableConcurrency 
+      ? { ...baseState, workerPool: this.workerPool.getStats() }
+      : baseState;
+
     const stateEvt: StateUpdate = {
       type: "state",
       message: "agent queue length update",
       timestamp: Date.now(),
-      metadata: {
-        state: {
-          queueLength: this.taskQueue.length,
-          isRunning: this.isRunning,
-          lastUpdate: Date.now()
-        }
-      }
+      metadata: { state }
     };
 
     this.logger.info(stateEvt.message, stateEvt);
@@ -179,7 +222,18 @@ export class Scheduler {
     };
 
     try {
-      this.enqueue(task);
+      if (this.config.enableConcurrency) {
+        // Use worker pool for concurrent execution
+        await this.workerPool.queueTask(task);
+        this.logger.debug("task queued to worker pool", {
+          type: "scheduler.task.queued.concurrent",
+          spaceId: space.id,
+          concurrencyGroup: space.concurrencyGroup
+        });
+      } else {
+        // Use legacy single-threaded execution
+        this.enqueue(task);
+      }
     } catch (error) {
       this.logger.error("error pushing event to queue", {
         type: "runtime.event.queue.push.failed",

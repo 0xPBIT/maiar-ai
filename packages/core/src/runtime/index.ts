@@ -16,7 +16,7 @@ import { ICapabilities } from "./managers/model/capability/types";
 import { PluginRegistry } from "./managers/plugin";
 import { PromptRegistry } from "./managers/prompt";
 import { ServerManager } from "./managers/server";
-import { AgentTask, Scheduler } from "./pipeline";
+import { AgentTask, Scheduler, WorkerConfig } from "./pipeline";
 import { formatZodSchema } from "./pipeline/operations";
 import { GetObjectConfig } from "./pipeline/types";
 import { MemoryProvider } from "./providers/memory";
@@ -73,7 +73,8 @@ export class Runtime {
     memoryManager: MemoryManager,
     pluginRegistry: PluginRegistry,
     serverManager: ServerManager,
-    promptRegistry: PromptRegistry
+    promptRegistry: PromptRegistry,
+    schedulerConfig?: Partial<WorkerConfig>
   ) {
     this.modelManager = modelManager;
     this.memoryManager = memoryManager;
@@ -81,7 +82,7 @@ export class Runtime {
     this.serverManager = serverManager;
     this.promptRegistry = promptRegistry;
 
-    this.scheduler = new Scheduler(this, memoryManager, pluginRegistry);
+    this.scheduler = new Scheduler(this, memoryManager, pluginRegistry, schedulerConfig);
   }
 
   public static async init({
@@ -100,6 +101,12 @@ export class Runtime {
       server?: {
         port?: number;
         cors?: cors.CorsOptions;
+      };
+      scheduler?: {
+        enableConcurrency?: boolean;
+        maxWorkersPerSpace?: number;
+        workerTimeoutMs?: number;
+        healthCheckIntervalMs?: number;
       };
     };
   }): Promise<Runtime> {
@@ -275,7 +282,8 @@ export class Runtime {
       memoryManager,
       pluginRegistry,
       serverManager,
-      promptRegistry
+      promptRegistry,
+      options?.scheduler
     );
 
     // Expose template registry on runtime instance
@@ -336,6 +344,9 @@ export class Runtime {
    * Start the runtime
    */
   public async start(): Promise<void> {
+    // Initialize the scheduler (including worker pool if configured)
+    await this.scheduler.init();
+    
     this.logger.info("ai agent (powered by $MAIAR) runtime started", {
       type: "runtime.started"
     });
@@ -440,6 +451,14 @@ export class Runtime {
         }
       })
     );
+
+    // shut down the scheduler
+    this.logger.info("shutting down scheduler...");
+    try {
+      await this.scheduler.shutdown();
+    } catch (error) {
+      this.logger.error("failed to shutdown scheduler", { error });
+    }
 
     // shut down the memory provider
     this.logger.info("unregistering memory provider...");

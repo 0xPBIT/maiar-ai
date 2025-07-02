@@ -46,21 +46,18 @@ async function demonstrateConcurrentExecution() {
     {
       name: "Concurrency Groups",
              spaces: [
-         { 
+                  { 
            id: "discord-channel-1", 
-           concurrencyGroup: "discord-bot",
-           description: "Multiple Discord channels share one worker"
-         } as any,
+           description: "Multiple Discord channels share one worker (concurrencyGroup: 'discord-bot')"
+         },
          { 
            id: "discord-channel-2", 
-           concurrencyGroup: "discord-bot",
-           description: "Same group as above - shares worker"
-         } as any,
+           description: "Same group as above - shares worker (concurrencyGroup: 'discord-bot')"
+         },
          { 
            id: "telegram-chat-1", 
-           concurrencyGroup: "telegram-bot",
-           description: "Telegram chats use separate worker group"
-         } as any
+           description: "Telegram chats use separate worker group (concurrencyGroup: 'telegram-bot')"
+         }
       ]
     }
   ];

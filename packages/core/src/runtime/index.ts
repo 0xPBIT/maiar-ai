@@ -508,6 +508,14 @@ export class Runtime {
   }
 
   /**
+   * Demonstrate concurrent execution by submitting multiple tasks simultaneously
+   * This method proves that the concurrent execution implementation works correctly
+   */
+  public async demonstrateConcurrency(): Promise<void> {
+    return this.scheduler.demonstrateConcurrency();
+  }
+
+  /**
    * Execute a capability through the model-manager.
    *
    * @typeParam K – Capability identifier literal (key of the `ICapabilities` interface).

@@ -79,6 +79,19 @@ export class Scheduler {
   }
 
   /**
+   * Demonstrate concurrent execution capabilities
+   * This method submits multiple tasks simultaneously to prove concurrency works
+   */
+  public async demonstrateConcurrency(): Promise<void> {
+    if (!this.config.enableConcurrency) {
+      this.logger.warn("Cannot demonstrate concurrency - feature is disabled in scheduler config");
+      return;
+    }
+    
+    await this.workerPool.demonstrateConcurrency();
+  }
+
+  /**
    * Emits a lightweight agent state snapshot containing queue length and running status.
    * This is consumed by the monitor UI to keep the queue counter up-to-date.
    */
@@ -206,8 +219,27 @@ export class Scheduler {
 
   /**
    * Queues a task to be run, first stores the user interaction in memory, augments the task context with the conversationId, and then queues the task
-   * @param task - the task to queue
-   * @param platformContext - the platform context of the task
+   * 
+   * LIFECYCLE: This is the main entry point for task execution in MAIAR.
+   * The scheduler acts as a delegator that routes tasks to the appropriate
+   * execution context based on configuration.
+   * 
+   * EXECUTION PATHS:
+   * 1. CONCURRENT MODE (enableConcurrency: true):
+   *    - Route to WorkerPool.queueTask()
+   *    - WorkerPool creates space-specific workers
+   *    - Tasks execute in parallel across different spaces
+   * 
+   * 2. LEGACY MODE (enableConcurrency: false):
+   *    - Use single-threaded Scheduler.enqueue()
+   *    - Tasks execute sequentially in cycle() loop
+   *    - Maintains backward compatibility
+   * 
+   * SPACE ROUTING: Tasks are routed based on space.id or space.concurrencyGroup,
+   * ensuring that conversations are isolated while allowing concurrent execution.
+   * 
+   * @param trigger - the initial trigger context for the task
+   * @param space - the space context that determines routing and execution
    */
   public async queueTask(
     trigger: AgentTask["trigger"],

@@ -1,0 +1,34 @@
+You are analyzing memory context to identify file references that may be relevant to the current task.
+
+## Memory Context to Analyze:
+{{ memoryContext }}
+
+## Instructions:
+1. Look through the memory context for any file references including:
+   - URLs (http://, https://)
+   - File paths (/path/to/file.ext, C:\path\file.ext)
+   - Cloud storage references (Google Drive, Dropbox, S3, etc.)
+   - Image URLs from previous generations
+   - Document references
+   - Any other file-like resources
+
+2. For each file found, extract:
+   - The file reference (URL/path)
+   - Brief context about how it was used
+   - File type if obvious (image, document, etc.)
+
+3. Focus on files that could be relevant to ongoing conversations or tasks.
+
+4. Return ONLY a JSON object with the following structure:
+
+{
+  "files": [
+    {
+      "reference": "file URL or path",
+      "context": "brief description of how this file was used",
+      "type": "url|path|reference"
+    }
+  ]
+}
+
+If no files are found, return: {"files": []}

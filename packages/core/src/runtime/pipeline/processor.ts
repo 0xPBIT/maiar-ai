@@ -73,49 +73,79 @@ export class Processor {
       }))
     );
 
-    // Get related memories with files and multi-resolution summaries
-    let relatedMemories: string;
+    // Get related memories and enhance with AI-extracted files and summaries
+    const relatedMemoriesResults = await this.memoryManager.queryMemory({
+      relatedSpaces: task.space.relatedSpaces,
+      limit: 10
+    });
+
+    let contextSummary = "";
+    let relatedFiles = "";
     
     try {
-      const relatedMemoriesResults = await this.memoryManager.queryMemoryWithFiles({
-        relatedSpaces: task.space.relatedSpaces,
-        limit: 10,
-        includeFiles: true
-      });
-
-      relatedMemories = await this.runtime.templates.render(
-        "core/related_memories_enhanced", 
+      // Use AI to generate multi-resolution summary
+      const summaryTemplate = await this.runtime.templates.render(
+        "core/generate_memory_summary",
         {
-          relatedMemoriesContext: JSON.stringify({
-            task: task.trigger,
-            memories: relatedMemoriesResults.memories,
-            files: relatedMemoriesResults.relatedFiles,
-            summary: relatedMemoriesResults.summary
-          })
+          memoriesContext: JSON.stringify(relatedMemoriesResults)
         }
       );
+      
+      const summaryResult = await this.runtime.getObject(
+        { type: "object" } as any, // Simple schema since AI will handle structure
+        summaryTemplate
+      );
+      
+      contextSummary = `
+**Recent Context:** ${summaryResult.recent || 'No recent context'}
+**Short-term Context:** ${summaryResult.short || 'No short-term context'}  
+**Medium-term Context:** ${summaryResult.medium || 'No medium-term context'}
+**Long-term Context:** ${summaryResult.long || 'No long-term context'}`;
+
+      // Use AI to extract file references
+      const filesTemplate = await this.runtime.templates.render(
+        "core/extract_related_files",
+        {
+          memoryContext: JSON.stringify(relatedMemoriesResults)
+        }
+      );
+      
+      const filesResult = await this.runtime.getObject(
+        { type: "object" } as any, // Simple schema since AI will handle structure
+        filesTemplate
+      );
+      
+      if (filesResult.files && filesResult.files.length > 0) {
+        relatedFiles = "The following files have been referenced in previous interactions:\n" +
+          filesResult.files.map((file: any) => 
+            `- **${file.type.toUpperCase()}**: ${file.reference}\n  Context: ${file.context}`
+          ).join('\n') + 
+          "\n\n**IMPORTANT**: These files may be directly relevant to the current task. Reference them appropriately.";
+      } else {
+        relatedFiles = "No related files found in previous interactions.";
+      }
+      
     } catch (error) {
-      // Fallback to original memory system if enhanced version fails
-      this.logger.warn("enhanced memory query failed, falling back to original", {
-        type: "runtime.pipeline.memory.enhanced.fallback",
+      this.logger.warn("AI-enhanced memory processing failed, using basic context", {
+        type: "runtime.pipeline.memory.ai.fallback",
         error: error instanceof Error ? error.message : String(error)
       });
-
-      const relatedMemoriesResults = await this.memoryManager.queryMemory({
-        relatedSpaces: task.space.relatedSpaces,
-        limit: 10
-      });
-
-      relatedMemories = await this.runtime.templates.render(
-        "core/related_memories",
-        {
-          relatedMemoriesContext: JSON.stringify({
-            task: task.trigger,
-            relatedMemoriesResults
-          })
-        }
-      );
+      
+      contextSummary = "Context summary not available.";
+      relatedFiles = "File extraction not available.";
     }
+
+    const relatedMemories = await this.runtime.templates.render(
+      "core/related_memories_enhanced", 
+      {
+        contextSummary,
+        relatedFiles,
+        relatedMemoriesContext: JSON.stringify({
+          task: task.trigger,
+          relatedMemoriesResults
+        })
+      }
+    );
 
     this.updateMonitoringState(task, {
       relatedMemories

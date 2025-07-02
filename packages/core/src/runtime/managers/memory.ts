@@ -5,10 +5,7 @@ import { AgentTask } from "../pipeline";
 import {
   Memory,
   MemoryProvider,
-  QueryMemoryOptions,
-  MemoryQueryResult,
-  FileReference,
-  MultiResolutionSummary
+  QueryMemoryOptions
 } from "../providers/memory";
 
 /**
@@ -132,19 +129,6 @@ export class MemoryManager {
       id,
       patch
     });
-
-    // Extract file references from context if available
-    if (patch.context) {
-      const extractedFiles = this.extractFileReferences(patch.context);
-      if (extractedFiles.length > 0) {
-        patch.files = extractedFiles;
-        this.logger.debug("extracted files during memory update", {
-          type: "memory.update.files.extracted",
-          fileCount: extractedFiles.length
-        });
-      }
-    }
-
     await this.memoryProvider.updateMemory(id, patch);
   }
 
@@ -159,43 +143,5 @@ export class MemoryManager {
       options
     });
     return this.memoryProvider.queryMemory(options);
-  }
-
-  /**
-   * Enhanced query that includes files and multi-resolution summaries
-   * @param {QueryMemoryOptions} options - The options for the search
-   * @returns {Promise<MemoryQueryResult>} Enhanced result with files and summaries
-   */
-  public async queryMemoryWithFiles(options: QueryMemoryOptions): Promise<MemoryQueryResult> {
-    this.logger.info("querying memory with files", {
-      type: "memory.query.files.called",
-      options
-    });
-    return this.memoryProvider.queryMemoryWithFiles(options);
-  }
-
-  /**
-   * Extract file references from a context chain
-   * @param {string} contextChain - Serialized context chain
-   * @returns {FileReference[]} Array of extracted file references
-   */
-  public extractFileReferences(contextChain: string): FileReference[] {
-    this.logger.debug("extracting file references", {
-      type: "memory.files.extract.called"
-    });
-    return this.memoryProvider.extractFileReferences(contextChain);
-  }
-
-  /**
-   * Generate multi-resolution summary from memory list
-   * @param {Memory[]} memories - List of memories to summarize  
-   * @returns {Promise<MultiResolutionSummary>} Multi-level summaries
-   */
-  public async generateMultiResolutionSummary(memories: Memory[]): Promise<MultiResolutionSummary> {
-    this.logger.info("generating multi-resolution summary", {
-      type: "memory.summary.multi.called",
-      memoryCount: memories.length
-    });
-    return this.memoryProvider.generateMultiResolutionSummary(memories);
   }
 }

@@ -1,0 +1,29 @@
+You are generating multi-resolution summaries from memory context to provide layered understanding of conversation history.
+
+## Memory Context:
+{{ memoriesContext }}
+
+## Instructions:
+Analyze the provided memories and generate summaries at different levels of detail. Each summary should capture the essence of the interactions while being appropriate for its granularity level.
+
+## Summary Levels:
+
+1. **Recent** (last 1-2 interactions): Focus on immediate context and latest developments
+2. **Short** (last ~5 interactions): Recent conversation flow and immediate concerns  
+3. **Medium** (last ~10 interactions): Session context and ongoing topics
+4. **Long** (broader history): Overall themes, patterns, and historical context
+
+## Guidelines:
+- Keep each summary concise but informative
+- Highlight file references, key decisions, and important context
+- Maintain chronological awareness
+- Focus on information that would help an AI agent understand context
+
+Return ONLY a JSON object with this structure:
+
+{
+  "recent": "Summary of the most recent 1-2 interactions...",
+  "short": "Summary of the last ~5 interactions...", 
+  "medium": "Summary of the last ~10 interactions...",
+  "long": "Summary of the broader conversation history..."
+}

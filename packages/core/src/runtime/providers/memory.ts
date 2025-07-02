@@ -55,6 +55,51 @@ export interface QueryMemoryOptions {
 }
 
 /**
+ * Defines column information for custom table creation
+ * @property name - column name
+ * @property type - column data type (text, integer, real, blob, json, etc.)
+ * @property constraints - optional column constraints (primary key, not null, unique, etc.)
+ */
+export interface TableColumn {
+  name: string;
+  type: 'text' | 'integer' | 'real' | 'blob' | 'json' | 'bigint' | 'boolean';
+  constraints?: Array<'primary_key' | 'not_null' | 'unique' | 'auto_increment'>;
+}
+
+/**
+ * Defines schema for custom table creation
+ * @property name - table name
+ * @property columns - array of column definitions
+ * @property indexes - optional indexes to create on the table
+ */
+export interface TableSchema {
+  name: string;
+  columns: TableColumn[];
+  indexes?: Array<{
+    name: string;
+    columns: string[];
+    unique?: boolean;
+  }>;
+}
+
+/**
+ * Defines options for querying custom tables
+ * @property where - optional where conditions
+ * @property orderBy - optional order by clauses
+ * @property limit - optional limit for results
+ * @property offset - optional offset for pagination
+ */
+export interface TableQueryOptions {
+  where?: Record<string, unknown>;
+  orderBy?: Array<{
+    column: string;
+    direction: 'asc' | 'desc';
+  }>;
+  limit?: number;
+  offset?: number;
+}
+
+/**
  * Interface that all memory providers must implement
  */
 export abstract class MemoryProvider {
@@ -111,4 +156,70 @@ export abstract class MemoryProvider {
    * @returns {Promise<Memory[]>} A promise that resolves to the list of memories
    */
   public abstract queryMemory(options: QueryMemoryOptions): Promise<Memory[]>;
+
+  // New table operation methods for client-side table management
+
+  /**
+   * Create a new custom table with the specified schema
+   * @param {TableSchema} schema - The table schema definition
+   * @returns {Promise<void>} A promise that resolves when the table is created
+   */
+  public abstract createTable(schema: TableSchema): Promise<void>;
+
+  /**
+   * Insert data into a custom table
+   * @param {string} tableName - The name of the table
+   * @param {Record<string, unknown>} data - The data to insert
+   * @returns {Promise<string>} A promise that resolves to the inserted record ID
+   */
+  public abstract insertIntoTable(
+    tableName: string,
+    data: Record<string, unknown>
+  ): Promise<string>;
+
+  /**
+   * Update data in a custom table
+   * @param {string} tableName - The name of the table
+   * @param {string} id - The ID of the record to update
+   * @param {Record<string, unknown>} data - The data to update
+   * @returns {Promise<void>} A promise that resolves when the update is complete
+   */
+  public abstract updateTableRecord(
+    tableName: string,
+    id: string,
+    data: Record<string, unknown>
+  ): Promise<void>;
+
+  /**
+   * Query data from a custom table
+   * @param {string} tableName - The name of the table
+   * @param {TableQueryOptions} options - The query options
+   * @returns {Promise<Record<string, unknown>[]>} A promise that resolves to the query results
+   */
+  public abstract queryTable(
+    tableName: string,
+    options?: TableQueryOptions
+  ): Promise<Record<string, unknown>[]>;
+
+  /**
+   * Delete a record from a custom table
+   * @param {string} tableName - The name of the table
+   * @param {string} id - The ID of the record to delete
+   * @returns {Promise<void>} A promise that resolves when the deletion is complete
+   */
+  public abstract deleteFromTable(tableName: string, id: string): Promise<void>;
+
+  /**
+   * Check if a custom table exists
+   * @param {string} tableName - The name of the table
+   * @returns {Promise<boolean>} A promise that resolves to true if the table exists
+   */
+  public abstract tableExists(tableName: string): Promise<boolean>;
+
+  /**
+   * Drop a custom table
+   * @param {string} tableName - The name of the table to drop
+   * @returns {Promise<void>} A promise that resolves when the table is dropped
+   */
+  public abstract dropTable(tableName: string): Promise<void>;
 }

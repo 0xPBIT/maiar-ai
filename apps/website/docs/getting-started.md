@@ -101,6 +101,8 @@ You can customize the configuration by:
 - Configuring memory storage options (e.g. SQLite, Postgres, etc.)
 - Adding more plugins and adjusting their settings
 
+For detailed configuration options and examples, see the [Configuration Guide](./05-configuration/runtime-init).
+
 ## Adding Plugins
 
 You can extend your agent's capabilities by installing additional plugins:

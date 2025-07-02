@@ -84,6 +84,97 @@ export class Runtime {
     this.scheduler = new Scheduler(this, memoryManager, pluginRegistry);
   }
 
+  /**
+   * Initializes and configures a new Runtime instance with all necessary providers and plugins.
+   * 
+   * This is the primary entry point for creating a fully-configured runtime environment.
+   * The initialization process includes setting up model providers, memory storage, plugins,
+   * server configuration, logging, and capability validation.
+   * 
+   * @example
+   * ```typescript
+   * import { Runtime } from '@maiar/core';
+   * import { OpenAIModelProvider } from '@maiar/model-openai';
+   * import { SQLiteMemoryProvider } from '@maiar/memory-sqlite';
+   * import { ChatPlugin } from '@maiar/plugin-chat';
+   * 
+   * const runtime = await Runtime.init({
+   *   modelProviders: [
+   *     new OpenAIModelProvider({
+   *       apiKey: process.env.OPENAI_API_KEY,
+   *       models: ['gpt-4', 'gpt-3.5-turbo']
+   *     })
+   *   ],
+   *   memoryProvider: new SQLiteMemoryProvider({
+   *     dataDir: './data'
+   *   }),
+   *   plugins: [
+   *     new ChatPlugin()
+   *   ],
+   *   capabilityAliases: [
+   *     {
+   *       ids: ['text-generation', 'chat-completion'],
+   *       transforms: []
+   *     }
+   *   ],
+   *   options: {
+   *     logger: {
+   *       level: 'info',
+   *       transports: []
+   *     },
+   *     server: {
+   *       port: 3000,
+   *       cors: {
+   *         origin: ['http://localhost:3000'],
+   *         methods: ['GET', 'POST']
+   *       }
+   *     }
+   *   }
+   * });
+   * 
+   * await runtime.start();
+   * ```
+   * 
+   * @param config - The runtime configuration object
+   * @param config.modelProviders - Array of model providers that supply AI capabilities (e.g., OpenAI, Ollama). At least one provider with required capabilities must be included.
+   * @param config.memoryProvider - Memory provider for persistent storage of conversations, context, and agent state. Supports SQLite, PostgreSQL, and custom implementations.
+   * @param config.plugins - Array of plugins that extend runtime functionality with triggers, executors, and custom capabilities. Plugins are automatically validated for required capabilities.
+   * @param config.capabilityAliases - Optional capability aliases that allow mapping between different capability names. Useful for standardizing capability names across different model providers.
+   * @param config.options - Optional configuration for logging, server settings, and other runtime behavior
+   * @param config.options.logger - Logger configuration including level, transports, and formatting options
+   * @param config.options.logger.level - Log level (trace, debug, info, warn, error)
+   * @param config.options.logger.transports - Array of transport configurations for log output (console, file, websocket)
+   * @param config.options.server - HTTP server configuration for API endpoints and plugin routes
+   * @param config.options.server.port - Port number for the HTTP server (default: 3000)
+   * @param config.options.server.cors - CORS configuration for cross-origin requests
+   * 
+   * @returns Promise that resolves to a configured Runtime instance ready to be started
+   * 
+   * @throws {Error} When required capabilities are missing from model providers
+   * @throws {Error} When plugin requirements cannot be satisfied by available model providers
+   * @throws {Error} When server initialization fails
+   * @throws {Error} When memory provider initialization fails
+   * 
+   * @remarks
+   * The initialization process performs the following steps:
+   * 1. Configure logging and display startup banner
+   * 2. Initialize and start HTTP server
+   * 3. Set up prompt registry with core templates
+   * 4. Register all model providers and validate capabilities
+   * 5. Initialize memory provider and register memory plugin
+   * 6. Register all plugins and their prompt directories
+   * 7. Mount API routes for prompts and plugin endpoints
+   * 8. Configure capability aliases for model provider abstraction
+   * 9. Validate that all required capabilities are available
+   * 10. Validate that all plugin requirements are satisfied
+   * 11. Set up graceful shutdown handlers
+   * 
+   * The runtime requires certain core capabilities to be available from model providers:
+   * - text-generation: For basic language model operations
+   * - Additional capabilities may be required based on loaded plugins
+   * 
+   * @since 1.0.0
+   */
   public static async init({
     modelProviders,
     memoryProvider,

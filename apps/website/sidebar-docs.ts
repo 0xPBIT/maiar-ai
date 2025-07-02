@@ -74,6 +74,17 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Configuration",
+      link: {
+        type: "doc",
+        id: "05-configuration/index"
+      },
+      items: [
+        "05-configuration/runtime-init"
+      ]
+    },
+    {
+      type: "category",
       label: "Core Utilities",
       link: {
         type: "doc",

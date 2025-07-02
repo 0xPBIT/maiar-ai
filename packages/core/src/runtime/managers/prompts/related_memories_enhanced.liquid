@@ -1,0 +1,53 @@
+These are the related memories and files for your current task. Use this context to inform your response and maintain continuity with previous interactions.
+
+## Multi-Resolution Summary
+
+**Recent Context (last 1-2 interactions):**
+{{ relatedMemoriesContext.summary.recent }}
+
+**Short-term Context (last 5 interactions):**
+{{ relatedMemoriesContext.summary.short }}
+
+**Medium-term Context (last 10 interactions):**
+{{ relatedMemoriesContext.summary.medium }}
+
+**Long-term Context (broader history):**
+{{ relatedMemoriesContext.summary.long }}
+
+## Related Files
+{% if relatedMemoriesContext.files.size > 0 %}
+The following files have been referenced in previous interactions:
+
+{% for file in relatedMemoriesContext.files %}
+- **{{ file.type | upcase }}**: {{ file.value }}
+  {% if file.context %}Context: {{ file.context }}{% endif %}
+  {% if file.metadata.mimeType %}Type: {{ file.metadata.mimeType }}{% endif %}
+  {% if file.metadata.description %}Description: {{ file.metadata.description }}{% endif %}
+
+{% endfor %}
+
+**IMPORTANT**: These files may be directly relevant to the current task. Reference them appropriately and preserve their exact URLs/paths when needed.
+{% else %}
+No related files found in previous interactions.
+{% endif %}
+
+## Detailed Memory Context
+{% if relatedMemoriesContext.memories.size > 0 %}
+Here are the detailed memories for additional context:
+
+{% for memory in relatedMemoriesContext.memories %}
+**Memory {{ forloop.index }}** ({{ memory.createdAt | date: "%Y-%m-%d %H:%M:%S" }}):
+- Trigger: {{ memory.trigger }}
+{% if memory.context %}- Context: {{ memory.context }}{% endif %}
+{% if memory.files.size > 0 %}- Files: {{ memory.files.size }} file references{% endif %}
+
+{% endfor %}
+{% else %}
+No detailed memories available.
+{% endif %}
+
+## Context Integration Guidelines
+1. Use the multi-resolution summaries to understand the conversation flow at different levels
+2. Reference specific files when they are relevant to the current task
+3. Maintain consistency with previous interactions and build upon established context
+4. Preserve exact file URLs/paths without modification when referencing them

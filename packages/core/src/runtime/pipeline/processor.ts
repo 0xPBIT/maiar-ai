@@ -73,21 +73,49 @@ export class Processor {
       }))
     );
 
-    // Get related memories from the space search
-    const relatedMemoriesResults = await this.memoryManager.queryMemory({
-      relatedSpaces: task.space.relatedSpaces,
-      limit: 10
-    });
+    // Get related memories with files and multi-resolution summaries
+    let relatedMemories: string;
+    
+    try {
+      const relatedMemoriesResults = await this.memoryManager.queryMemoryWithFiles({
+        relatedSpaces: task.space.relatedSpaces,
+        limit: 10,
+        includeFiles: true
+      });
 
-    const relatedMemories = await this.runtime.templates.render(
-      "core/related_memories",
-      {
-        relatedMemoriesContext: JSON.stringify({
-          task: task.trigger,
-          relatedMemoriesResults
-        })
-      }
-    );
+      relatedMemories = await this.runtime.templates.render(
+        "core/related_memories_enhanced", 
+        {
+          relatedMemoriesContext: JSON.stringify({
+            task: task.trigger,
+            memories: relatedMemoriesResults.memories,
+            files: relatedMemoriesResults.relatedFiles,
+            summary: relatedMemoriesResults.summary
+          })
+        }
+      );
+    } catch (error) {
+      // Fallback to original memory system if enhanced version fails
+      this.logger.warn("enhanced memory query failed, falling back to original", {
+        type: "runtime.pipeline.memory.enhanced.fallback",
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      const relatedMemoriesResults = await this.memoryManager.queryMemory({
+        relatedSpaces: task.space.relatedSpaces,
+        limit: 10
+      });
+
+      relatedMemories = await this.runtime.templates.render(
+        "core/related_memories",
+        {
+          relatedMemoriesContext: JSON.stringify({
+            task: task.trigger,
+            relatedMemoriesResults
+          })
+        }
+      );
+    }
 
     this.updateMonitoringState(task, {
       relatedMemories

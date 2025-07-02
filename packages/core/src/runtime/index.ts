@@ -19,7 +19,7 @@ import { ServerManager } from "./managers/server";
 import { AgentTask, Scheduler } from "./pipeline";
 import { formatZodSchema } from "./pipeline/operations";
 import { GetObjectConfig } from "./pipeline/types";
-import { MemoryProvider } from "./providers/memory";
+import { MemoryProvider, TableSchema, TableQueryOptions } from "./providers/memory";
 import { ModelProvider } from "./providers/model";
 import { Plugin } from "./providers/plugin";
 
@@ -315,6 +315,13 @@ export class Runtime {
    */
   public get memory(): MemoryManager {
     return this.memoryManager;
+  }
+
+  /**
+   * Access to the memory provider for direct table operations
+   */
+  public get memoryProvider(): MemoryProvider {
+    return this.memoryManager.memoryProvider;
   }
 
   /**
@@ -635,5 +642,85 @@ export class Runtime {
     const matches = str.match(/\{[\s\S]*\}|\[[\s\S]*\]/g);
     if (!matches) throw new Error("No JSON-like structure found in response");
     return (matches[matches.length - 1] ?? "").trim();
+  }
+
+  // Table operation methods exposed through runtime
+
+  /**
+   * Create a new custom table with the specified schema
+   * @param {TableSchema} schema - The table schema definition
+   * @returns {Promise<void>} A promise that resolves when the table is created
+   */
+  public async createTable(schema: TableSchema): Promise<void> {
+    return this.memoryProvider.createTable(schema);
+  }
+
+  /**
+   * Insert data into a custom table
+   * @param {string} tableName - The name of the table
+   * @param {Record<string, unknown>} data - The data to insert
+   * @returns {Promise<string>} A promise that resolves to the inserted record ID
+   */
+  public async insertIntoTable(
+    tableName: string,
+    data: Record<string, unknown>
+  ): Promise<string> {
+    return this.memoryProvider.insertIntoTable(tableName, data);
+  }
+
+  /**
+   * Update data in a custom table
+   * @param {string} tableName - The name of the table
+   * @param {string} id - The ID of the record to update
+   * @param {Record<string, unknown>} data - The data to update
+   * @returns {Promise<void>} A promise that resolves when the update is complete
+   */
+  public async updateTableRecord(
+    tableName: string,
+    id: string,
+    data: Record<string, unknown>
+  ): Promise<void> {
+    return this.memoryProvider.updateTableRecord(tableName, id, data);
+  }
+
+  /**
+   * Query data from a custom table
+   * @param {string} tableName - The name of the table
+   * @param {TableQueryOptions} options - The query options
+   * @returns {Promise<Record<string, unknown>[]>} A promise that resolves to the query results
+   */
+  public async queryTable(
+    tableName: string,
+    options?: TableQueryOptions
+  ): Promise<Record<string, unknown>[]> {
+    return this.memoryProvider.queryTable(tableName, options);
+  }
+
+  /**
+   * Delete a record from a custom table
+   * @param {string} tableName - The name of the table
+   * @param {string} id - The ID of the record to delete
+   * @returns {Promise<void>} A promise that resolves when the deletion is complete
+   */
+  public async deleteFromTable(tableName: string, id: string): Promise<void> {
+    return this.memoryProvider.deleteFromTable(tableName, id);
+  }
+
+  /**
+   * Check if a custom table exists
+   * @param {string} tableName - The name of the table
+   * @returns {Promise<boolean>} A promise that resolves to true if the table exists
+   */
+  public async tableExists(tableName: string): Promise<boolean> {
+    return this.memoryProvider.tableExists(tableName);
+  }
+
+  /**
+   * Drop a custom table
+   * @param {string} tableName - The name of the table to drop
+   * @returns {Promise<void>} A promise that resolves when the table is dropped
+   */
+  public async dropTable(tableName: string): Promise<void> {
+    return this.memoryProvider.dropTable(tableName);
   }
 }

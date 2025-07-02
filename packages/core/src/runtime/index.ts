@@ -94,6 +94,7 @@ export class Runtime {
    * @example
    * ```typescript
    * import { Runtime } from '@maiar/core';
+   * import { stdout, websocket } from '@maiar/core/dist/logger';
    * import { OpenAIModelProvider } from '@maiar/model-openai';
    * import { SQLiteMemoryProvider } from '@maiar/memory-sqlite';
    * import { ChatPlugin } from '@maiar/plugin-chat';
@@ -120,7 +121,7 @@ export class Runtime {
    *   options: {
    *     logger: {
    *       level: 'info',
-   *       transports: []
+   *       transports: [stdout, websocket({ path: '/monitor' })]
    *     },
    *     server: {
    *       port: 3000,
@@ -141,9 +142,9 @@ export class Runtime {
    * @param config.plugins - Array of plugins that extend runtime functionality with triggers, executors, and custom capabilities. Plugins are automatically validated for required capabilities.
    * @param config.capabilityAliases - Optional capability aliases that allow mapping between different capability names. Useful for standardizing capability names across different model providers.
    * @param config.options - Optional configuration for logging, server settings, and other runtime behavior
-   * @param config.options.logger - Logger configuration including level, transports, and formatting options
+   * @param config.options.logger - Winston LoggerOptions for configuring structured logging
    * @param config.options.logger.level - Log level (trace, debug, info, warn, error)
-   * @param config.options.logger.transports - Array of transport configurations for log output (console, file, websocket)
+   * @param config.options.logger.transports - Array of Winston transport instances (use stdout, websocket from @maiar/core/dist/logger or standard Winston transports)
    * @param config.options.server - HTTP server configuration for API endpoints and plugin routes
    * @param config.options.server.port - Port number for the HTTP server (default: 3000)
    * @param config.options.server.cors - CORS configuration for cross-origin requests

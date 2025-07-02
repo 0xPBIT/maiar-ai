@@ -152,42 +152,31 @@ const runtime = await Runtime.init({
 
 ### Logger Options
 
-Configure structured logging with multiple transports and log levels.
+Configure structured logging using Winston's LoggerOptions interface with pre-built transports.
 
 ```typescript
+import { stdout, websocket } from '@maiar/core/dist/logger';
+import { transports } from 'winston';
+
 const runtime = await Runtime.init({
   options: {
     logger: {
       level: 'info', // trace, debug, info, warn, error
       transports: [
-        {
-          type: 'console',
-          options: {
-            colorize: true,
-            timestamp: true
-          }
-        },
-        {
-          type: 'file',
-          options: {
-            filename: 'logs/maiar.log',
-            maxFileSize: '10MB',
-            maxFiles: 5
-          }
-        },
-        {
-          type: 'websocket',
-          options: {
-            port: 3001,
-            path: '/logs'
-          }
-        }
+        stdout, // Pre-built console transport with MAIAR formatting
+        websocket({ path: '/monitor' }), // WebSocket transport for remote monitoring
+        new transports.File({ filename: 'logs/maiar.log' }) // Standard Winston file transport
       ]
     }
   },
   // ... other config
 });
 ```
+
+**Available Transports:**
+- `stdout`: Pre-built console transport with MAIAR's colored formatting (imported from `@maiar/core/dist/logger`)
+- `websocket({ path })`: WebSocket transport for real-time log streaming to connected clients (imported from `@maiar/core/dist/logger`)
+- Standard Winston transports: `File`, `HTTP`, `Stream`, etc. (imported from `winston`)
 
 **Log Levels:**
 - `trace`: Most verbose, includes all debug information
@@ -229,11 +218,13 @@ Here's a complete example with all configuration options:
 
 ```typescript
 import { Runtime } from '@maiar/core';
+import { stdout, websocket } from '@maiar/core/dist/logger';
 import { OpenAIModelProvider } from '@maiar/model-openai';
 import { OllamaModelProvider } from '@maiar/model-ollama';
 import { PostgresMemoryProvider } from '@maiar/memory-postgres';
 import { ChatPlugin } from '@maiar/plugin-chat';
 import { DiscordPlugin } from '@maiar/plugin-discord';
+import { transports } from 'winston';
 
 const runtime = await Runtime.init({
   modelProviders: [
@@ -270,14 +261,9 @@ const runtime = await Runtime.init({
     logger: {
       level: process.env.LOG_LEVEL || 'info',
       transports: [
-        {
-          type: 'console',
-          options: { colorize: true }
-        },
-        {
-          type: 'file',
-          options: { filename: 'logs/maiar.log' }
-        }
+        stdout, // MAIAR's formatted console output
+        websocket({ path: '/monitor' }), // WebSocket for remote monitoring
+        new transports.File({ filename: 'logs/maiar.log' }) // Standard file logging
       ]
     },
     server: {

@@ -78,18 +78,7 @@ export class Scheduler {
     this.logger.info("Scheduler shutdown complete");
   }
 
-  /**
-   * Demonstrate concurrent execution capabilities
-   * This method submits multiple tasks simultaneously to prove concurrency works
-   */
-  public async demonstrateConcurrency(): Promise<void> {
-    if (!this.config.enableConcurrency) {
-      this.logger.warn("Cannot demonstrate concurrency - feature is disabled in scheduler config");
-      return;
-    }
-    
-    await this.workerPool.demonstrateConcurrency();
-  }
+
 
   /**
    * Emits a lightweight agent state snapshot containing queue length and running status.

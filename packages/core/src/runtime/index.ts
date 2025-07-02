@@ -507,13 +507,7 @@ export class Runtime {
     return this.scheduler.queueTask(trigger, space);
   }
 
-  /**
-   * Demonstrate concurrent execution by submitting multiple tasks simultaneously
-   * This method proves that the concurrent execution implementation works correctly
-   */
-  public async demonstrateConcurrency(): Promise<void> {
-    return this.scheduler.demonstrateConcurrency();
-  }
+
 
   /**
    * Execute a capability through the model-manager.

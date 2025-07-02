@@ -383,6 +383,9 @@ body {
 
 /* ---- Mobile adjustments ---- */
 @media (max-width: 600px) {
+  .hero {
+    padding: 0 2rem;
+  }
   .nav {
     flex-direction: column;
     align-items: center;

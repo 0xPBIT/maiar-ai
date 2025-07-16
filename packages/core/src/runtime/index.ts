@@ -73,7 +73,8 @@ export class Runtime {
     memoryManager: MemoryManager,
     pluginRegistry: PluginRegistry,
     serverManager: ServerManager,
-    promptRegistry: PromptRegistry
+    promptRegistry: PromptRegistry,
+    maxConcurrentTasks?: number
   ) {
     this.modelManager = modelManager;
     this.memoryManager = memoryManager;
@@ -81,7 +82,12 @@ export class Runtime {
     this.serverManager = serverManager;
     this.promptRegistry = promptRegistry;
 
-    this.scheduler = new Scheduler(this, memoryManager, pluginRegistry);
+    this.scheduler = new Scheduler(
+      this,
+      memoryManager,
+      pluginRegistry,
+      maxConcurrentTasks
+    );
   }
 
   public static async init({
@@ -100,6 +106,9 @@ export class Runtime {
       server?: {
         port?: number;
         cors?: cors.CorsOptions;
+      };
+      concurrency?: {
+        maxTasks?: number;
       };
     };
   }): Promise<Runtime> {
@@ -274,7 +283,8 @@ export class Runtime {
       memoryManager,
       pluginRegistry,
       serverManager,
-      promptRegistry
+      promptRegistry,
+      options?.concurrency?.maxTasks
     );
 
     // Expose template registry on runtime instance

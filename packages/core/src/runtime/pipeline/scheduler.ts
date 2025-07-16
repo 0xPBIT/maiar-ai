@@ -8,6 +8,14 @@ import { PluginRegistry } from "../managers/plugin";
 import { Processor } from "./processor";
 import { AgentTask } from "./types";
 
+/**
+ * Interface for tracking metadata of concurrently executing tasks
+ */
+interface TaskMetadata {
+  taskId: string;
+  startTime: number;
+}
+
 export class Scheduler {
   private readonly runtime: Runtime;
   private readonly memoryManager: MemoryManager;
@@ -17,6 +25,14 @@ export class Scheduler {
   private taskQueue: AgentTask[];
   private isRunning: boolean;
 
+  // Concurrent execution properties
+  private readonly maxConcurrentTasks: number;
+  private activeTasks: Map<Promise<void>, TaskMetadata>;
+
+  // Reactive task arrival system
+  private newTaskResolver: (() => void) | null = null;
+  private newTaskPromise!: Promise<void>;
+
   public get logger(): Logger {
     return logger.child({ scope: "scheduler" });
   }
@@ -24,11 +40,13 @@ export class Scheduler {
   constructor(
     runtime: Runtime,
     memoryManager: MemoryManager,
-    pluginRegistry: PluginRegistry
+    pluginRegistry: PluginRegistry,
+    maxConcurrentTasks: number = 4
   ) {
     this.runtime = runtime;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
+    this.maxConcurrentTasks = maxConcurrentTasks;
 
     this.processor = new Processor(
       this.runtime,
@@ -38,6 +56,19 @@ export class Scheduler {
 
     this.taskQueue = [];
     this.isRunning = false;
+    this.activeTasks = new Map();
+
+    // Initialize reactive task arrival system
+    this.createNewTaskPromise();
+  }
+
+  /**
+   * Creates a new promise that resolves when a new task arrives
+   */
+  private createNewTaskPromise(): void {
+    this.newTaskPromise = new Promise<void>((resolve) => {
+      this.newTaskResolver = resolve;
+    });
   }
 
   /**
@@ -53,6 +84,8 @@ export class Scheduler {
         state: {
           queueLength: this.taskQueue.length,
           isRunning: this.isRunning,
+          activeTasks: this.activeTasks.size,
+          maxConcurrentTasks: this.maxConcurrentTasks,
           lastUpdate: Date.now()
         }
       }
@@ -62,7 +95,7 @@ export class Scheduler {
   }
 
   /**
-   * Adds a task to the task queue
+   * Adds a task to the task queue and signals the cycle loop
    * @param task - the task to add to the queue
    */
   private enqueue(task: AgentTask): void {
@@ -71,6 +104,16 @@ export class Scheduler {
       type: "scheduler.queue.push",
       queueLength: this.taskQueue.length
     });
+
+    // Signal running cycle that new task is available
+    if (this.isRunning && this.newTaskResolver) {
+      this.logger.debug("signaling cycle about new task", {
+        type: "scheduler.queue.signal",
+        queueLength: this.taskQueue.length
+      });
+      this.newTaskResolver();
+      this.newTaskResolver = null; // Clear to prevent double-signaling
+    }
 
     // Emit updated queue length snapshot
     this.emitQueueState();
@@ -103,34 +146,106 @@ export class Scheduler {
   }
 
   /**
-   * Iterates over the queue and runs each task
+   * Iterates over the queue and runs tasks concurrently up to maxConcurrentTasks limit
    */
   private async cycle(): Promise<void> {
     this.isRunning = true;
-    this.logger.debug("starting queue processing", {
+    this.logger.debug("starting concurrent queue processing", {
       type: "scheduler.queue.processing.start",
-      queueLength: this.taskQueue.length
+      queueLength: this.taskQueue.length,
+      maxConcurrentTasks: this.maxConcurrentTasks
     });
 
-    let task = this.dequeue();
+    // Main concurrent processing loop
+    while (this.taskQueue.length > 0 || this.activeTasks.size > 0) {
+      this.logger.debug("cycle loop iteration starting", {
+        type: "scheduler.cycle.iteration.start",
+        queueLength: this.taskQueue.length,
+        activeTasks: this.activeTasks.size,
+        maxConcurrentTasks: this.maxConcurrentTasks
+      });
 
-    while (task) {
-      try {
-        await this.execute(task);
-      } catch (error) {
-        this.logger.error("error processing task", {
-          type: "scheduler.queue.processing.error",
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
+      // Phase 1: Start new tasks up to our concurrency limit
+      this.logger.debug("about to fill concurrency slots", {
+        type: "scheduler.cycle.fill.start",
+        queueLength: this.taskQueue.length,
+        activeTasks: this.activeTasks.size
+      });
+
+      this.fillConcurrencySlots();
+
+      // Phase 2: Wait for any task to complete OR new task arrival
+      if (this.activeTasks.size > 0 || this.taskQueue.length === 0) {
+        const activePromises = [...this.activeTasks.keys()].filter(
+          (p): p is Promise<void> => p !== undefined
+        );
+
+        this.logger.debug("about to wait for any task completion or new task", {
+          type: "scheduler.cycle.race.start",
+          activeTasks: this.activeTasks.size,
+          activePromisesCount: activePromises.length,
+          queueLength: this.taskQueue.length
         });
+
+        if (activePromises.length > 0) {
+          // Race between task completion and new task arrival
+          await Promise.race([
+            Promise.race(activePromises), // Existing task completion
+            this.newTaskPromise // New task arrival signal
+          ]);
+        } else if (this.taskQueue.length === 0) {
+          // No active tasks and no queued tasks - wait for new tasks
+          await this.newTaskPromise;
+        }
+
+        this.logger.debug("promise race completed", {
+          type: "scheduler.cycle.race.complete",
+          activeTasks: this.activeTasks.size,
+          queueLength: this.taskQueue.length
+        });
+
+        // Reset new task promise if it was resolved
+        if (this.newTaskResolver === null) {
+          this.createNewTaskPromise();
+          this.logger.debug("reset new task promise after signal", {
+            type: "scheduler.cycle.promise.reset"
+          });
+        }
       }
-      task = this.dequeue();
+
+      // Phase 3: Clean up completed tasks now that we've waited for any task to complete
+      this.logger.debug("about to start cleanup", {
+        type: "scheduler.cycle.cleanup.start",
+        activeTasks: this.activeTasks.size,
+        timestamp: Date.now()
+      });
+
+      this.cleanupCompletedTasks();
+
+      this.logger.debug("cleanup completed", {
+        type: "scheduler.cycle.cleanup.complete",
+        activeTasks: this.activeTasks.size,
+        timestamp: Date.now()
+      });
+
+      // Update queue state after each iteration
+      this.logger.debug("about to emit queue state", {
+        type: "scheduler.cycle.emit.start",
+        timestamp: Date.now()
+      });
+
+      this.emitQueueState();
+
+      this.logger.debug("queue state emitted", {
+        type: "scheduler.cycle.emit.complete",
+        timestamp: Date.now()
+      });
     }
 
     this.isRunning = false;
-    this.logger.debug("queue processing complete", {
+    this.logger.debug("concurrent queue processing complete", {
       type: "scheduler.queue.processing.complete",
-      queueLength: this.taskQueue.length
+      maxConcurrentTasks: this.maxConcurrentTasks
     });
 
     // Emit queue state when processing finishes (queue now empty)
@@ -138,27 +253,116 @@ export class Scheduler {
   }
 
   /**
-   * Runs a task on the processor
+   * Fills available concurrency slots by starting new tasks up to maxConcurrentTasks limit
+   */
+  private fillConcurrencySlots(): void {
+    while (
+      this.taskQueue.length > 0 &&
+      this.activeTasks.size < this.maxConcurrentTasks
+    ) {
+      const task = this.dequeue();
+      if (task) {
+        // Start task execution but don't await it - explicitly type as Promise<void>
+        const taskPromise: Promise<void> = this.execute(task);
+
+        // Track this running task
+        this.activeTasks.set(taskPromise, {
+          taskId: task.trigger.id,
+          startTime: Date.now()
+        });
+
+        this.logger.debug("added task to active tracking", {
+          type: "scheduler.task.tracking.add",
+          taskId: task.trigger.id,
+          activeTasks: this.activeTasks.size,
+          promiseType: typeof taskPromise
+        });
+
+        this.logger.debug("started concurrent task", {
+          type: "scheduler.task.concurrent.start",
+          taskId: task.trigger.id,
+          activeTasks: this.activeTasks.size,
+          queueLength: this.taskQueue.length
+        });
+      }
+    }
+  }
+
+  /**
+   * Cleans up all completed tasks from the active tasks tracking
+   * Non-blocking: only removes already-settled promises
+   */
+  private cleanupCompletedTasks(): void {
+    if (this.activeTasks.size === 0) return;
+
+    // Check each promise to see if it's already completed
+    for (const [promise, metadata] of this.activeTasks) {
+      // Use Promise.race with resolved promise to check if original promise is settled
+      Promise.race([promise, Promise.resolve()]).then(
+        () => {
+          // Promise completed successfully
+          if (this.activeTasks.has(promise)) {
+            this.logger.debug("cleaned up completed task", {
+              type: "scheduler.task.cleanup",
+              taskId: metadata.taskId,
+              status: "fulfilled",
+              duration: Date.now() - metadata.startTime
+            });
+            this.activeTasks.delete(promise);
+          }
+        },
+        () => {
+          // Promise rejected
+          if (this.activeTasks.has(promise)) {
+            this.logger.debug("cleaned up completed task", {
+              type: "scheduler.task.cleanup",
+              taskId: metadata.taskId,
+              status: "rejected",
+              duration: Date.now() - metadata.startTime
+            });
+            this.activeTasks.delete(promise);
+          }
+        }
+      );
+    }
+  }
+
+  /**
+   * Runs a task on the processor. This method now supports concurrent execution
+   * and includes enhanced error handling for concurrent task processing.
    * @param task - the task to run
    */
   private async execute(task: AgentTask): Promise<void> {
-    this.logger.debug("processing task", {
-      type: "processor.task.processing",
-      task
-    });
+    try {
+      this.logger.debug("processing task", {
+        type: "processor.task.processing",
+        taskId: task.trigger.id,
+        activeTasks: this.activeTasks.size
+      });
 
-    // store the incoming task event in memory
-    const memoryId = await this.memoryManager.storeMemory(task);
+      // store the incoming task event in memory
+      const memoryId = await this.memoryManager.storeMemory(task);
 
-    const completedTaskChain = await this.processor.spawn(task);
+      const completedTaskChain = await this.processor.spawn(task);
 
-    await this.memoryManager.updateMemory(memoryId, {
-      context: JSON.stringify(completedTaskChain)
-    });
+      await this.memoryManager.updateMemory(memoryId, {
+        context: JSON.stringify(completedTaskChain)
+      });
 
-    this.logger.info("pipeline execution complete", {
-      type: "runtime.pipeline.execution.complete"
-    });
+      this.logger.info("pipeline execution complete", {
+        type: "runtime.pipeline.execution.complete",
+        taskId: task.trigger.id
+      });
+    } catch (error) {
+      this.logger.error("error processing task", {
+        type: "scheduler.queue.processing.error",
+        taskId: task.trigger.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        activeTasks: this.activeTasks.size
+      });
+      // Don't re-throw - let this task fail but continue with others
+    }
   }
 
   /**

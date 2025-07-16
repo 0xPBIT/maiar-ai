@@ -59,6 +59,10 @@ export interface AgentStatePayload {
   lastUpdate: number;
   /** Full AgentTask (trigger + contextChain + etc.) */
   currentContext?: unknown;
+  /** Number of currently active concurrent tasks */
+  activeTasks?: number;
+  /** Maximum number of concurrent tasks allowed */
+  maxConcurrentTasks?: number;
 
   /** Optional pipeline information for UI */
   pipeline?: Array<{ pluginId: string; action: string }>;

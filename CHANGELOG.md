@@ -1,3 +1,13 @@
+## 1.1.0-alpha.0 (2025-07-23)
+
+### 🚀 Features
+
+- **core:** concurrent task processing ([#182](https://github.com/UraniumCorporation/maiar-ai/pull/182))
+
+### ❤️ Thank You
+
+- pbit @0xPBIT
+
 # 1.0.0 (2025-06-27)
 
 ### 🚀 Features

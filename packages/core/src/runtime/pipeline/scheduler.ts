@@ -31,7 +31,7 @@ export class Scheduler {
 
   // Reactive task arrival system
   private newTaskResolver: (() => void) | null = null;
-  private newTaskPromise!: Promise<void>;
+  private newTaskPromise: Promise<void>;
 
   public get logger(): Logger {
     return logger.child({ scope: "scheduler" });
@@ -43,6 +43,12 @@ export class Scheduler {
     pluginRegistry: PluginRegistry,
     maxConcurrentTasks: number = 4
   ) {
+    if (maxConcurrentTasks < 1 || !Number.isInteger(maxConcurrentTasks)) {
+      throw new Error(
+        `maxConcurrentTasks must be a positive integer, got ${maxConcurrentTasks}`
+      );
+    }
+
     this.runtime = runtime;
     this.memoryManager = memoryManager;
     this.pluginRegistry = pluginRegistry;
@@ -59,7 +65,10 @@ export class Scheduler {
     this.activeTasks = new Map();
 
     // Initialize reactive task arrival system
-    this.createNewTaskPromise();
+    this.newTaskPromise = new Promise<void>((resolve) => {
+      // Store this resolver in the class instance so it can be resolved by the enqueue method
+      this.newTaskResolver = resolve;
+    });
   }
 
   /**
@@ -111,8 +120,10 @@ export class Scheduler {
         type: "scheduler.queue.signal",
         queueLength: this.taskQueue.length
       });
+      // Resolve the new task promise
       this.newTaskResolver();
-      this.newTaskResolver = null; // Clear to prevent double-signaling
+      // Clear the new task resolver to prevent double-signaling
+      this.newTaskResolver = null;
     }
 
     // Emit updated queue length snapshot
@@ -228,18 +239,7 @@ export class Scheduler {
         timestamp: Date.now()
       });
 
-      // Update queue state after each iteration
-      this.logger.debug("about to emit queue state", {
-        type: "scheduler.cycle.emit.start",
-        timestamp: Date.now()
-      });
-
       this.emitQueueState();
-
-      this.logger.debug("queue state emitted", {
-        type: "scheduler.cycle.emit.complete",
-        timestamp: Date.now()
-      });
     }
 
     this.isRunning = false;
@@ -271,18 +271,8 @@ export class Scheduler {
           startTime: Date.now()
         });
 
-        this.logger.debug("added task to active tracking", {
-          type: "scheduler.task.tracking.add",
-          taskId: task.trigger.id,
-          activeTasks: this.activeTasks.size,
-          promiseType: typeof taskPromise
-        });
-
         this.logger.debug("started concurrent task", {
-          type: "scheduler.task.concurrent.start",
-          taskId: task.trigger.id,
-          activeTasks: this.activeTasks.size,
-          queueLength: this.taskQueue.length
+          taskId: task.trigger.id
         });
       }
     }
@@ -297,28 +287,27 @@ export class Scheduler {
 
     // Check each promise to see if it's already completed
     for (const [promise, metadata] of this.activeTasks) {
-      // Use Promise.race with resolved promise to check if original promise is settled
+      // Use finally to handle both fulfilled and rejected cases
       Promise.race([promise, Promise.resolve()]).then(
         () => {
-          // Promise completed successfully
           if (this.activeTasks.has(promise)) {
             this.logger.debug("cleaned up completed task", {
               type: "scheduler.task.cleanup",
               taskId: metadata.taskId,
-              status: "fulfilled",
-              duration: Date.now() - metadata.startTime
+              duration: Date.now() - metadata.startTime,
+              status: "fulfilled"
             });
             this.activeTasks.delete(promise);
           }
         },
-        () => {
-          // Promise rejected
+        (error) => {
           if (this.activeTasks.has(promise)) {
             this.logger.debug("cleaned up completed task", {
               type: "scheduler.task.cleanup",
               taskId: metadata.taskId,
+              duration: Date.now() - metadata.startTime,
               status: "rejected",
-              duration: Date.now() - metadata.startTime
+              error: error instanceof Error ? error.message : String(error)
             });
             this.activeTasks.delete(promise);
           }

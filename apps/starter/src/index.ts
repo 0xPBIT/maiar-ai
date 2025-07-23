@@ -92,6 +92,9 @@ async function main() {
       server: {
         port: 3000
       }
+      // concurrency: {
+      //   maxTasks: 4 // Process up to 4 tasks concurrently (default: 4)
+      // }
     }
   });
 

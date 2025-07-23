@@ -15,7 +15,7 @@ export function AgentStatus() {
 
   return (
     <Grid container>
-      <StyledGridItem size={4}>
+      <StyledGridItem size={3}>
         <Typography
           variant="caption"
           color="text.secondary"
@@ -28,7 +28,7 @@ export function AgentStatus() {
           {agentState?.queueLength || 0}
         </Typography>
       </StyledGridItem>
-      <StyledGridItem size={4}>
+      <StyledGridItem size={3}>
         <Typography
           variant="caption"
           color="text.secondary"
@@ -41,7 +41,23 @@ export function AgentStatus() {
           {agentState?.isRunning ? "Running" : "Idle"}
         </Typography>
       </StyledGridItem>
-      <StyledGridItem size={4}>
+      <StyledGridItem size={3}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          padding={0}
+          fontSize={10}
+        >
+          Active
+        </Typography>
+        <Typography variant="body1" padding={0}>
+          {agentState?.activeTasks || 0}
+          {agentState?.maxConcurrentTasks
+            ? `/${agentState.maxConcurrentTasks}`
+            : ""}
+        </Typography>
+      </StyledGridItem>
+      <StyledGridItem size={3}>
         <Typography
           variant="caption"
           color="text.secondary"
